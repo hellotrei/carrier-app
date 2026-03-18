@@ -3552,6 +3552,11 @@ NetInfo.addEventListener(state => {
 - [ ] Order core harus stabil end-to-end sebelum pilot hardening dan fitur optional diprioritaskan
 - [ ] Build order yang dieksekusi tetap konsisten dengan `MVP Pilot` scope lock
 
+### 23.17 Ticketized Engineering Board
+- [ ] Semua ticket `ENG-001` sampai `ENG-014` membentuk jalur core pilot tanpa dependency ke ticket optional
+- [ ] Ticket `ENG-Oxx` tidak masuk blocker launch pilot
+- [ ] Priority `P0/P1/P2` pada board konsisten dengan scope lock dan build order final
+
 ---
 
 ## 24. Testing Specification
@@ -3749,6 +3754,33 @@ Rules:
 - `Pilot Optional` tidak boleh masuk dependency pada fase 1-4
 - Jika fase 3 belum end-to-end stabil, fase 4 hanya boleh mengambil hardening yang membantu flow inti
 - Phase 2 feature tidak boleh masuk ke build order final pilot
+
+### Fase F — Ticketized Engineering Board
+| Ticket | Scope | Deliverable Minimum | Priority | Blocking |
+|---|---|---|---|---|
+| ENG-001 | foundation | bootstrap, navigation, sqlite init | P0 | - |
+| ENG-002 | foundation | repository inti dan migration baseline | P0 | ENG-001 |
+| ENG-003 | foundation | onboarding, role switch, permission flow | P0 | ENG-001 |
+| ENG-004 | foundation | basic profile, pricing settings, readiness validation | P0 | ENG-002, ENG-003 |
+| ENG-005 | presence | supabase client, presence gateway | P0 | ENG-004 |
+| ENG-006 | presence | anti-abuse + go online/offline | P0 | ENG-005 |
+| ENG-007 | home | customer home, discovery, recommendation | P0 | ENG-006 |
+| ENG-008 | home | driver home, online gate, recovery banner | P0 | ENG-006 |
+| ENG-009 | order | booking form, quote, review | P0 | ENG-007 |
+| ENG-010 | order | order request/response signaling | P0 | ENG-009 |
+| ENG-011 | order | incoming order + accept/reject + contact reveal | P0 | ENG-010 |
+| ENG-012 | order | active trip + cancel/no-show/mismatch + recovery | P0 | ENG-011 |
+| ENG-013 | hardening | history + post-trip feedback + transaction log | P0 | ENG-012 |
+| ENG-014 | hardening | audit writer + export + csv export | P0 | ENG-013 |
+| ENG-015 | hardening | error mapping + empty states + copy/design polish | P1 | ENG-012 |
+| ENG-O01 | optional | fcm wake-up notice | P1 | ENG-010 |
+| ENG-O02 | optional | women preference | P1 | ENG-007 |
+| ENG-O03 | optional | temporary chat | P2 | ENG-011 |
+
+Rules:
+- `P0` membentuk jalur launch pilot
+- `P1` boleh diambil bila P0 sprint terkait sudah aman
+- `P2` tidak boleh mengganggu readiness launch pilot
 
 ---
 

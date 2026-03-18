@@ -67,6 +67,15 @@ Rules:
 - jangan lompat ke fitur optional sebelum core order lifecycle stabil
 - `Pilot Optional` hanya boleh diaktifkan setelah jalur inti selesai end-to-end
 
+### 3.3 Engineering Board Rule
+- Board engineering pilot harus dibagi minimal menjadi:
+  - core foundation
+  - core presence/home
+  - core order lifecycle
+  - core hardening
+  - pilot optional
+- Ticket `Pilot Optional` tidak boleh masuk sprint aktif sebelum exit criteria core sprint terpenuhi
+
 ### 3.2 Tujuan Pengguna
 - Customer menemukan mitra online dalam < 60 detik dari buka app
 - Customer melihat estimasi harga sebelum order dikirim

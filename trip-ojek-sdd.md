@@ -2205,6 +2205,32 @@ Rules:
 - Sprint berikutnya tidak boleh mengambil fitur `Pilot Optional` sebelum exit criteria sprint sebelumnya tercapai
 - Jika ada dev capacity sisa, gunakan untuk hardening flow inti lebih dulu, bukan membuka phase 2
 
+### 28.2 Sprintable Task Board
+| Ticket | Sprint | Task | Priority | Depends On |
+|---|---|---|---|---|
+| ENG-001 | 1 | bootstrap app, navigation, sqlite init | P0 | - |
+| ENG-002 | 1 | user/pricing/order/audit repositories minimum | P0 | ENG-001 |
+| ENG-003 | 1 | onboarding, role switch, permission lokasi | P0 | ENG-001 |
+| ENG-004 | 1 | basic profile, pricing settings, readiness gate | P0 | ENG-002, ENG-003 |
+| ENG-005 | 2 | Supabase relay integration + presence gateway | P0 | ENG-004 |
+| ENG-006 | 2 | go online/offline + anti-abuse validation | P0 | ENG-005 |
+| ENG-007 | 2 | customer home + discovery list + recommendation card | P0 | ENG-006 |
+| ENG-008 | 2 | driver home + online gate + demand list | P0 | ENG-006 |
+| ENG-009 | 3 | booking form, quote builder, review screen | P0 | ENG-007 |
+| ENG-010 | 3 | order signaling, waiting response, retry state | P0 | ENG-009 |
+| ENG-011 | 3 | incoming order, accept/reject, contact reveal | P0 | ENG-010 |
+| ENG-012 | 3 | active trip, cancel/no-show/mismatch, recovery | P0 | ENG-011 |
+| ENG-013 | 4 | history, transaction log, post-trip feedback | P0 | ENG-012 |
+| ENG-014 | 4 | audit writer, audit export, csv export | P0 | ENG-013 |
+| ENG-015 | 4 | error/empty state matrix, copy/tone, design system hardening | P1 | ENG-012 |
+| ENG-O01 | Optional | FCM wake-up notice | P1 | ENG-010 |
+| ENG-O02 | Optional | women preference toggle | P1 | ENG-007 |
+| ENG-O03 | Optional | temporary chat | P2 | ENG-011 |
+
+Rules:
+- Ticket `ENG-Oxx` tidak boleh masuk critical path pilot
+- Jika `ENG-012` belum stabil, `ENG-013` sampai `ENG-015` hanya boleh fokus pada hardening yang mendukung core trip
+
 ---
 
 ## 29. Ringkasan Keputusan Teknis
