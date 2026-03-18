@@ -933,6 +933,11 @@ Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
 - File chat tidak boleh menjadi arsip permanen produk di MVP
 - Background tracking tidak boleh dipakai untuk discovery background terus-menerus; hanya untuk active order
 - Update lokasi background harus hemat baterai dan bersifat periodik minimum, target awal 60 detik sekali bila OS mengizinkan
+- Matrix delivery event harus jelas:
+  - `presence` dan `order signaling` via realtime relay
+  - `incoming order`, `order response`, dan notice penting saat app background via FCM bila tersedia
+  - `history`, `transaction log`, `audit`, dan feedback tetap local-first
+- Push notification tidak boleh menjadi source of truth status order; push hanya wake-up/notice layer
 - SOS wajib membawa:
   - orderId jika ada
   - actorUserId
@@ -946,6 +951,7 @@ Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
 - [ ] Temporary chat hanya tersedia untuk pasangan order aktif
 - [ ] Temporary chat punya TTL/retention policy yang jelas
 - [ ] Call/WhatsApp tetap tersedia saat temporary chat dimatikan
+- [ ] Matrix event relay/push/local terdokumentasi dan konsisten
 - [ ] SOS mengirim lokasi dan keterangan bahaya minimum
 - [ ] Background safety mode tidak mengaktifkan discovery background
 - [ ] User diberi penjelasan bahwa chat dan tracking ini bersifat terbatas saat active order

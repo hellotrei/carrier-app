@@ -114,6 +114,23 @@ Relay **wajib ada** (tidak murni optional) untuk discovery dan signaling. Dua op
 - Firebase tidak boleh menjadi penyimpan permanen histori trip, histori pembayaran, atau histori audit
 - Jika chat/Firebase gagal, order core flow tetap harus jalan dengan relay utama dan local state
 
+### 4.3C Notification dan Realtime Event Matrix
+| Event / Data | Transport Utama | Fallback / Catatan |
+|---|---|---|
+| Presence publish/discovery | Supabase Realtime | Tidak memakai FCM |
+| Order request | Supabase Realtime | FCM hanya wake-up notice bila app target background |
+| Order accept/reject | Supabase Realtime | FCM boleh kirim notice ringkas, bukan source of truth |
+| Contact reveal | Supabase Realtime bertarget | Tidak boleh dibroadcast |
+| Active order recovery sync | Relay pull/sync | Jika relay down, pakai local recovery mode |
+| Temporary chat | Firebase temp store | Call/WhatsApp fallback |
+| History / transaction log / audit | Local storage | Tidak dikirim ke FCM/Firebase chat |
+| SOS notice | FCM / channel safety ringan | Payload minimum, bukan histori permanen |
+
+Rules:
+- Realtime relay tetap menjadi jalur kebenaran untuk coordination event antar user
+- FCM hanya lapisan notifikasi untuk membantu wake-up/background delivery
+- Event yang terlewat di push harus tetap bisa dipulihkan dari relay sync atau local state
+
 ### 4.3B Maps Strategy (Free First)
 - Navigasi berbasis deep link latitude/longitude
 - Android memprioritaskan Google Maps jika tersedia

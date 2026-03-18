@@ -98,6 +98,11 @@ Firebase rules:
 - Firebase Realtime Database/Storage hanya untuk temporary chat/file yang non-source-of-truth
 - Jika Firebase down, order core flow tidak boleh ikut gagal
 
+Realtime delivery rules:
+- Supabase Realtime tetap jalur utama untuk presence dan order coordination
+- FCM hanya dipakai sebagai wake-up / notice layer saat app background atau terminated
+- Push payload tidak boleh diperlakukan sebagai source of truth business state
+
 ### 3.4 Dependency Principles
 - Hindari SDK berbayar
 - Pilih library dengan maintainer aktif dan stars > 1000
@@ -689,6 +694,20 @@ export type PricingSettingsViewModel = {
   affectsCurrentOrder: false
   helperText: string
 }
+
+export type DeliveryChannel =
+  | 'relay_realtime'
+  | 'fcm_push'
+  | 'firebase_temp'
+  | 'local_only'
+
+export type DeliveryMatrixItem = {
+  eventName: string
+  primaryChannel: DeliveryChannel
+  secondaryChannel?: DeliveryChannel
+  sourceOfTruth: 'relay' | 'local'
+  notes?: string
+}
 ```
 
 ---
@@ -786,6 +805,63 @@ export interface DeviceAuthGateway {
   authenticate(reason: string): Promise<boolean>
 }
 ```
+
+---
+
+### 8.1 Delivery Matrix Contract
+```ts
+export const DELIVERY_MATRIX: DeliveryMatrixItem[] = [
+  {
+    eventName: 'presence_publish',
+    primaryChannel: 'relay_realtime',
+    sourceOfTruth: 'relay',
+    notes: 'FCM tidak dipakai untuk discovery',
+  },
+  {
+    eventName: 'order_request',
+    primaryChannel: 'relay_realtime',
+    secondaryChannel: 'fcm_push',
+    sourceOfTruth: 'relay',
+    notes: 'push hanya wake-up notice jika target background',
+  },
+  {
+    eventName: 'order_response',
+    primaryChannel: 'relay_realtime',
+    secondaryChannel: 'fcm_push',
+    sourceOfTruth: 'relay',
+  },
+  {
+    eventName: 'contact_reveal',
+    primaryChannel: 'relay_realtime',
+    sourceOfTruth: 'relay',
+    notes: 'targeted payload only',
+  },
+  {
+    eventName: 'temporary_chat_message',
+    primaryChannel: 'firebase_temp',
+    secondaryChannel: 'fcm_push',
+    sourceOfTruth: 'local',
+    notes: 'non-source-of-truth communication only',
+  },
+  {
+    eventName: 'history_transaction_audit',
+    primaryChannel: 'local_only',
+    sourceOfTruth: 'local',
+  },
+  {
+    eventName: 'sos_notice',
+    primaryChannel: 'fcm_push',
+    secondaryChannel: 'relay_realtime',
+    sourceOfTruth: 'local',
+    notes: 'payload minimum dan best effort',
+  },
+]
+```
+
+Rules:
+- `secondaryChannel` tidak boleh mengubah state bisnis bila `primaryChannel` gagal atau terlambat
+- Event source of truth `local` harus tetap dapat diakses tanpa jaringan
+- Event source of truth `relay` harus punya recovery path via `syncActiveOrder()` atau re-subscribe
 
 ---
 
@@ -2657,6 +2733,7 @@ Rules:
 - `Reject` oleh user wajib membawa `responseReasonCode`
 - Jika `bookingMode = manual`, reject/expired mengembalikan customer ke flow pilih mitra
 - Jika `bookingMode = auto`, reject/expired boleh meneruskan retry ke kandidat berikutnya secara berurutan
+- Jika app target berada di background, FCM boleh dipakai untuk wake-up incoming order, tetapi payload relay tetap menjadi jalur keputusan akhir
 
 ### 20.5A Incoming Order Screen Contract
 ```ts
@@ -2981,6 +3058,13 @@ Rules:
 - Saat sukses, UI harus menampilkan file path atau membuka share sheet
 - Saat gagal, user harus mendapat pesan yang bisa ditindaklanjuti tanpa jargon teknis
 
+### 20.7D Notification dan Realtime Matrix Rules
+Rules:
+- Presence dan order coordination harus tetap bekerja walau `firebase_push_enabled = false`
+- FCM dipakai untuk event notice seperti incoming order, response order, dan SOS wake-up; bukan untuk menyimpan state
+- History, transaction log, audit export, dan post-trip feedback tidak memerlukan transport realtime
+- Jika push datang terlambat atau hilang, app harus tetap bisa memulihkan state dari relay atau local store
+
 ---
 
 ## 21. Logging Specification
@@ -3120,6 +3204,7 @@ NetInfo.addEventListener(state => {
 - [ ] Order timeout setelah 60 detik → status Expired
 - [ ] Contact reveal tidak terjadi sebelum order diterima
 - [ ] Action call/chat baru aktif setelah contact reveal sukses
+- [ ] Kehilangan push tidak membuat order state hilang jika relay/local sync masih tersedia
 
 ### 23.6 Transaction Log
 - [ ] Setiap order Completed membuat TransactionLog entry
@@ -3147,6 +3232,11 @@ NetInfo.addEventListener(state => {
 - [ ] Trip dengan rating manual menyimpan rating manual dan source `manual`
 - [ ] Temporary chat hanya aktif untuk order yang sudah contact reveal dan masih aktif
 - [ ] Temporary chat tidak mengubah source of truth status order
+
+### 23.10 Notification Matrix
+- [ ] Presence dan order coordination tetap berjalan saat `firebase_push_enabled = false`
+- [ ] FCM payload diperlakukan hanya sebagai wake-up/notice layer
+- [ ] Event `history`, `transaction_log`, `audit_export`, dan `feedback` tidak bergantung pada transport realtime
 
 ---
 
