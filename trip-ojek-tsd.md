@@ -312,6 +312,7 @@ export type UserProfile = {
   legalFullName?: string
   identityNumberMasked?: string
   profilePhotoUri?: string
+  driverReadinessStatus?: 'draft' | 'declared' | 'minimum_valid' | 'flagged' | 'blocked'
   phoneMasked?: string
   phoneHash?: string
   activeRoles: AppRole[]
@@ -341,6 +342,7 @@ export type VehicleProfile = {
   pricingMode: 'per_vehicle' | 'per_seat' | 'fixed_price'
   basePricePerKm?: number
   additionalPassengerPricePerKm?: number
+  verificationStatus?: 'draft' | 'declared' | 'minimum_valid' | 'flagged' | 'blocked'
   isActiveForBooking: boolean
 }
 
@@ -845,6 +847,11 @@ Driver readiness tambahan:
 - jika `activeVehicle.vehicleType = motor`, `hasSpareHelmet` wajib `true`
 - vehicle pricing mode dan legalitas minimum harus tersedia sebelum publish presence
 
+Verification boundary:
+- MVP memakai `minimum_valid` verification, bukan KYC legal penuh
+- `flagged` dan `blocked` tidak boleh publish presence sebagai driver
+- `minimum_valid` berarti format data dan konsistensi minimum lolos, bukan bukti legal yang kuat
+
 ### 10.6 Online Readiness Contract
 ```ts
 async function validateOnlineReadiness(userId: string, role: AppRole): Promise<Result<void>> {
@@ -865,6 +872,9 @@ async function validateOnlineReadiness(userId: string, role: AppRole): Promise<R
   }
 
   if (role === 'mitra') {
+    const readiness = await validateDriverReadiness(profile)
+    if (!readiness.ok) return readiness
+
     const pricing = await PricingRepository.getPricing(userId)
     if (!pricing?.partnerPricePerKm) {
       return err({ code: 'INVALID_PRICE_PER_KM' })
@@ -878,8 +888,16 @@ async function validateOnlineReadiness(userId: string, role: AppRole): Promise<R
 ### 10.6A Driver Readiness Extension
 ```ts
 async function validateDriverReadiness(profile: UserProfile): Promise<Result<void>> {
+  if (profile.driverReadinessStatus && profile.driverReadinessStatus !== 'minimum_valid') {
+    return err({ code: 'PROFILE_NOT_READY', context: { reason: 'driver_verification_not_ready', status: profile.driverReadinessStatus } })
+  }
+
   const activeVehicle = profile.vehicles?.find(vehicle => vehicle.isActiveForBooking)
   if (!activeVehicle) return err({ code: 'PROFILE_NOT_READY', context: { reason: 'active_vehicle_missing' } })
+
+  if (activeVehicle.verificationStatus && activeVehicle.verificationStatus !== 'minimum_valid') {
+    return err({ code: 'PROFILE_NOT_READY', context: { reason: 'vehicle_verification_not_ready', status: activeVehicle.verificationStatus } })
+  }
 
   if (activeVehicle.vehicleType === 'motor' && !profile.hasSpareHelmet) {
     return err({ code: 'PROFILE_NOT_READY', context: { reason: 'spare_helmet_required' } })
@@ -892,6 +910,15 @@ async function validateDriverReadiness(profile: UserProfile): Promise<Result<voi
   return ok(undefined)
 }
 ```
+
+### 10.6B Driver Verification Decision Matrix
+| Status | Meaning | Online Driver Eligibility |
+|---|---|---|
+| `draft` | data belum lengkap | deny |
+| `declared` | data sudah diisi tapi belum minimum-valid | deny |
+| `minimum_valid` | lolos validasi format dan konsistensi minimum | allow |
+| `flagged` | data janggal dan perlu ditahan | deny |
+| `blocked` | data ditolak atau pola abuse berat | deny |
 
 ### 10.7 Auth Lifecycle Operational Spec
 ```ts

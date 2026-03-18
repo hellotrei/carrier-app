@@ -394,6 +394,7 @@ type UserProfile = {
   legalFullName?: string
   identityNumberMasked?: string
   profilePhotoUri?: string
+  driverReadinessStatus?: 'draft' | 'declared' | 'minimum_valid' | 'flagged' | 'blocked'
   phoneMasked?: string
   phoneHash?: string
   activeRoles: AppRole[]
@@ -425,6 +426,7 @@ type VehicleProfile = {
   seatCapacity?: number
   pricingMode: 'per_vehicle' | 'per_seat' | 'fixed_price'
   additionalPassengerPricePerKm?: number
+  verificationStatus?: 'draft' | 'declared' | 'minimum_valid' | 'flagged' | 'blocked'
   isActiveForBooking: boolean
 }
 
@@ -1094,6 +1096,20 @@ function resolveAppliedPrice(
 - Jika kendaraan aktif adalah `motor`, `hasSpareHelmet` wajib `true`
 - Jika readiness belum lolos, user tetap bisa memakai app sebagai customer
 
+### 16.1B.1 Driver Verification Matrix
+| Verification Status | Arti | Boleh Online Sebagai Driver |
+|---|---|---|
+| `draft` | data driver belum lengkap | Tidak |
+| `declared` | data sudah diisi tetapi belum lolos cek minimum | Tidak |
+| `minimum_valid` | data lolos validasi format dan konsistensi minimum | Ya |
+| `flagged` | data janggal dan perlu ditahan | Tidak |
+| `blocked` | data ditolak karena risiko tinggi atau pola abuse | Tidak |
+
+Rule:
+- MVP ini memakai verifikasi `minimum_valid`, bukan KYC legal penuh
+- `minimum_valid` cukup untuk pilot, tetapi tidak boleh diklaim sebagai legal identity proof
+- Data yang saling bertentangan atau tampak palsu diperlakukan sebagai `flagged` atau `blocked`
+
 ### 16.1C Waiting Fairness Policy
 - Setelah driver tiba di pickup, 5 menit pertama gratis
 - Setiap kelipatan 5 menit berikutnya menghasilkan waiting charge sebesar `pricePerKmApplied`
@@ -1327,6 +1343,13 @@ Invariants:
 - Background standby hanya boleh aktif saat ada order aktif, bukan untuk discovery terus-menerus
 - Saat order aktif, app boleh melakukan update lokasi periodik minimum untuk kebutuhan sinkronisasi dan SOS
 - SOS minimal membawa `actorUserId`, `orderId` bila ada, lokasi terakhir, dan keterangan bahaya singkat
+
+### 18.11 Treatment Data Driver Palsu atau Tidak Konsisten
+- Jika data driver belum lengkap → `driverReadinessStatus = draft|declared`
+- Jika data format valid tetapi janggal → `driverReadinessStatus = flagged`
+- Jika data diduga palsu atau berulang mismatch berat → `driverReadinessStatus = blocked`
+- `flagged` dan `blocked` tidak boleh publish presence sebagai driver
+- Semua perubahan status ini wajib menulis audit event yang relevan agar operator bisa menelusuri keputusan
 
 ---
 

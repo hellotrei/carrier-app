@@ -622,13 +622,43 @@ Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
   - account bank (bisa lebih dari satu)
 - Driver motor baru boleh online jika deklarasi helm dua tersedia
 - Driver hanya boleh online jika legalitas minimum untuk kendaraan yang aktif telah dinyatakan lengkap
+- Verification MVP untuk driver bersifat `minimum-valid`, bukan KYC legal penuh
+- Data yang tidak lengkap, tidak konsisten, atau mencurigakan harus ditahan dari status online
 
 **Acceptance Criteria:**
 - [ ] User bisa memiliki lebih dari satu profil kendaraan
 - [ ] Driver motor tanpa helm cadangan tidak bisa `ready to online`
 - [ ] Data profil driver persisten di local storage
+- [ ] Driver dengan data legal minimum yang tidak lengkap tidak bisa online
+- [ ] Driver dengan data mencurigakan masuk status flagged/blocked dan tidak bisa publish presence
 
 **Prioritas:** P1
+
+### F-015A: Driver Verification Matrix
+**Deskripsi:** Sistem membedakan profil driver yang baru deklaratif, minimum-valid, flagged, atau blocked.
+
+**Requirements:**
+- Status minimum yang perlu didukung:
+  - `draft`: data driver belum lengkap
+  - `declared`: data sudah diisi, belum lolos validasi minimum
+  - `minimum_valid`: data lolos validasi format dan konsistensi minimum
+  - `flagged`: data terlihat janggal dan ditahan dari online
+  - `blocked`: data ditolak dari fitur driver sampai ada perbaikan
+- `minimum_valid` adalah syarat minimum untuk `ready to online`
+- Contoh kondisi `flagged`:
+  - plat kosong untuk kendaraan yang memerlukannya
+  - nomor identitas format salah
+  - jenis kendaraan aktif tidak cocok dengan field readiness
+  - data helm/SIM bertentangan
+- Contoh kondisi `blocked`:
+  - pola data palsu berulang
+  - mismatch berat yang berulang di lapangan
+  - deklarasi kendaraan/legalitas yang jelas tidak masuk akal
+
+**Acceptance Criteria:**
+- [ ] Driver tidak bisa online bila verification status masih `draft` atau `declared`
+- [ ] Driver `minimum_valid` bisa masuk flow readiness
+- [ ] Driver `flagged` dan `blocked` tidak bisa publish presence sebagai driver
 
 ---
 
@@ -880,6 +910,7 @@ type UserProfile = {
   legalFullName?: string
   identityNumber?: string
   profilePhotoUri?: string
+  driverReadinessStatus?: 'draft' | 'declared' | 'minimum_valid' | 'flagged' | 'blocked'
   activeRoles: AppRole[]
   currentRole: AppRole
   deviceAuthEnabled: boolean
@@ -903,6 +934,7 @@ type VehicleProfile = {
   pricingMode?: 'per_vehicle' | 'per_seat' | 'fixed_price'
   seatCapacity?: number
   additionalPassengerPricePerKm?: number
+  verificationStatus?: 'draft' | 'declared' | 'minimum_valid' | 'flagged' | 'blocked'
 }
 
 type BankAccount = {

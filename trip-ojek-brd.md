@@ -429,6 +429,8 @@ Ini harus dikomunikasikan sebagai **nilai lebih** kepada pengguna dan regulator.
 | BR-018 | Secara default sistem memberi rating 5 bintang saat trip selesai kecuali customer memberi rating manual |
 | BR-019 | Pembayaran yang direncanakan mencakup cash, transfer manual, dan payment gateway dengan biaya admin dibagi dua |
 | BR-020 | Maps integration harus memprioritaskan Google Maps dan Apple Maps berbasis latitude/longitude tanpa API berbayar |
+| BR-021 | Driver verification MVP bersifat deklaratif dan minimum-valid, bukan KYC legal penuh |
+| BR-022 | Data driver yang tidak lengkap, tidak konsisten, atau mencurigakan tidak boleh lolos ke status ready-to-online |
 
 ---
 
