@@ -1736,6 +1736,7 @@ const PARTNER_CAN_CANCEL: OrderStatus[] = ['Accepted', 'OnTheWay', 'OnTrip']
 
 Allowed cancel reason codes:
 - `user_changed_mind`
+- `no_show`
 - `identity_mismatch`
 - `undeclared_rider`
 - `contact_mismatch`
@@ -1747,6 +1748,9 @@ Rules:
 - Cancel dengan reason `identity_mismatch`, `undeclared_rider`, `contact_mismatch`, atau `unsafe_or_suspicious` harus memicu audit event `TRIP_IDENTITY_MISMATCH_REPORTED`
 - Sistem tidak boleh memaksa trip lanjut jika salah satu pihak menyatakan mismatch serius setelah contact reveal atau pertemuan fisik
 - Mismatch report tidak otomatis membuktikan fraud, tetapi harus menjadi bukti operasional untuk dispute dan tindak lanjut
+- `no_show` hanya valid setelah milestone `arrived_at_pickup`
+- `user_changed_mind` tidak boleh memicu punishment otomatis
+- Setelah `OnTrip`, `no_show` tidak lagi valid dan cancel harus diperlakukan sebagai cancel darurat
 
 Enforcement escalation:
 - Mismatch report valid dari mitra → minimal warning ke customer
@@ -2409,6 +2413,47 @@ export type CustomerTripAction =
   | 'call_partner'
   | 'chat_partner'
   | 'cancel_trip'
+```
+
+### 20.6A.3 Cancel Sheet Contract
+```ts
+export type CancelReasonCode =
+  | 'user_changed_mind'
+  | 'no_show'
+  | 'identity_mismatch'
+  | 'undeclared_rider'
+  | 'contact_mismatch'
+  | 'unsafe_or_suspicious'
+  | 'pickup_mismatch'
+  | 'other'
+
+export function getAllowedCancelReasons(params: {
+  status: OrderStatus
+  milestone: ActiveTripMilestone
+}): CancelReasonCode[] {
+  const baseReasons: CancelReasonCode[] = [
+    'user_changed_mind',
+    'identity_mismatch',
+    'undeclared_rider',
+    'contact_mismatch',
+    'unsafe_or_suspicious',
+    'pickup_mismatch',
+    'other',
+  ]
+
+  if (params.status === 'Accepted' || params.status === 'OnTheWay') {
+    if (params.milestone === 'arrived_at_pickup' || params.milestone === 'waiting_free_window' || params.milestone === 'waiting_charge_running') {
+      return ['no_show', ...baseReasons]
+    }
+    return baseReasons
+  }
+
+  if (params.status === 'OnTrip') {
+    return ['unsafe_or_suspicious', 'other']
+  }
+
+  return ['other']
+}
 ```
 
 ### 20.6B Background Safety Mode Boundary

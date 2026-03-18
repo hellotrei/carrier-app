@@ -1129,6 +1129,18 @@ type OrderContactRevealPayload = {
 - Cancel karena mismatch **tidak boleh** memaksa trip lanjut hanya karena order sudah `Accepted`
 - Saat mismatch terjadi, sistem wajib menulis audit event `TRIP_IDENTITY_MISMATCH_REPORTED` beserta actor, orderId, dan reason code
 
+### 15.5A Cancel, No-Show, dan Mismatch Boundary
+- `cancel biasa`
+  - dipakai untuk perubahan keputusan tanpa tuduhan mismatch
+  - tidak otomatis memicu punishment
+- `no_show`
+  - baru sah setelah milestone `Arrived at Pickup`
+  - dapat dipakai bila pihak lawan tidak muncul dalam window yang wajar
+- `mismatch / unsafe cancel`
+  - boleh dipakai sejak `Accepted` sampai sebelum `OnTrip`
+  - harus membuka jalur report jika reason bersifat objektif atau safety-related
+- Setelah `OnTrip`, cancel hanya untuk kondisi darurat dan tidak boleh dicampur dengan no-show
+
 ### 15.6 Delegated Booking (Customer memesankan orang lain)
 - Sistem harus membedakan dua mode: `bookingIntent = self` dan `bookingIntent = for_other`
 - Jika customer memesankan orang lain, customer **wajib declare sejak awal** bahwa penumpang aktual bukan dirinya
@@ -1728,11 +1740,19 @@ Rules:
   - `gearDiscountAmount`
   - `estimatedPrice`
 - Cancel sheet sebelum `OnTrip` harus menyediakan reason:
+  - `user_changed_mind`
   - `no_show`
   - `identity_mismatch`
+  - `undeclared_rider`
+  - `contact_mismatch`
   - `unsafe_or_suspicious`
   - `pickup_mismatch`
   - `other`
+
+Rules:
+- `no_show` hanya boleh aktif setelah `Arrived at Pickup`
+- `user_changed_mind` tidak boleh memicu punishment otomatis
+- `identity_mismatch`, `undeclared_rider`, `contact_mismatch`, `unsafe_or_suspicious` harus memicu audit mismatch/report path
 
 ### 22.5 Complete Order
 ```

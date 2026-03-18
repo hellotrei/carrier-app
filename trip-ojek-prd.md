@@ -538,6 +538,17 @@ Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
   - `gearDiscountAmount`
 - Tombol cancel dengan konfirmasi
 - Reason cancel/no-show/mismatch harus tetap bisa dipilih sebelum `OnTrip`
+- Sistem harus membedakan jelas:
+  - `cancel biasa`
+  - `no-show`
+  - `mismatch / unsafe cancel`
+- `No-show` hanya sah setelah driver mencapai milestone `Arrived at Pickup`
+- `Mismatch / unsafe cancel` tetap sah di `Accepted`, `OnTheWay`, atau `Arrived at Pickup`
+- Setelah `OnTrip`, cancel hanya untuk kondisi darurat dan harus membawa alasan kuat
+- Jalur keluar ini harus punya dampak yang berbeda:
+  - `cancel biasa` → audit only
+  - `no-show` → boleh memicu waiting fairness dan audit
+  - `mismatch / unsafe cancel` → audit + report path + kandidat enforcement
 
 **Acceptance Criteria:**
 - [ ] Active trip screen muncul setelah order accepted
@@ -546,8 +557,36 @@ Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
 - [ ] Waiting timer muncul setelah driver menandai sudah sampai pickup
 - [ ] Breakdown aktif berubah saat fairness component berubah
 - [ ] Cancel dengan konfirmasi sebelum dieksekusi
+- [ ] No-show, mismatch, dan cancel biasa dibedakan jelas di UI
 - [ ] State persisten jika app di-background dan dibuka ulang
 - [ ] Audit event untuk setiap transisi status tercatat
+
+**Prioritas:** P0
+
+---
+
+### F-009A: Cancel, No-Show, dan Mismatch Handling
+**Deskripsi:** Jalur keluar trip aktif harus fair, eksplisit, dan dapat diaudit.
+
+**Requirements:**
+- Reason minimum yang perlu didukung:
+  - `user_changed_mind`
+  - `no_show`
+  - `identity_mismatch`
+  - `undeclared_rider`
+  - `contact_mismatch`
+  - `unsafe_or_suspicious`
+  - `pickup_mismatch`
+  - `other`
+- `No-show` baru boleh dipilih setelah driver mencapai milestone `Arrived at Pickup`
+- `Mismatch / unsafe cancel` harus selalu bisa diikuti report flow
+- Sistem harus menjelaskan dampak singkat ke user sebelum cancel dieksekusi
+- Jika cancel terkait mismatch yang objektif, audit dan trust flow harus menerima reason code yang sama
+
+**Acceptance Criteria:**
+- [ ] Reason cancel/no-show/mismatch tampil sesuai stage trip
+- [ ] `no_show` tidak bisa dipilih sebelum milestone `Arrived at Pickup`
+- [ ] Mismatch cancel menghasilkan audit dan report path yang konsisten
 
 **Prioritas:** P0
 
