@@ -69,6 +69,15 @@ SDD ini menurunkan PRD ke level implementasi: arsitektur sistem, komponen, desai
 - Alasan: relational query untuk history, atomic writes, recovery lebih baik dari key-value murni
 - Secure Storage (Keychain/Keystore) untuk secret kecil
 
+### 4.2A Model Auth dan Identity (MVP)
+- MVP **tidak** memakai username/password dan **tidak** memakai OTP SMS
+- Identitas pengguna bersifat **device-bound**: saat first launch app membuat `userId` dan `deviceBindingId`
+- `deviceBindingId` disimpan di Secure Storage dan dipakai sebagai jangkar identitas lokal device
+- Nomor telepon penuh disimpan di Secure Storage setelah dinormalisasi ke format E.164 (`+62...`)
+- SQLite hanya menyimpan versi yang aman untuk operasional ringan: `phoneMasked`, `phoneHash`, dan status identitas
+- User boleh memakai app secara lokal dalam status draft, tetapi **baru boleh online** jika profil valid, identity status aktif, dan gate anti-abuse lolos
+- Device auth (PIN/biometric OS) dipakai untuk aksi sensitif, bukan sebagai login utama
+
 ### 4.3 Relay Technology
 Relay **wajib ada** (tidak murni optional) untuk discovery dan signaling. Dua opsi yang layak:
 
@@ -101,6 +110,12 @@ Relay **wajib ada** (tidak murni optional) untuk discovery dan signaling. Dua op
 - Tidak ada zero-server absolut — relay tipis wajib ada untuk discovery dan signaling
 - Tidak ada backend berat — tidak ada dispatch server, routing engine, atau analytics kompleks
 - Tidak ada histori lokasi penuh di server
+
+### 4.6 Klarifikasi Istilah Penting
+- **Local-first** berarti source of truth untuk data bisnis utama ada di device user, bukan di relay
+- **Decentralised** dalam konteks MVP ini berarti data inti tersebar di device masing-masing, bukan berarti sistem murni peer-to-peer tanpa relay
+- **End-to-end** di dokumen ini berarti alur bisnis lengkap dari satu device ke device lain melalui relay tipis, dari request sampai complete/recovery
+- **Binary audit** adalah format penyimpanan lokal yang compact untuk audit dan export, bukan media komunikasi antar user
 
 ---
 
@@ -359,10 +374,13 @@ getTransactionSummary(period)       ← BARU
 type UserProfile = {
   userId: string               // UUID, generated locally
   displayName: string
-  phoneNumber?: string
+  phoneMasked?: string
+  phoneHash?: string
   activeRoles: AppRole[]
   currentRole: AppRole
   deviceAuthEnabled: boolean
+  identityStatus: 'draft' | 'active' | 'blocked'
+  profileValidatedAt?: string
   createdAt: string            // ISO 8601
   updatedAt: string
 }
@@ -418,12 +436,20 @@ type OrderStatus =
 
 type Order = {
   orderId: string
+  bookingSessionId: string
   customerId: string
   partnerId: string
+  bookingMode: 'manual' | 'auto'
+  bookingIntent: 'self' | 'for_other'
+  riderDeclaredName: string
+  riderPhoneMasked?: string
   pickup: LocationPoint
   destination: LocationPoint
   distanceEstimateKm: number
+  pickupDistanceFromPartnerKm: number
   pricePerKmApplied: number
+  baseTripEstimatedPrice: number
+  pickupSurchargeAmount: number
   estimatedPrice: number
   status: OrderStatus
   cancelReason?: string
@@ -533,10 +559,13 @@ function transitionOrder(
 CREATE TABLE user_profile (
   user_id TEXT PRIMARY KEY,
   display_name TEXT NOT NULL,
-  phone_number TEXT,
+  phone_masked TEXT,
+  phone_hash TEXT,
   current_role TEXT NOT NULL,
   active_roles TEXT NOT NULL,  -- JSON array
   device_auth_enabled INTEGER DEFAULT 0,
+  identity_status TEXT NOT NULL DEFAULT 'draft',
+  profile_validated_at TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
@@ -553,12 +582,20 @@ CREATE TABLE pricing_profile (
 -- Orders
 CREATE TABLE orders (
   order_id TEXT PRIMARY KEY,
+  booking_session_id TEXT NOT NULL,
   customer_id TEXT NOT NULL,
   partner_id TEXT NOT NULL,
+  booking_mode TEXT NOT NULL DEFAULT 'manual',
+  booking_intent TEXT NOT NULL DEFAULT 'self',
+  rider_declared_name TEXT NOT NULL,
+  rider_phone_masked TEXT,
   pickup_json TEXT NOT NULL,
   destination_json TEXT NOT NULL,
   distance_estimate_km REAL NOT NULL,
+  pickup_distance_from_partner_km REAL NOT NULL,
   price_per_km_applied REAL NOT NULL,
+  base_trip_estimated_price REAL NOT NULL,
+  pickup_surcharge_amount REAL NOT NULL DEFAULT 0,
   estimated_price REAL NOT NULL,
   status TEXT NOT NULL,
   cancel_reason TEXT,
@@ -605,6 +642,12 @@ CREATE TABLE app_settings (
 -- Di app_settings: key = 'active_order_id', value = orderId | NULL
 ```
 
+### 12.2A Secure Identity Storage
+- `deviceBindingId` disimpan di Secure Storage
+- `phoneE164` disimpan di Secure Storage
+- SQLite **tidak** menyimpan nomor telepon penuh
+- `phoneHash` dipakai untuk referensi aman dan integritas profil, bukan untuk menggantikan nomor telepon asli saat handoff
+
 ### 12.3 Migrations
 - Semua schema changes melalui versioned migration
 - Versi schema tersimpan di `user_version` SQLite pragma
@@ -633,6 +676,8 @@ type AuditEventType =
   | 'BOOTSTRAP_COMPLETE'
   | 'ROLE_SELECTED'
   | 'ROLE_SWITCHED'
+  | 'PROFILE_VALIDATED'
+  | 'IDENTITY_BLOCKED'
   | 'LOCATION_PERMISSION_GRANTED'
   | 'LOCATION_PERMISSION_DENIED'
   | 'USER_WENT_ONLINE'
@@ -647,6 +692,10 @@ type AuditEventType =
   | 'ORDER_ON_TRIP'
   | 'ORDER_COMPLETED'
   | 'ORDER_CANCELED'
+  | 'CONTACT_REVEALED'
+  | 'TRIP_IDENTITY_MISMATCH_REPORTED'
+  | 'AUTH_WARNING_ISSUED'
+  | 'ACCOUNT_RESTRICTED'
   | 'HANDOFF_MAPS_ATTEMPTED'
   | 'HANDOFF_MAPS_OPENED'
   | 'HANDOFF_MAPS_FAILED'
@@ -689,6 +738,12 @@ Binary structure:
 - Satu folder per bulan (`events/YYYY-MM/`)
 - Hapus event file > 6 bulan (tapi pertahankan manifest entry)
 - Berikan opsi export sebelum rotation
+
+### 13.6 Klarifikasi Penggunaan Binary Audit
+- File audit binary ditulis saat runtime ke file system device, bukan ditanam ke binary aplikasi
+- Binary audit tidak dipakai untuk discovery, signaling, atau sinkronisasi antar user
+- Binary audit dipakai untuk audit trail lokal, recovery support, dan export jika dibutuhkan operator
+- Event auth/identity yang penting juga wajib masuk audit, misalnya profile validated, identity blocked, dan contact revealed
 
 ---
 
@@ -763,18 +818,75 @@ Mitra menerima order:
   6. Kedua pihak update status order lokal
 ```
 
+### 15.1A Booking Draft Lifecycle
+- `Draft` adalah state order yang masih boleh diedit oleh customer
+- Selama masih `Draft`, customer masih boleh mengubah pickup, destination, mode booking, partner terpilih, dan `bookingIntent`
+- Setiap perubahan field inti harus memicu re-calculate jarak estimasi dan estimasi harga
+- Saat customer menekan konfirmasi, app harus membekukan field yang akan dikirim ke mitra lalu mengubah order ke `Requested`
+- Setelah menjadi `Requested`, field inti tidak boleh berubah diam-diam; perubahan harus lewat cancel lalu buat order baru
+
+### 15.1B Dua Mode Booking
+- `Manual select`
+  Customer melihat nearby list lalu memilih satu mitra tertentu
+- `Auto booking`
+  App memilih kandidat mitra terbaik secara otomatis dari discovery list yang tersedia di device customer
+- Kedua mode tetap menghasilkan **target tunggal** per attempt, bukan broadcast ke banyak mitra sekaligus
+- Jika `auto booking` gagal karena reject/timeout, app boleh mencoba kandidat berikutnya **secara berurutan**, bukan paralel
+- Setiap attempt auto booking tetap harus bisa dijelaskan ke user: siapa yang dipilih dan kenapa
+
+### 15.1C Auto Booking Ranking Policy (MVP)
+- Ranking dilakukan **di client/customer device**, bukan dispatch server
+- Faktor ranking MVP yang boleh dipakai:
+  - freshness snapshot
+  - jarak mitra ke pickup
+  - total estimasi biaya ke customer setelah pickup surcharge
+  - trust status mitra jika tersedia
+- Faktor yang **belum dipakai** di MVP:
+  - rating/review publik
+  - kualitas kendaraan
+  - scoring kompleks berbasis histori
+- Jika tidak ada kandidat eligible, app harus menampilkan hasil yang jelas dan tidak mengirim request
+
+### 15.1D Pickup Surcharge Policy
+- Mitra tidak boleh dirugikan untuk jarak penjemputan yang jauh
+- Jika jarak mitra ke pickup `<= 3 km`, tidak ada biaya tambahan
+- Jika jarak mitra ke pickup `> 3 km`, customer dikenakan biaya penjemputan tambahan
+- Formula MVP:
+  - `pickupSurchargeKm = max(0, pickupDistanceFromPartnerKm - 3)`
+  - `pickupSurchargeAmount = pickupSurchargeKm × pricePerKmApplied`
+- Breakdown ini harus terlihat sebelum booking di sisi customer dan saat incoming order di sisi mitra
+- Karena itu ranking `auto booking` harus melihat total estimasi, bukan hanya tarif per-km mentah
+
 ### 15.2 Payload
 ```ts
+type BookingIntent = 'self' | 'for_other'
+type OrderRejectReasonCode =
+  | 'busy'
+  | 'pickup_too_far'
+  | 'price_not_suitable'
+  | 'suspicious_order'
+  | 'undeclared_rider'
+  | 'payload_invalid'
+  | 'expired'
+
 // Request dari customer ke mitra
 type OrderRequestPayload = {
   orderId: string
+  bookingSessionId: string
   customerId: string
   customerDisplayName: string
+  bookingMode: 'manual' | 'auto'
+  bookingIntent: BookingIntent
+  riderDeclaredName: string
+  riderPhoneMasked?: string
   partnerId: string
   pickup: LocationPoint
   destination: LocationPoint
   distanceEstimateKm: number
+  pickupDistanceFromPartnerKm: number
   pricePerKmApplied: number
+  baseTripEstimatedPrice: number
+  pickupSurchargeAmount: number
   estimatedPrice: number
   expiresAt: string           // createdAt + 60 detik
   createdAt: string
@@ -785,7 +897,19 @@ type OrderResponsePayload = {
   orderId: string
   partnerId: string
   response: 'accept' | 'reject'
+  responseReasonCode?: OrderRejectReasonCode
   respondedAt: string
+}
+
+// Reveal contact hanya setelah order Accepted
+type OrderContactRevealPayload = {
+  orderId: string
+  customerId: string
+  partnerId: string
+  customerPhoneE164: string
+  partnerPhoneE164: string
+  revealedAt: string
+  expiresAt: string
 }
 ```
 
@@ -794,6 +918,56 @@ type OrderResponsePayload = {
 - Customer hanya bisa punya 1 active order
 - Payload dengan `expiresAt` sudah lewat wajib ditolak
 - Order aktif selalu di-persist lokal (tidak hanya di memory)
+- Local storage saja tidak cukup untuk mempertemukan dua user yang sama-sama online; karena itu relay tetap wajib untuk presence dan order signaling
+
+### 15.3A Booking Validation dan Freeze Rules
+- Customer tidak boleh submit jika masih punya active order non-terminal
+- Customer tidak boleh memilih dirinya sendiri sebagai mitra
+- Pickup dan destination wajib valid, lengkap, dan tidak boleh identik secara tidak masuk akal
+- Snapshot mitra yang dipilih harus masih fresh saat konfirmasi; jika sudah stale, customer harus pilih ulang atau refresh discovery
+- `pricePerKmApplied`, `baseTripEstimatedPrice`, `pickupSurchargeAmount`, dan `estimatedPrice` yang dikirim ke mitra adalah nilai yang dibekukan saat submit, bukan dihitung ulang diam-diam di sisi mitra
+- Setelah `Requested`, field yang dianggap immutable: `partnerId`, `bookingMode`, `pickup`, `destination`, `bookingIntent`, `riderDeclaredName`, `riderPhoneMasked`, `pricePerKmApplied`, `pickupDistanceFromPartnerKm`, `baseTripEstimatedPrice`, `pickupSurchargeAmount`, `estimatedPrice`
+
+### 15.3B Incoming Order Decision Rules
+- Incoming order screen di sisi mitra wajib menampilkan:
+  - `customerDisplayName`
+  - `bookingMode`
+  - `bookingIntent`
+  - `riderDeclaredName` dan `riderPhoneMasked` jika `for_other`
+  - pickup, destination, jarak mitra ke pickup
+  - `baseTripEstimatedPrice`, `pickupSurchargeAmount`, dan `estimatedPrice`
+  - countdown sisa waktu respons
+- Mitra hanya boleh `Accept` jika:
+  - payload masih valid dan belum expired
+  - `partnerId` pada payload cocok dengan user aktif di device
+  - mitra belum punya active order non-terminal
+  - order lokal masih di state `Requested`
+- `Reject` boleh dipicu oleh user atau sistem
+- Jika reject dipicu user, `responseReasonCode` wajib diisi
+- Reason minimum yang didukung untuk reject: `busy`, `pickup_too_far`, `price_not_suitable`, `suspicious_order`, `undeclared_rider`
+- Reject sistem memakai `payload_invalid` atau `expired`
+- Jika `bookingMode = manual`, reject/expired mengakhiri attempt dan customer kembali memilih mitra
+- Jika `bookingMode = auto`, reject/expired boleh memicu attempt berikutnya **secara berurutan** dalam `bookingSessionId` yang sama
+
+### 15.4 Aturan Exposure Data
+- Presence/discovery **tidak boleh** membawa nomor telepon penuh
+- Sebelum order accepted, pihak lain hanya melihat data minimum yang perlu: display name, role, harga terlihat, dan data pickup/destination yang relevan untuk order
+- Nomor telepon penuh baru boleh diekspos setelah order `Accepted` dan hanya ke pasangan order yang aktif
+- Contact exchange dilakukan lewat relay sebagai payload sensitif bertarget ke dua pihak order, tidak dibroadcast ke channel umum
+
+### 15.5 Hak Cancel dan Report karena Data Tidak Sesuai
+- Customer dan mitra **berhak cancel** jika data identitas, nomor kontak, atau perilaku pihak lawan tidak sesuai dengan data yang tampil di app
+- Reason minimum yang harus didukung: `identity_mismatch`, `undeclared_rider`, `contact_mismatch`, `unsafe_or_suspicious`, `pickup_mismatch`
+- Cancel karena mismatch **tidak boleh** memaksa trip lanjut hanya karena order sudah `Accepted`
+- Saat mismatch terjadi, sistem wajib menulis audit event `TRIP_IDENTITY_MISMATCH_REPORTED` beserta actor, orderId, dan reason code
+
+### 15.6 Delegated Booking (Customer memesankan orang lain)
+- Sistem harus membedakan dua mode: `bookingIntent = self` dan `bookingIntent = for_other`
+- Jika customer memesankan orang lain, customer **wajib declare sejak awal** bahwa penumpang aktual bukan dirinya
+- Untuk `for_other`, order wajib membawa minimal `riderDeclaredName` dan `riderPhoneMasked`
+- Mitra harus bisa melihat bahwa order ini adalah **delegated booking**, bukan order untuk account holder sendiri
+- Jika di lapangan penumpang aktual berbeda dari rider yang dideklarasikan, itu diperlakukan sebagai mismatch yang valid
+- Jika customer memesankan orang lain **tanpa deklarasi**, mitra boleh cancel dengan reason `undeclared_rider`
 
 ---
 
@@ -844,8 +1018,8 @@ Transaction log entry dibuat setiap kali order berpindah ke status `Completed`.
 ```ts
 const COMMISSION_RATE = 0.10  // 10% — di bawah batas regulasi 15%
 
-function calculateCommission(estimatedPrice: number): number {
-  return Math.round(estimatedPrice * COMMISSION_RATE)
+function calculateCommission(baseTripEstimatedPrice: number): number {
+  return Math.round(baseTripEstimatedPrice * COMMISSION_RATE)
 }
 ```
 
@@ -853,6 +1027,8 @@ function calculateCommission(estimatedPrice: number): number {
 - Transaction log tersimpan di SQLite lokal (di device operator / admin)
 - Export ke CSV untuk rekap manual di fase awal
 - Komisi dipungut offline oleh operator — tidak ada auto-deduction di MVP
+- Basis komisi hanya `baseTripEstimatedPrice`
+- `pickupSurchargeAmount` sepenuhnya milik mitra dan tidak dihitung sebagai basis komisi platform
 
 > **Catatan CEO:** Ini memang manual dan tidak scalable jangka panjang. Tapi ini cukup untuk validasi dan mulai membangun data transaksi nyata sebelum investasi ke payment integration.
 
@@ -864,7 +1040,8 @@ function calculateCommission(estimatedPrice: number): number {
 
 | Kategori | Data | Penyimpanan |
 |----------|------|-------------|
-| Sangat sensitif | Nomor telepon, device binding key | Secure Storage (Keychain/Keystore) |
+| Sangat sensitif | Nomor telepon penuh, device binding key | Secure Storage (Keychain/Keystore) |
+| Sensitif terbatas | Phone masked, phone hash, identity status | SQLite |
 | Sensitif | Order history, pickup/destination, tarif | SQLite (encrypted at rest jika memungkinkan) |
 | Internal | Audit payload | File binary + checksum |
 | Rendah | Role aktif, UI preference | SQLite atau AsyncStorage |
@@ -876,17 +1053,143 @@ function calculateCommission(estimatedPrice: number): number {
 - Log aplikasi tidak boleh menulis nomor telepon atau koordinat mentah secara penuh
 - Build production wajib code obfuscation (Hermes / ProGuard)
 
-### 18.3 Anti-Abuse (Wajib di MVP)
+### 18.3 Validasi Data dan Treatment Fraud
+- Input profil harus dinormalisasi sebelum disimpan: trim whitespace, batasi panjang display name, normalisasi nomor ke `+62...`
+- Data yang gagal validasi format **ditolak sebelum persist**
+- Data yang valid format tetapi mencurigakan dapat diberi `identityStatus = 'blocked'` dan user tidak boleh online sampai diperbaiki
+- Payload dari relay yang invalid, expired, atau tidak lolos policy **tidak boleh** mengubah business state lokal
+- Semua violation penting harus ditulis ke audit sebagai dasar dispute dan investigasi
+### 18.4 Anti-Abuse (Wajib di MVP)
 Lihat bagian 14.4 untuk validasi presence. Tambahan:
 - Reject order payload dengan timestamp > 5 menit dari now
 - Rate limit order submit: maks 1 order baru per 30 detik per user
 - Log `ANTI_ABUSE_VIOLATION` ke audit setiap kali ada pelanggaran yang terdeteksi
 
-### 18.4 Catatan Realitas
+### 18.5 Catatan Realitas
 Local-first architecture berarti data ada di device user. Device compromise (jailbreak/root) tidak bisa dicegah sepenuhnya. Fokus MVP adalah:
 - Mengurangi data yang disimpan
 - Menambah friction akses
 - Menyediakan audit trail untuk dispute resolution
+
+### 18.6 Auth Lifecycle Operasional
+Definisi penting:
+- **Terdaftar di app** pada MVP berarti user sudah membuat profil lokal yang device-bound dan lolos validasi minimum
+- **Bukan** berarti identitas legal atau kepemilikan nomor telepon sudah diverifikasi kuat seperti sistem OTP/KYC
+
+Lifecycle yang disepakati:
+1. **First install**
+   App membuat `userId` dan `deviceBindingId`
+2. **Profile draft**
+   User mengisi display name, nomor telepon, dan role; data belum boleh dipublish ke publik
+3. **Profile validated**
+   Data dinormalisasi, format diperiksa, nomor di-mask/hash untuk SQLite, nomor penuh masuk Secure Storage
+4. **Identity active**
+   Status berubah ke `active` jika semua syarat minimum lolos
+5. **Ready to online**
+   User baru boleh online jika `identityStatus = active`, binding device ada, dan gate role-specific lolos
+6. **Online**
+   Hanya data minimum dipublish ke relay; nomor telepon penuh tetap tersembunyi
+7. **Matched / accepted**
+   Setelah order diterima, contact reveal boleh dilakukan hanya ke dua pihak order aktif
+8. **Trip verification by humans**
+   Customer dan mitra membandingkan identitas/nomor/perilaku nyata dengan data di app
+9. **Mismatch handling**
+   Jika tidak cocok atau terasa mencurigakan, salah satu pihak boleh cancel dan report mismatch
+10. **Blocked**
+   Profil yang gagal validasi berat atau dianggap mencurigakan bisa diubah ke `blocked` sehingga tidak boleh online
+
+Makna praktisnya:
+- MVP ini bisa menghasilkan user yang **ready to online** dan cukup aman untuk pilot
+- MVP ini **belum cukup** untuk menjamin bahwa user adalah pemilik sah nomor atau identitas legal tanpa OTP/KYC/operator review
+- Jadi fungsi auth MVP adalah **trust minimization**, bukan trust elimination
+
+### 18.7 Warning dan Punishment untuk Melindungi Mitra
+Prinsip:
+- Jalur punishment terutama dipicu oleh report dari **mitra**, karena mismatch customer lebih sering merugikan mitra di lapangan
+- Delegated booking yang **dideklarasikan dengan benar** tidak boleh diperlakukan sebagai fraud
+
+Ladder minimum:
+1. **Warning**
+   Report mismatch valid pertama memberi warning ke account customer
+2. **Delegated booking restricted**
+   Jika mismatch berulang, customer masuk status `delegated_booking_restricted`
+3. **Order creation restricted**
+   Jika mismatch serius atau berulang lintas mitra, customer masuk status `restricted`
+4. **Suspended / blocked**
+   Jika ada pola abuse kuat atau unsafe behavior, account masuk status `suspended` atau `blocked` sampai ada tindak lanjut operator
+
+Kapan punishment boleh naik:
+- Ada mismatch `undeclared_rider`
+- Nomor kontak setelah contact reveal tidak cocok dengan yang dideklarasikan
+- Banyak report serupa dari mitra berbeda dalam rolling window
+- Ada reason `unsafe_or_suspicious`
+
+Batas realitas:
+- Punishment yang hanya disimpan lokal mudah dibypass dengan reinstall atau ganti device
+- Jadi punishment yang benar-benar berguna **membutuhkan metadata enforcement minimal di relay/backing store**, misalnya warning count, trust level, dan restriction until
+- Metadata enforcement ini kecil dan tidak mengubah prinsip local-first, karena yang disimpan bukan histori trip penuh melainkan status trust minimum
+
+### 18.8 Decision Table Enforcement
+Kondisi report yang **layak diproses**:
+- Report dibuat oleh mitra yang memang menerima order tersebut
+- Order minimal sudah `Accepted`
+- Reason code jelas dan masuk daftar resmi
+- Report dibuat dalam window yang wajar setelah accept atau pertemuan fisik
+
+Kondisi report yang **tidak boleh menghukum customer**:
+- Delegated booking sudah dideklarasikan dengan benar dan rider sesuai deklarasi
+- Mitra hanya berubah pikiran tanpa ada mismatch nyata
+- Report duplikat untuk order yang sama
+- Data tidak cukup untuk membedakan mismatch vs miskomunikasi biasa
+
+Tabel keputusan minimum:
+
+| Kondisi | Keputusan |
+|--------|-----------|
+| `bookingIntent=self`, rider sesuai, tidak ada mismatch | Tidak ada punishment |
+| `bookingIntent=for_other`, rider dideklarasikan, rider sesuai deklarasi | Tidak ada punishment |
+| `bookingIntent=for_other`, rider aktual berbeda dari deklarasi | Warning + mismatch report |
+| Rider pihak ketiga muncul tanpa deklarasi | Warning, dan kandidat restrict delegated booking |
+| Nomor/identitas kontak setelah reveal tidak cocok | Warning, dan jika berulang jadi restrict |
+| Reason `unsafe_or_suspicious` dari banyak mitra berbeda | Restrict atau suspend |
+| Report berulang dari mitra berbeda dalam rolling window | Escalate ke restrict |
+| Report tunggal yang lemah / ambiguous | Catat audit saja, tanpa punishment otomatis |
+
+Prinsip fairness:
+- Sistem harus melindungi mitra, tetapi **tidak boleh** otomatis menghukum customer untuk delegated booking yang sah
+- Hukuman otomatis hanya boleh naik pada reason yang relatif objektif atau pada pola report berulang lintas order/mitra
+
+### 18.9 Trust Enforcement State Machine
+State minimum:
+- `clear`
+- `warned`
+- `delegated_booking_restricted`
+- `restricted`
+- `suspended`
+
+Transition rules:
+- `clear -> warned`
+  Trigger: mismatch valid pertama dari mitra
+- `warned -> delegated_booking_restricted`
+  Trigger: report valid berulang dengan reason `undeclared_rider` atau `contact_mismatch`
+- `warned -> restricted`
+  Trigger: mismatch berat lintas mitra atau kombinasi warning + unsafe signal
+- `delegated_booking_restricted -> restricted`
+  Trigger: tetap ada mismatch baru saat customer sudah dibatasi untuk delegated booking
+- `restricted -> suspended`
+  Trigger: report berat berulang, `unsafe_or_suspicious`, atau pola abuse yang kuat
+- `warned -> clear`
+  Trigger: review manual atau cooldown policy selesai tanpa insiden baru
+- `delegated_booking_restricted -> warned|clear`
+  Trigger: masa restriksi selesai dan tidak ada insiden baru
+- `restricted -> warned|clear`
+  Trigger: review manual atau masa restriksi selesai
+
+Invariants:
+- `clear` dan `warned` masih boleh booking untuk diri sendiri
+- `delegated_booking_restricted` tidak boleh memakai `bookingIntent=for_other`
+- `restricted` tidak boleh membuat order baru
+- `suspended` tidak boleh menggunakan fitur transaksi utama sama sekali
 
 ---
 
@@ -1007,8 +1310,10 @@ interface PresenceGateway {
 interface OrderSignalGateway {
   sendOrderRequest(payload: OrderRequestPayload): Promise<void>
   sendOrderResponse(orderId: string, response: 'accept' | 'reject'): Promise<void>
+  sendContactReveal(payload: OrderContactRevealPayload): Promise<void>
   subscribeToIncomingOrders(userId: string, callback: (payload: OrderRequestPayload) => void): Unsubscribe
   subscribeToOrderResponse(orderId: string, callback: (payload: OrderResponsePayload) => void): Unsubscribe
+  subscribeToContactReveal(orderId: string, callback: (payload: OrderContactRevealPayload) => void): Unsubscribe
   syncActiveOrder(orderId: string): Promise<OrderSyncState | null>
 }
 
@@ -1037,46 +1342,70 @@ interface AuditGateway {
 
 ### 22.2 Go Online (Mitra)
 ```
-1. Validasi pricing tidak kosong
-2. Dapatkan lokasi terkini
-3. Validasi koordinat (anti-abuse: range check)
-4. Cek rate limit (anti-abuse: bukan < 10 detik dari publish terakhir)
-5. Buat PresenceSnapshot
-6. Publish ke relay (presence:mitra channel)
-7. Update local state: isOnline = true
-8. Tulis audit USER_WENT_ONLINE
-9. Mulai refresh loop (setiap 20 detik)
+1. Load profile lokal + pastikan `identityStatus = active`
+2. Pastikan `deviceBindingId` tersedia di Secure Storage
+3. Validasi pricing tidak kosong
+4. Dapatkan lokasi terkini
+5. Validasi koordinat (anti-abuse: range check)
+6. Cek rate limit (anti-abuse: bukan < 10 detik dari publish terakhir)
+7. Buat PresenceSnapshot
+8. Publish ke relay (presence:mitra channel)
+9. Update local state: isOnline = true
+10. Tulis audit USER_WENT_ONLINE
+11. Mulai refresh loop (setiap 20 detik)
 ```
 
 ### 22.3 Submit Order
 ```
 1. Customer isi pickup (GPS atau manual pin)
 2. Customer isi destination
-3. Hitung haversine distance
-4. Hitung estimasi harga (resolveAppliedPrice × distance)
-5. Customer pilih mitra dari discovery list
-6. Buat Order dengan status Draft
-7. Tulis audit ORDER_DRAFT_CREATED
-8. Customer review dan confirm
-9. Update status ke Requested
-10. Simpan lokal
-11. Kirim OrderRequestPayload ke relay
-12. Tulis audit ORDER_REQUESTED
-13. Mulai timeout 60 detik di client
-14. Tampilkan "Menunggu konfirmasi mitra"
+3. Customer pilih mode: `manual select` atau `auto booking`
+4. Customer pilih `bookingIntent`: untuk diri sendiri atau untuk orang lain
+5. Jika untuk orang lain, customer wajib isi rider name dan contact minimum
+6. Hitung haversine distance
+7. Hitung estimasi perjalanan
+8. Hitung jarak mitra ke pickup dan biaya penjemputan tambahan jika > 3 km
+9. Tampilkan breakdown total ke customer
+10. Jika `manual`, customer pilih mitra dari discovery list
+11. Jika `auto`, app meranking kandidat lalu memilih target terbaik secara lokal
+12. Buat Order dengan status Draft
+13. Tulis audit ORDER_DRAFT_CREATED
+14. Customer review dan confirm
+15. Update status ke Requested
+16. Simpan lokal
+17. Kirim OrderRequestPayload ke relay
+18. Tulis audit ORDER_REQUESTED
+19. Mulai timeout 60 detik di client
+20. Tampilkan "Menunggu konfirmasi mitra"
 ```
 
 ### 22.4 Mitra Accept Order
 ```
 1. Terima OrderRequestPayload via relay subscription
-2. Validasi: payload tidak expired, mitra belum punya active order
-3. Tampilkan incoming order screen dengan countdown
+2. Validasi: payload tidak expired, partnerId cocok, mitra belum punya active order, breakdown harga konsisten
+3. Tampilkan incoming order screen dengan countdown + booking context + breakdown biaya
 4. Mitra tap Accept
 5. Update order lokal ke status Accepted
 6. Simpan lokal
 7. Kirim OrderResponsePayload ke relay (accept)
-8. Tulis audit ORDER_ACCEPTED
-9. Navigasi ke active trip screen
+8. Lakukan contact reveal bertarget ke pasangan order
+9. Tulis audit ORDER_ACCEPTED
+10. Navigasi ke active trip screen
+```
+
+### 22.4A Mitra Reject Order
+```
+1. Terima OrderRequestPayload via relay subscription
+2. Validasi dasar payload dan state lokal
+3. Tampilkan incoming order screen dengan countdown
+4. Mitra tap Reject atau timer habis
+5. Tentukan responseReasonCode
+6. Update order lokal ke status Rejected atau Expired
+7. Simpan lokal
+8. Kirim OrderResponsePayload ke relay (reject + reason)
+9. Tulis audit ORDER_REJECTED atau ORDER_EXPIRED
+10. Jika bookingMode=manual, customer kembali pilih mitra
+11. Jika bookingMode=auto, customer boleh lanjut ke kandidat berikutnya secara berurutan
 ```
 
 ### 22.5 Complete Order
@@ -1256,6 +1585,8 @@ TRIP dibangun sebagai **single cross-platform mobile app** dengan:
 - **External handoff** untuk maps, call, dan chat
 
 Arsitektur ini menjaga prinsip local-first tanpa jatuh ke zero-server yang rapuh, dan menyediakan path yang jelas untuk scale ke fase berikutnya.
+
+Model yang dipilih adalah **local-first + thin relay**, bukan backend-heavy tradisional dan bukan pure peer-to-peer tanpa server.
 
 ---
 

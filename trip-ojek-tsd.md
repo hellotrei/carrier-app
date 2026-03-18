@@ -32,6 +32,11 @@ TSD ini menjabarkan spesifikasi implementasi teknis untuk **TRIP** — single ap
 7. Data sensitif tidak boleh ditulis utuh ke debug log
 8. Desain harus toleran terhadap app kill, resume, dan koneksi buruk
 
+**Klarifikasi terminologi implementasi:**
+- "End-to-end" pada TSD ini berarti alur request → relay signaling → update lokal kedua pihak → completion/recovery
+- "Decentralised" pada MVP ini berarti penyimpanan data inti tersebar di device user, bukan arsitektur pure peer-to-peer tanpa relay
+- Binary audit adalah format penyimpanan lokal dan export, bukan format pertukaran data antar user
+
 ---
 
 ## 2. Out of Scope Teknis MVP
@@ -278,13 +283,31 @@ src/
 ```ts
 export type AppRole = 'customer' | 'mitra'
 
+export type IdentityStatus = 'draft' | 'active' | 'blocked'
+
+export type BookingIntent = 'self' | 'for_other'
+
+export type BookingMode = 'manual' | 'auto'
+
+export type OrderRejectReasonCode =
+  | 'busy'
+  | 'pickup_too_far'
+  | 'price_not_suitable'
+  | 'suspicious_order'
+  | 'undeclared_rider'
+  | 'payload_invalid'
+  | 'expired'
+
 export type UserProfile = {
   userId: string
   displayName: string
-  phoneNumber?: string
+  phoneMasked?: string
+  phoneHash?: string
   activeRoles: AppRole[]
   currentRole: AppRole
   deviceAuthEnabled: boolean
+  identityStatus: IdentityStatus
+  profileValidatedAt?: string
   createdAt: string
   updatedAt: string
 }
@@ -328,12 +351,20 @@ export type OrderStatus =
 
 export type Order = {
   orderId: string
+  bookingSessionId: string
   customerId: string
   partnerId: string
+  bookingMode: BookingMode
+  bookingIntent: BookingIntent
+  riderDeclaredName: string
+  riderPhoneMasked?: string
   pickup: LocationPoint
   destination: LocationPoint
   distanceEstimateKm: number
+  pickupDistanceFromPartnerKm: number
   pricePerKmApplied: number
+  baseTripEstimatedPrice: number
+  pickupSurchargeAmount: number
   estimatedPrice: number
   status: OrderStatus
   cancelReason?: string
@@ -370,13 +401,21 @@ export type TransactionLog = {
 ```ts
 export type OrderRequestPayload = {
   orderId: string
+  bookingSessionId: string
   customerId: string
   customerDisplayName: string
+  bookingMode: BookingMode
+  bookingIntent: BookingIntent
+  riderDeclaredName: string
+  riderPhoneMasked?: string
   partnerId: string
   pickup: LocationPoint
   destination: LocationPoint
   distanceEstimateKm: number
+  pickupDistanceFromPartnerKm: number
   pricePerKmApplied: number
+  baseTripEstimatedPrice: number
+  pickupSurchargeAmount: number
   estimatedPrice: number
   expiresAt: string           // ISO 8601, createdAt + 60s
   createdAt: string
@@ -386,7 +425,18 @@ export type OrderResponsePayload = {
   orderId: string
   partnerId: string
   response: 'accept' | 'reject'
+  responseReasonCode?: OrderRejectReasonCode
   respondedAt: string
+}
+
+export type OrderContactRevealPayload = {
+  orderId: string
+  customerId: string
+  partnerId: string
+  customerPhoneE164: string
+  partnerPhoneE164: string
+  revealedAt: string
+  expiresAt: string
 }
 
 export type OrderSyncState = {
@@ -394,6 +444,41 @@ export type OrderSyncState = {
   status: OrderStatus
   updatedAt: string
   version: number
+}
+
+export type OrderCancelReason =
+  | 'user_changed_mind'
+  | 'identity_mismatch'
+  | 'undeclared_rider'
+  | 'contact_mismatch'
+  | 'unsafe_or_suspicious'
+  | 'pickup_mismatch'
+  | 'other'
+
+export type UserTrustLevel =
+  | 'clear'
+  | 'warned'
+  | 'delegated_booking_restricted'
+  | 'restricted'
+  | 'suspended'
+
+export type UserTrustStatus = {
+  userId: string
+  trustLevel: UserTrustLevel
+  warningCount: number
+  restrictedUntil?: string
+  updatedAt: string
+}
+
+export type MismatchReport = {
+  reportId: string
+  orderId: string
+  reportedUserId: string
+  reporterUserId: string
+  reporterRole: 'mitra' | 'customer'
+  reason: OrderCancelReason
+  notes?: string
+  createdAt: string
 }
 
 export type DiscoverParams = {
@@ -468,6 +553,7 @@ export interface PresenceGateway {
 export interface OrderSignalGateway {
   sendOrderRequest(payload: OrderRequestPayload): Promise<void>
   sendOrderResponse(orderId: string, response: 'accept' | 'reject'): Promise<void>
+  sendContactReveal(payload: OrderContactRevealPayload): Promise<void>
   subscribeToIncomingOrders(
     userId: string,
     callback: (payload: OrderRequestPayload) => void
@@ -475,6 +561,10 @@ export interface OrderSignalGateway {
   subscribeToOrderResponse(
     orderId: string,
     callback: (payload: OrderResponsePayload) => void
+  ): () => void
+  subscribeToContactReveal(
+    orderId: string,
+    callback: (payload: OrderContactRevealPayload) => void
   ): () => void
   syncActiveOrder(orderId: string): Promise<OrderSyncState | null>
 }
@@ -512,6 +602,10 @@ export type AppErrorCode =
   | 'LOCATION_UNAVAILABLE'
   | 'INVALID_PRICE_PER_KM'
   | 'PROFILE_NOT_FOUND'
+  | 'PROFILE_NOT_READY'
+  | 'IDENTITY_BLOCKED'
+  | 'ACCOUNT_RESTRICTED'
+  | 'DELEGATED_BOOKING_REQUIRES_DECLARATION'
   | 'ROLE_NOT_ALLOWED'
   | 'DISCOVERY_UNAVAILABLE'
   | 'RELAY_UNAVAILABLE'          // BARU: relay offline / timeout
@@ -576,10 +670,13 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS user_profile (
   user_id TEXT PRIMARY KEY NOT NULL,
   display_name TEXT NOT NULL,
-  phone_number TEXT,
+  phone_masked TEXT,
+  phone_hash TEXT,
   current_role TEXT NOT NULL CHECK(current_role IN ('customer', 'mitra')),
   active_roles TEXT NOT NULL DEFAULT '[]',   -- JSON array
   device_auth_enabled INTEGER NOT NULL DEFAULT 0,
+  identity_status TEXT NOT NULL DEFAULT 'draft' CHECK(identity_status IN ('draft', 'active', 'blocked')),
+  profile_validated_at TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
@@ -594,12 +691,20 @@ CREATE TABLE IF NOT EXISTS pricing_profile (
 
 CREATE TABLE IF NOT EXISTS order_table (
   order_id TEXT PRIMARY KEY NOT NULL,
+  booking_session_id TEXT NOT NULL,
   customer_id TEXT NOT NULL,
   partner_id TEXT NOT NULL,
+  booking_mode TEXT NOT NULL DEFAULT 'manual' CHECK(booking_mode IN ('manual', 'auto')),
+  booking_intent TEXT NOT NULL DEFAULT 'self' CHECK(booking_intent IN ('self', 'for_other')),
+  rider_declared_name TEXT NOT NULL,
+  rider_phone_masked TEXT,
   pickup_json TEXT NOT NULL,             -- JSON: LocationPoint
   destination_json TEXT NOT NULL,        -- JSON: LocationPoint
   distance_estimate_km REAL NOT NULL,
+  pickup_distance_from_partner_km REAL NOT NULL,
   price_per_km_applied REAL NOT NULL,
+  base_trip_estimated_price REAL NOT NULL,
+  pickup_surcharge_amount REAL NOT NULL DEFAULT 0,
   estimated_price REAL NOT NULL,
   status TEXT NOT NULL,
   cancel_reason TEXT,
@@ -663,11 +768,145 @@ const APP_SETTINGS_KEYS = {
 ### 10.4 Secure Storage Keys
 ```ts
 const SECURE_STORAGE_KEYS = {
+  USER_PHONE_E164: 'trip.user_phone_e164',
   DEVICE_BINDING_ID: 'trip.device_binding_id',
   AUDIT_EXPORT_GUARD_ENABLED: 'trip.audit_export_guard_enabled',
   LAST_AUTHENTICATED_AT: 'trip.last_authenticated_at',
 }
 ```
+
+### 10.5 Identity Storage Rules
+- Nomor telepon penuh (`phoneE164`) hanya boleh disimpan di Secure Storage
+- SQLite hanya menyimpan `phone_masked`, `phone_hash`, dan `identity_status`
+- `deviceBindingId` dibuat saat first launch dan wajib ada sebelum user boleh online
+- `identity_status = active` hanya boleh diberikan setelah display name dan phone number lolos normalisasi dan validasi
+- `identity_status = blocked` mencegah publish presence dan submit order baru sampai data diperbaiki
+
+### 10.6 Online Readiness Contract
+```ts
+async function validateOnlineReadiness(userId: string, role: AppRole): Promise<Result<void>> {
+  const profile = await UserRepository.getProfile()
+  if (!profile) return err({ code: 'PROFILE_NOT_FOUND' })
+
+  if (profile.identityStatus === 'blocked') {
+    return err({ code: 'IDENTITY_BLOCKED' })
+  }
+
+  if (profile.identityStatus !== 'active' || !profile.profileValidatedAt) {
+    return err({ code: 'PROFILE_NOT_READY' })
+  }
+
+  const deviceBindingId = await SecureStorage.get(SECURE_STORAGE_KEYS.DEVICE_BINDING_ID)
+  if (!deviceBindingId) {
+    return err({ code: 'PROFILE_NOT_READY', context: { reason: 'missing_device_binding' } })
+  }
+
+  if (role === 'mitra') {
+    const pricing = await PricingRepository.getPricing(userId)
+    if (!pricing?.partnerPricePerKm) {
+      return err({ code: 'INVALID_PRICE_PER_KM' })
+    }
+  }
+
+  return ok(undefined)
+}
+```
+
+### 10.7 Auth Lifecycle Operational Spec
+```ts
+type AuthLifecycleStage =
+  | 'first_install'
+  | 'profile_draft'
+  | 'profile_validated'
+  | 'identity_active'
+  | 'ready_to_online'
+  | 'online'
+  | 'accepted_contact_revealed'
+  | 'blocked'
+```
+
+Rules:
+- `first_install` → generate `userId` + `deviceBindingId`
+- `profile_draft` → data masih lokal, belum boleh dipublish ke relay
+- `profile_validated` → display name dan phone sudah dinormalisasi + lolos format minimum
+- `identity_active` → profile boleh dipakai untuk fitur inti, tetapi exposure tetap minimum
+- `ready_to_online` → identity aktif + binding device tersedia + validasi role-specific lolos
+- `online` → presence publish boleh dilakukan
+- `accepted_contact_revealed` → nomor telepon penuh baru boleh dibuka ke pasangan order aktif
+- `blocked` → publish presence, submit order baru, dan contact reveal harus ditolak
+
+Reality boundary:
+- MVP ini membuktikan user **terdaftar dan tervalidasi minimum di device**, bukan membuktikan identitas legal secara kuat
+- Untuk memastikan user benar-benar pemilik nomor/data secara kuat dibutuhkan OTP, KYC, atau operator review di fase berikutnya
+
+### 10.8 Trust Enforcement Boundary
+- Warning/punishment yang hanya lokal **tidak cukup**
+- Enforcement yang survive reinstall/ganti device memerlukan metadata trust minimum di relay/backing store
+- Metadata minimum yang boleh sentral:
+  - `userId`
+  - `warningCount`
+  - `trustLevel`
+  - `restrictedUntil`
+- Metadata ini bukan source of truth trip, tetapi source of truth untuk **status enforcement auth**
+- Jika `trustLevel = delegated_booking_restricted`, app harus menolak `bookingIntent = for_other`
+- Jika `trustLevel = restricted|suspended`, app harus menolak submit order baru
+
+### 10.9 Trust Enforcement Decision Table
+Preconditions agar report layak diproses:
+- `reporterRole = 'mitra'`
+- reporter memang adalah `partnerId` pada order tersebut
+- order minimal berstatus `Accepted`
+- reason code masuk daftar resmi
+- report tidak duplikat untuk kombinasi `orderId + reporterUserId + reason`
+
+Cases yang **tidak boleh** menaikkan punishment:
+- `bookingIntent = for_other` dan `riderDeclaredName` sesuai dengan rider aktual
+- delegated booking sah tetapi hanya terjadi kebingungan komunikasi biasa
+- report tanpa konteks minimum atau report duplikat
+
+Decision table:
+
+| Input condition | Enforcement result |
+|----------------|--------------------|
+| `bookingIntent=self` dan tidak ada mismatch nyata | ignore punishment |
+| `bookingIntent=for_other` dan rider sesuai deklarasi | ignore punishment |
+| `undeclared_rider` pada order aktif | issue warning |
+| `contact_mismatch` pada order aktif | issue warning |
+| `undeclared_rider` berulang 2x dalam rolling window | `trustLevel = delegated_booking_restricted` |
+| `contact_mismatch` berulang lintas mitra | `trustLevel = restricted` |
+| `unsafe_or_suspicious` dari beberapa mitra berbeda | `trustLevel = suspended` |
+| report tunggal yang ambiguous | audit only, no automatic punishment |
+
+Escalation rules:
+- Warning pertama → tulis `AUTH_WARNING_ISSUED`
+- Restriction/suspension → tulis `ACCOUNT_RESTRICTED`
+- Restriction tidak menghapus histori lokal; hanya mengubah status enforcement auth
+
+### 10.10 Trust Enforcement State Machine
+```ts
+const TRUST_TRANSITIONS: Record<UserTrustLevel, UserTrustLevel[]> = {
+  clear: ['warned'],
+  warned: ['clear', 'delegated_booking_restricted', 'restricted'],
+  delegated_booking_restricted: ['warned', 'clear', 'restricted'],
+  restricted: ['warned', 'clear', 'suspended'],
+  suspended: ['restricted', 'warned', 'clear'],
+}
+```
+
+Transition rules:
+- `clear -> warned` saat mismatch valid pertama
+- `warned -> delegated_booking_restricted` saat ada `undeclared_rider` atau `contact_mismatch` berulang
+- `warned -> restricted` saat ada mismatch berat lintas mitra
+- `delegated_booking_restricted -> restricted` saat abuse tetap berulang setelah pembatasan
+- `restricted -> suspended` saat ada pola abuse kuat atau `unsafe_or_suspicious` yang tervalidasi
+- `warned|delegated_booking_restricted|restricted -> clear` hanya lewat cooldown policy atau review manual
+
+Enforcement mapping:
+- `clear` → semua fitur normal
+- `warned` → fitur normal, tetapi warning tampil dan audit wajib ditulis
+- `delegated_booking_restricted` → `bookingIntent = for_other` harus ditolak
+- `restricted` → submit order baru harus ditolak
+- `suspended` → fitur transaksi utama harus ditolak
 
 ---
 
@@ -699,12 +938,20 @@ Byte layout (little-endian):
 [N+1..N+4] checksum     : uint32 CRC32 over bytes [0..N]
 ```
 
+### 11.2A Peran Binary Audit
+- File binary audit ditulis ke file system device saat event terjadi
+- File ini tidak menjadi bagian dari app binary yang di-install
+- File ini tidak digunakan untuk presence, order signaling, atau komunikasi live antar user
+- Tujuannya adalah audit trail lokal yang compact, durable, dan mudah diexport
+
 ### 11.3 Event Type Codes
 ```ts
 const AUDIT_EVENT_CODES: Record<AuditEventType, number> = {
   BOOTSTRAP_COMPLETE:              0x0001,
   ROLE_SELECTED:                   0x0010,
   ROLE_SWITCHED:                   0x0011,
+  PROFILE_VALIDATED:               0x0012,
+  IDENTITY_BLOCKED:                0x0013,
   LOCATION_PERMISSION_GRANTED:     0x0020,
   LOCATION_PERMISSION_DENIED:      0x0021,
   USER_WENT_ONLINE:                0x0030,
@@ -719,6 +966,10 @@ const AUDIT_EVENT_CODES: Record<AuditEventType, number> = {
   ORDER_ON_TRIP:                   0x0106,
   ORDER_COMPLETED:                 0x0107,
   ORDER_CANCELED:                  0x0108,
+  CONTACT_REVEALED:                0x0109,
+  TRIP_IDENTITY_MISMATCH_REPORTED: 0x0110,
+  AUTH_WARNING_ISSUED:             0x0111,
+  ACCOUNT_RESTRICTED:              0x0112,
   HANDOFF_MAPS_ATTEMPTED:          0x0200,
   HANDOFF_MAPS_OPENED:             0x0201,
   HANDOFF_MAPS_FAILED:             0x0202,
@@ -780,6 +1031,10 @@ const DISCOVERY_MAX_RESULTS = 50
 ### 12.2 Publish Sequence
 ```ts
 async function goOnline(): Promise<Result<void>> {
+  // 0. Validate identity dan readiness
+  const readiness = await validateOnlineReadiness(userId, currentRole)
+  if (!readiness.ok) return readiness
+
   // 1. Dapatkan lokasi terkini
   const location = await LocationGateway.getCurrentLocation()
   if (!location) return err({ code: 'LOCATION_UNAVAILABLE' })
@@ -940,6 +1195,147 @@ async function submitOrder(draftId: string): Promise<Result<Order>> {
 }
 ```
 
+### 13.2B Booking Mode Resolution Contract
+```ts
+function resolveBookingTarget(params: {
+  bookingMode: BookingMode
+  discoveryItems: PresenceSnapshot[]
+  selectedPartnerId?: string
+  pickup: LocationPoint
+  now: number
+}): Result<PresenceSnapshot> {
+  const freshCandidates = filterAndSortDiscovery(
+    params.discoveryItems,
+    params.pickup,
+    DISCOVERY_DEFAULT_RADIUS_KM,
+    params.now
+  )
+
+  if (params.bookingMode === 'manual') {
+    const selected = freshCandidates.find(item => item.userId === params.selectedPartnerId)
+    return selected
+      ? ok(selected)
+      : err({ code: 'DISCOVERY_UNAVAILABLE', context: { reason: 'selected_partner_not_available' } })
+  }
+
+  const ranked = rankAutoBookingCandidates(freshCandidates, params.pickup)
+  const best = ranked[0]
+  return best
+    ? ok(best)
+    : err({ code: 'DISCOVERY_UNAVAILABLE', context: { reason: 'no_eligible_partner' } })
+}
+```
+
+### 13.2C Auto Booking Ranking Contract
+```ts
+function rankAutoBookingCandidates(
+  candidates: PresenceSnapshot[],
+  pickup: LocationPoint
+): PresenceSnapshot[] {
+  return candidates
+    .filter(candidate => candidate.role === 'mitra')
+    .filter(candidate => candidate.isOnline)
+    .sort((a, b) => {
+      const distA = haversineDistanceKm(pickup.latitude, pickup.longitude, a.latitude, a.longitude)
+      const distB = haversineDistanceKm(pickup.latitude, pickup.longitude, b.latitude, b.longitude)
+      const surchargeA = calculatePickupSurcharge(distA, a.visiblePricePerKm)
+      const surchargeB = calculatePickupSurcharge(distB, b.visiblePricePerKm)
+
+      if (surchargeA !== surchargeB) return surchargeA - surchargeB
+      if (distA !== distB) return distA - distB
+      if (a.visiblePricePerKm !== b.visiblePricePerKm) return a.visiblePricePerKm - b.visiblePricePerKm
+      return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    })
+}
+```
+
+Rules:
+- `manual` → customer memilih satu mitra spesifik
+- `auto` → target dipilih oleh ranking lokal di device customer
+- Tidak boleh fanout ke banyak mitra sekaligus dalam satu attempt
+- Jika ingin retry kandidat berikutnya setelah reject/timeout, lakukan **sequential retry** dengan attempt baru yang masih membawa `bookingSessionId` yang sama
+- Rating/review publik dan kualitas kendaraan **tidak** dipakai untuk ranking MVP karena source of truth belum cukup kuat
+- Ranking auto booking harus memperhitungkan pickup surcharge agar kandidat yang dipilih tetap masuk akal dari sisi total biaya customer
+
+### 13.2A Booking Validation dan Freeze Contract
+```ts
+function validateBookingDraft(params: {
+  customerId: string
+  currentRole: AppRole
+  pickup: LocationPoint
+  destination: LocationPoint
+  bookingMode: BookingMode
+  selectedPartnerSnapshot: PresenceSnapshot
+  bookingIntent: BookingIntent
+  riderDeclaredName: string
+  riderPhoneMasked?: string
+  activeOrder: Order | null
+}): Result<void> {
+  if (params.currentRole !== 'customer') {
+    return err({ code: 'ROLE_NOT_ALLOWED' })
+  }
+
+  if (params.activeOrder && !isTerminal(params.activeOrder.status)) {
+    return err({ code: 'ORDER_ALREADY_ACTIVE' })
+  }
+
+  if (params.customerId === params.selectedPartnerSnapshot.userId) {
+    return err({ code: 'ROLE_NOT_ALLOWED', context: { reason: 'self_booking_not_allowed' } })
+  }
+
+  if (!isValidIndonesiaCoords(params.pickup) || !isValidIndonesiaCoords(params.destination)) {
+    return err({ code: 'ANTI_ABUSE_INVALID_COORDS' })
+  }
+
+  if (params.selectedPartnerSnapshot.role !== 'mitra' || !params.selectedPartnerSnapshot.isOnline) {
+    return err({ code: 'DISCOVERY_UNAVAILABLE', context: { reason: 'partner_not_available' } })
+  }
+
+  const snapshotAgeMs = Date.now() - new Date(params.selectedPartnerSnapshot.timestamp).getTime()
+  if (snapshotAgeMs >= params.selectedPartnerSnapshot.ttlSeconds * 1000) {
+    return err({ code: 'DISCOVERY_UNAVAILABLE', context: { reason: 'partner_snapshot_stale' } })
+  }
+
+  if (params.bookingIntent === 'self' && params.riderDeclaredName.trim() === '') {
+    return err({ code: 'DELEGATED_BOOKING_REQUIRES_DECLARATION', context: { reason: 'missing_rider_name' } })
+  }
+
+  if (params.bookingIntent === 'for_other' && (!params.riderDeclaredName.trim() || !params.riderPhoneMasked)) {
+    return err({ code: 'DELEGATED_BOOKING_REQUIRES_DECLARATION' })
+  }
+
+  return ok(undefined)
+}
+```
+
+Freeze rules:
+- `Draft` masih editable
+- Saat submit berhasil dibuat, field berikut menjadi immutable untuk order tersebut:
+  - `bookingMode`
+  - `partnerId`
+  - `pickup`
+  - `destination`
+  - `bookingIntent`
+  - `riderDeclaredName`
+  - `riderPhoneMasked`
+  - `pickupDistanceFromPartnerKm`
+  - `pricePerKmApplied`
+  - `baseTripEstimatedPrice`
+  - `pickupSurchargeAmount`
+  - `estimatedPrice`
+- Jika customer ingin mengubah salah satu field immutable setelah `Requested`, flow yang benar adalah cancel lalu buat order baru
+
+Booking intent rules:
+- `bookingIntent = self` → `riderDeclaredName` harus sama dengan `customerDisplayName`
+- `bookingIntent = for_other` → `riderDeclaredName` wajib diisi dan `riderPhoneMasked` wajib tersedia
+- Jika `bookingIntent = for_other` tapi declaration tidak lengkap, return `DELEGATED_BOOKING_REQUIRES_DECLARATION`
+- Jika `trustLevel = delegated_booking_restricted|restricted|suspended`, submit order untuk `for_other` harus ditolak dengan `ACCOUNT_RESTRICTED`
+
+Booking mode rules:
+- `bookingMode = manual` → `selectedPartnerSnapshot` wajib berasal dari pilihan eksplisit user
+- `bookingMode = auto` → `selectedPartnerSnapshot` wajib berasal dari hasil `resolveBookingTarget()`
+- `bookingMode = auto` tidak boleh mengirim request paralel ke banyak mitra
+
 ### 13.3 Idempotency Rules
 - `orderId` dibuat UUID v4 di client, dijamin unik
 - Response accept/reject yang diterima kedua kali untuk orderId yang sama → ignored
@@ -958,10 +1354,60 @@ function isOrderPayloadValid(payload: OrderRequestPayload): boolean {
   // Reject jika terlalu jauh di masa depan (> 70 detik dari createdAt)
   const createdAt = new Date(payload.createdAt).getTime()
   if (now < createdAt - 5000) return false  // allow 5s clock skew
+
+  if (payload.distanceEstimateKm <= 0) return false
+  if (payload.pickupDistanceFromPartnerKm < 0) return false
+  if (payload.pricePerKmApplied <= 0) return false
+  if (payload.baseTripEstimatedPrice < 0) return false
+  if (payload.pickupSurchargeAmount < 0) return false
+  if (payload.estimatedPrice !== payload.baseTripEstimatedPrice + payload.pickupSurchargeAmount) return false
   
   return true
 }
 ```
+
+### 13.4A Incoming Order Decision Contract
+```ts
+function validateIncomingOrderDecision(params: {
+  payload: OrderRequestPayload
+  localPartnerId: string
+  activeOrder: Order | null
+  currentTrustLevel: UserTrustLevel
+  localOrderStatus?: OrderStatus
+}): Result<void> {
+  if (params.payload.partnerId !== params.localPartnerId) {
+    return err({ code: 'ROLE_NOT_ALLOWED', context: { reason: 'wrong_target_partner' } })
+  }
+
+  if (!isOrderPayloadValid(params.payload)) {
+    return err({ code: 'ORDER_REQUEST_EXPIRED', context: { reason: 'payload_invalid_or_expired' } })
+  }
+
+  if (params.activeOrder && !isTerminal(params.activeOrder.status)) {
+    return err({ code: 'ORDER_ALREADY_ACTIVE' })
+  }
+
+  if (params.currentTrustLevel === 'restricted' || params.currentTrustLevel === 'suspended') {
+    return err({ code: 'ACCOUNT_RESTRICTED' })
+  }
+
+  if (params.localOrderStatus && params.localOrderStatus !== 'Requested') {
+    return err({ code: 'INVALID_ORDER_TRANSITION', context: { current: params.localOrderStatus, attempted: 'Accepted' } })
+  }
+
+  return ok(undefined)
+}
+```
+
+Rules:
+- `Accept` hanya boleh dilakukan jika `validateIncomingOrderDecision()` lolos
+- `Reject` oleh user harus mengirim `responseReasonCode`
+- Reject sistem karena payload rusak memakai `payload_invalid`
+- Reject sistem karena timer habis memakai `expired`
+- `bookingMode = manual` → reject/expired mengakhiri flow dan customer harus memilih mitra lagi
+- `bookingMode = auto` → reject/expired boleh memicu candidate berikutnya secara berurutan dalam `bookingSessionId` yang sama
+- Response kedua atau response terlambat untuk `orderId` yang sama harus di-ignore
+- `for_other` tanpa declaration lengkap harus diperlakukan sebagai order invalid dan boleh direject dengan `undeclared_rider`
 
 ---
 
@@ -1026,6 +1472,26 @@ const CUSTOMER_CAN_CANCEL: OrderStatus[] = ['Requested', 'Accepted', 'OnTheWay',
 const PARTNER_CAN_CANCEL: OrderStatus[] = ['Accepted', 'OnTheWay', 'OnTrip']
 ```
 
+Allowed cancel reason codes:
+- `user_changed_mind`
+- `identity_mismatch`
+- `undeclared_rider`
+- `contact_mismatch`
+- `unsafe_or_suspicious`
+- `pickup_mismatch`
+- `other`
+
+Rules:
+- Cancel dengan reason `identity_mismatch`, `undeclared_rider`, `contact_mismatch`, atau `unsafe_or_suspicious` harus memicu audit event `TRIP_IDENTITY_MISMATCH_REPORTED`
+- Sistem tidak boleh memaksa trip lanjut jika salah satu pihak menyatakan mismatch serius setelah contact reveal atau pertemuan fisik
+- Mismatch report tidak otomatis membuktikan fraud, tetapi harus menjadi bukti operasional untuk dispute dan tindak lanjut
+
+Enforcement escalation:
+- Mismatch report valid dari mitra → minimal warning ke customer
+- Repeated `undeclared_rider` atau `contact_mismatch` → `trustLevel = delegated_booking_restricted`
+- Repeated mismatch lintas mitra atau `unsafe_or_suspicious` → `trustLevel = restricted|suspended`
+- Setiap kenaikan enforcement level wajib menulis audit event `AUTH_WARNING_ISSUED` atau `ACCOUNT_RESTRICTED`
+
 ---
 
 ## 15. Pricing Specification
@@ -1036,6 +1502,7 @@ export const PRICING_CONSTRAINTS = {
   minPartnerPricePerKm: 2000,     // Rp 2.000 (configurable)
   maxPartnerPricePerKm: 8000,     // Rp 8.000 (configurable)
   roundingUnit: 500,              // Pembulatan ke Rp 500 terdekat
+  freePickupRadiusKm: 3,          // Jarak penjemputan gratis sampai 3 km
   currency: 'IDR' as const,
 }
 ```
@@ -1067,6 +1534,33 @@ export function calculateEstimatedPrice(
   return Math.ceil(raw / PRICING_CONSTRAINTS.roundingUnit) * PRICING_CONSTRAINTS.roundingUnit
 }
 
+export function calculatePickupSurcharge(
+  pickupDistanceFromPartnerKm: number,
+  pricePerKm: number
+): number {
+  const chargeableKm = Math.max(0, pickupDistanceFromPartnerKm - PRICING_CONSTRAINTS.freePickupRadiusKm)
+  return Math.round(chargeableKm * pricePerKm)
+}
+
+export function calculateTotalEstimatedPrice(
+  tripDistanceKm: number,
+  pickupDistanceFromPartnerKm: number,
+  pricePerKm: number
+): {
+  baseTripEstimatedPrice: number
+  pickupSurchargeAmount: number
+  totalEstimatedPrice: number
+} {
+  const baseTripEstimatedPrice = calculateEstimatedPrice(tripDistanceKm, pricePerKm)
+  const pickupSurchargeAmount = calculatePickupSurcharge(pickupDistanceFromPartnerKm, pricePerKm)
+
+  return {
+    baseTripEstimatedPrice,
+    pickupSurchargeAmount,
+    totalEstimatedPrice: baseTripEstimatedPrice + pickupSurchargeAmount,
+  }
+}
+
 export function resolveAppliedPrice(
   partnerPricePerKm: number,
   customerOfferPerKm?: number
@@ -1088,6 +1582,10 @@ export const COMMISSION = {
 }
 ```
 
+Rule:
+- Basis komisi platform hanya `baseTripEstimatedPrice`
+- `pickupSurchargeAmount` tidak masuk basis komisi dan menjadi kompensasi penuh untuk mitra
+
 ### 16.2 Record Transaction
 ```ts
 async function recordCompletedTrip(order: Order): Promise<Result<void>> {
@@ -1096,7 +1594,7 @@ async function recordCompletedTrip(order: Order): Promise<Result<void>> {
   }
   
   const commissionAmount = Math.round(
-    order.estimatedPrice * COMMISSION.rate / COMMISSION.roundingUnit
+    order.baseTripEstimatedPrice * COMMISSION.rate / COMMISSION.roundingUnit
   ) * COMMISSION.roundingUnit
   
   const log: TransactionLog = {
@@ -1113,7 +1611,11 @@ async function recordCompletedTrip(order: Order): Promise<Result<void>> {
   }
   
   await TransactionRepository.recordTransaction(log)
-  await appendAuditEvent(buildEvent('TRANSACTION_RECORDED', { logId: log.logId, commissionAmount }))
+  await appendAuditEvent(buildEvent('TRANSACTION_RECORDED', {
+    logId: log.logId,
+    commissionAmount,
+    commissionBaseAmount: order.baseTripEstimatedPrice,
+  }))
   
   return ok(undefined)
 }
@@ -1317,8 +1819,13 @@ async function bootstrapApp(): Promise<void> {
 
 **Technical requirements:**
 - UUID v4 dibuat lokal untuk userId
+- Device binding ID dibuat lokal dan disimpan ke Secure Storage
 - Tidak ada API call ke server
-- Phone number: validasi format Indonesia (08xx/+628xx), tidak perlu OTP di MVP
+- Phone number: validasi format Indonesia (08xx/+628xx), normalisasi ke `+62...`, tidak perlu OTP di MVP
+- Nomor telepon penuh disimpan di Secure Storage; SQLite hanya simpan masked/hash
+- `identityStatus` hanya menjadi `active` jika profile lolos normalisasi dan validasi
+- `PROFILE_VALIDATED` audit event ditulis saat profil lolos validasi minimum
+- Profil dengan data mencurigakan dapat di-set ke `blocked` dan menghasilkan `IDENTITY_BLOCKED` audit event
 
 ### 20.2 Home Customer
 **Input:** UserProfile + PricingProfile + lokasi aktif
@@ -1348,7 +1855,16 @@ async function bootstrapApp(): Promise<void> {
 - Destination: text search menggunakan device keyboard (tidak butuh geocoding API)
 - Haversine distance calculation
 - Order UUID dibuat client-side
+- Booking session ID dibuat client-side untuk mengelompokkan retry dalam satu sesi booking
 - Persist lokal sebelum kirim sinyal
+- Customer dapat memilih `manual` atau `auto` booking
+- Customer wajib memilih `bookingIntent`: untuk diri sendiri atau untuk orang lain
+- Jika `bookingIntent = for_other`, `riderDeclaredName` wajib diisi dan `riderPhoneMasked` wajib tersedia sebelum submit
+- Jika delegated booking sedang direstrict oleh trust enforcement, submit harus ditolak
+- Auto booking harus memilih target di client dengan ranking lokal yang transparan
+- Auto booking tidak boleh broadcast ke banyak mitra sekaligus
+- Jika pickup distance melebihi 3 km dari mitra target, biaya penjemputan tambahan harus dihitung dan ditampilkan sebelum confirm
+- Preview booking harus menampilkan breakdown: estimasi perjalanan, biaya penjemputan tambahan, dan total estimasi
 
 ### 20.5 Incoming Order (Mitra)
 **Input:** OrderRequestPayload dari relay subscription
@@ -1356,9 +1872,21 @@ async function bootstrapApp(): Promise<void> {
 
 **Technical requirements:**
 - Validasi payload tidak expired (§13.4)
+- Validasi eligibility accept mengikuti `validateIncomingOrderDecision()` (§13.4A)
 - Countdown timer 60 detik yang akurat
 - Auto-handle timeout → don't leave UI hanging
 - Biometric prompt opsional sebelum accept (jika feature flag aktif)
+- Incoming order wajib menampilkan:
+  - `customerDisplayName`
+  - `bookingMode`
+  - `bookingIntent`
+  - `riderDeclaredName` dan `riderPhoneMasked` jika `for_other`
+  - pickup dan destination
+  - jarak ke pickup, estimasi perjalanan, biaya penjemputan tambahan, dan total estimasi
+- Mitra tidak boleh dipaksa accept order tanpa melihat total estimasi yang sudah termasuk pickup surcharge
+- `Reject` oleh user wajib membawa `responseReasonCode`
+- Jika `bookingMode = manual`, reject/expired mengembalikan customer ke flow pilih mitra
+- Jika `bookingMode = auto`, reject/expired boleh meneruskan retry ke kandidat berikutnya secara berurutan
 
 ### 20.6 Active Trip
 **Input:** active Order
@@ -1678,6 +2206,8 @@ TRIP diimplementasikan sebagai **single cross-platform React Native app dengan T
 - **External handoff** (Maps/Dialer/WhatsApp) untuk komunikasi dan navigasi
 
 Arsitektur ini memenuhi semua prinsip dari BRD dan PRD: local-first, transparan, ringan, dan dapat dieksekusi dengan cepat oleh tim kecil.
+
+Model final yang diimplementasikan adalah **local-first dengan thin relay wajib**, bukan zero-server absolut dan bukan backend-heavy konvensional.
 
 TSD ini adalah kontrak implementasi. Setiap deviasi harus didokumentasikan.
 

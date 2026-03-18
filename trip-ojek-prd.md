@@ -365,11 +365,18 @@ Mangkal di depan minimarket, dapat order dari kenalan, atau sesekali online di G
 **Requirements:**
 - Kalkulasi: haversine distance(pickup, destination) × tarif berlaku
 - Tarif berlaku: tarif offer customer jika ada, atau tarif mitra
+- Jika jarak mitra ke pickup melebihi `3 km`, customer dikenakan **biaya penjemputan tambahan**
+- Biaya penjemputan = `(jarak pickup - 3 km) × tarif mitra per km`
+- Estimasi harga harus ditampilkan sebagai breakdown:
+  - estimasi perjalanan
+  - biaya penjemputan tambahan (jika ada)
+  - total estimasi
 - Label "estimasi" wajib tampil di semua kalkulasi harga
 - Update otomatis jika destination atau tarif berubah
 
 **Acceptance Criteria:**
 - [ ] Estimasi harga muncul setelah pickup dan destination ditentukan
+- [ ] Jika pickup lebih dari 3 km dari mitra terpilih, biaya penjemputan tampil jelas sebelum booking
 - [ ] Kalkulasi haversine akurat (unit test wajib pass)
 - [ ] Label "estimasi" tampil jelas — bukan "harga final"
 - [ ] Jika tarif berubah, estimasi di-recalculate
@@ -384,15 +391,22 @@ Mangkal di depan minimarket, dapat order dari kenalan, atau sesekali online di G
 **Requirements:**
 - Customer isi pickup (GPS auto-fill atau manual pin di map)
 - Customer isi destination (search atau manual pin)
-- Customer pilih mitra dari list nearby
+- Customer dapat memilih **2 mode booking**:
+  - `Manual select`: customer klik salah satu mitra nearby
+  - `Auto booking`: app memilih kandidat mitra terbaik secara otomatis dari nearby list
 - Preview order: mitra, pickup, destination, jarak estimasi, harga estimasi
 - Customer confirm dan kirim order
 - Order tersimpan lokal dengan status `Requested`
 - Signaling dikirim ke mitra via relay
 - Timeout 60 detik jika mitra tidak merespons → auto status `Expired`
+- `Auto booking` MVP menggunakan ranking yang transparan dan ringan: freshness, jarak ke pickup, dan harga per-km
+- `Auto booking` **tidak** boleh broadcast ke banyak mitra sekaligus
+- Rating/review dan kualitas kendaraan **belum** dipakai untuk auto ranking di MVP
+- Customer harus diberi tahu jika ada biaya penjemputan tambahan sebelum menekan konfirmasi
 
 **Acceptance Criteria:**
 - [ ] Order bisa dibuat dan dikirim end-to-end dari customer ke mitra
+- [ ] Customer bisa memilih mode `manual select` atau `auto booking`
 - [ ] Preview order menampilkan semua detail yang relevan sebelum konfirmasi
 - [ ] Order tersimpan lokal sebelum sinyal dikirim (tidak hilang jika koneksi putus saat kirim)
 - [ ] Timeout 60 detik berjalan dan order auto-expire
@@ -408,15 +422,32 @@ Mangkal di depan minimarket, dapat order dari kenalan, atau sesekali online di G
 **Requirements:**
 - Notifikasi order masuk saat app foreground
 - Layar incoming order: nama customer, pickup point, estimasi harga, countdown timer
+- Layar incoming order wajib menampilkan konteks order:
+  - `bookingMode` (`manual select` atau `auto booking`)
+  - `bookingIntent` (`self` atau `for_other`)
+  - `riderDeclaredName` dan `riderPhoneMasked` jika customer memesankan orang lain
+- Layar incoming order harus menampilkan breakdown:
+  - estimasi perjalanan
+  - jarak mitra ke pickup
+  - biaya penjemputan tambahan (jika ada)
+  - total estimasi yang diterima mitra
 - Tombol Accept dan Reject
 - Countdown 60 detik yang visible
+- Mitra hanya boleh accept jika order masih valid, belum expired, dan mitra belum punya active order lain
+- Reject harus tercatat dengan alasan terstruktur minimum: `busy`, `pickup_too_far`, `price_not_suitable`, `suspicious_order`, `undeclared_rider`
+- Jika order berasal dari `manual select`, reject/expire mengakhiri attempt dan customer harus memilih ulang
+- Jika order berasal dari `auto booking`, reject/expire boleh melanjutkan ke kandidat berikutnya secara berurutan dalam `bookingSessionId` yang sama
 - Jika tidak ada respons dalam 60 detik → auto-reject (order kembali ke Expired)
 
 **Acceptance Criteria:**
 - [ ] Order masuk muncul di mitra dalam < 5 detik dari pengiriman customer
+- [ ] Delegated booking tampil jelas sebagai `for_other` beserta rider declaration yang relevan
+- [ ] Jika ada biaya penjemputan tambahan, nilainya terlihat jelas di layar incoming order
 - [ ] Countdown timer tampil dan berjalan mundur
 - [ ] Accept mengubah status order ke `Accepted`
 - [ ] Reject mengubah status ke `Rejected`
+- [ ] Reject reason tercatat untuk audit dan feedback ke customer
+- [ ] `Manual select` berhenti setelah reject/expire, sedangkan `auto booking` boleh lanjut ke kandidat berikutnya secara berurutan
 - [ ] Auto-expire setelah 60 detik tanpa respons
 - [ ] Audit event ORDER_ACCEPTED / ORDER_REJECTED tercatat
 
@@ -533,7 +564,8 @@ Mangkal di depan minimarket, dapat order dari kenalan, atau sesekali online di G
 **Requirements:**
 - Setiap order completed mencatat: orderId, estimatedPrice, tarif yang digunakan, timestamp
 - Log tersedia untuk di-export oleh operator
-- Komisi (10% dari estimatedPrice) dikalkulasi dan dicatat tapi tidak dipungut otomatis di MVP
+- Komisi dihitung hanya dari `baseTripEstimatedPrice`, bukan dari `pickupSurchargeAmount`
+- Biaya penjemputan tambahan sepenuhnya milik mitra dan tidak masuk basis komisi platform di MVP
 
 **Acceptance Criteria:**
 - [ ] Setiap order completed memiliki transaction log entry
