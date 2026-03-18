@@ -2299,15 +2299,44 @@ async function bootstrapApp(): Promise<void> {
 - Biometric prompt opsional sebelum accept (jika feature flag aktif)
 - Incoming order wajib menampilkan:
   - `customerDisplayName`
+  - `serviceType`
+  - `passengerCount` jika relevan
   - `bookingMode`
   - `bookingIntent`
   - `riderDeclaredName` dan `riderPhoneMasked` jika `for_other`
+  - `paymentMethod`
   - pickup dan destination
-  - jarak ke pickup, estimasi perjalanan, biaya penjemputan tambahan, dan total estimasi
+  - jarak ke pickup, estimasi perjalanan, biaya penjemputan tambahan, gear discount jika ada, admin fee split jika ada, dan total estimasi
 - Mitra tidak boleh dipaksa accept order tanpa melihat total estimasi yang sudah termasuk pickup surcharge
 - `Reject` oleh user wajib membawa `responseReasonCode`
 - Jika `bookingMode = manual`, reject/expired mengembalikan customer ke flow pilih mitra
 - Jika `bookingMode = auto`, reject/expired boleh meneruskan retry ke kandidat berikutnya secara berurutan
+
+### 20.5A Incoming Order Screen Contract
+```ts
+export type IncomingOrderViewModel = {
+  orderId: string
+  customerDisplayName: string
+  serviceType?: VehicleProfile['vehicleType']
+  passengerCount?: number
+  bookingMode: BookingMode
+  bookingIntent: BookingIntent
+  riderDeclaredName: string
+  riderPhoneMasked?: string
+  paymentMethod?: PaymentMethod
+  pickupLabel?: string
+  destinationLabel?: string
+  pickupDistanceFromPartnerKm: number
+  baseTripEstimatedPrice: number
+  pickupSurchargeAmount: number
+  gearDiscountAmount?: number
+  paymentAdminFeeTotal?: number
+  customerAdminFeeShare?: number
+  partnerAdminFeeShare?: number
+  estimatedPrice: number
+  expiresAt: string
+}
+```
 
 ### 20.6 Active Trip
 **Input:** active Order
@@ -2342,6 +2371,45 @@ Rules:
   - `waitingChargeAmount`
   - `driverDelayDeductionAmount`
   - `gearDiscountAmount`
+
+### 20.6A.1 Active Trip View Contract
+```ts
+export type ActiveTripViewModel = {
+  orderId: string
+  serviceType?: VehicleProfile['vehicleType']
+  paymentMethod?: PaymentMethod
+  bookingIntent: BookingIntent
+  passengerCount?: number
+  status: OrderStatus
+  milestone: ActiveTripMilestone
+  counterpartDisplayName: string
+  counterpartPhoneMasked?: string
+  arrivedAtPickupAt?: string
+  waitingTimerSeconds?: number
+  baseTripEstimatedPrice: number
+  pickupSurchargeAmount: number
+  waitingChargeAmount?: number
+  driverDelayDeductionAmount?: number
+  gearDiscountAmount?: number
+  estimatedPrice: number
+}
+```
+
+### 20.6A.2 Active Trip Action Contract
+```ts
+export type PartnerTripAction =
+  | 'depart_to_pickup'
+  | 'mark_arrived_at_pickup'
+  | 'start_trip'
+  | 'complete_trip'
+  | 'cancel_trip'
+
+export type CustomerTripAction =
+  | 'open_maps'
+  | 'call_partner'
+  | 'chat_partner'
+  | 'cancel_trip'
+```
 
 ### 20.6B Background Safety Mode Boundary
 Rules:

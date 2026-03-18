@@ -475,13 +475,19 @@ Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
 - Notifikasi order masuk saat app foreground
 - Layar incoming order: nama customer, pickup point, estimasi harga, countdown timer
 - Layar incoming order wajib menampilkan konteks order:
+  - `serviceType`
+  - `passengerCount` jika relevan
   - `bookingMode` (`manual select` atau `auto booking`)
   - `bookingIntent` (`self` atau `for_other`)
   - `riderDeclaredName` dan `riderPhoneMasked` jika customer memesankan orang lain
+  - `paymentMethod`
 - Layar incoming order harus menampilkan breakdown:
+  - `baseTripEstimatedPrice`
   - estimasi perjalanan
   - jarak mitra ke pickup
   - biaya penjemputan tambahan (jika ada)
+  - gear discount info jika relevan
+  - admin fee split jika aktif
   - total estimasi yang diterima mitra
 - Tombol Accept dan Reject
 - Countdown 60 detik yang visible
@@ -494,6 +500,7 @@ Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
 **Acceptance Criteria:**
 - [ ] Order masuk muncul di mitra dalam < 5 detik dari pengiriman customer
 - [ ] Delegated booking tampil jelas sebagai `for_other` beserta rider declaration yang relevan
+- [ ] `serviceType`, payment method, dan passenger context tampil jelas di incoming order
 - [ ] Jika ada biaya penjemputan tambahan, nilainya terlihat jelas di layar incoming order
 - [ ] Countdown timer tampil dan berjalan mundur
 - [ ] Accept mengubah status order ke `Accepted`
@@ -511,17 +518,33 @@ Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
 **Deskripsi:** Layar utama saat perjalanan sedang berlangsung.
 
 **Requirements:**
-- Tampilkan: nama & nomor pihak lain, status perjalanan, tombol aksi
+- Tampilkan: nama & nomor pihak lain, status perjalanan, milestone aktif, tombol aksi
+- Tampilkan konteks trip:
+  - `serviceType`
+  - `paymentMethod`
+  - `bookingIntent`
+  - `passengerCount` jika relevan
 - Tombol "Buka Maps" (ke pickup untuk mitra, ke destination untuk customer)
 - Tombol "Telepon" (buka dialer dengan nomor pihak lain)
 - Tombol "WhatsApp" (jika nomor tersedia di WhatsApp)
-- Update status: OnTheWay → OnTrip → Completed
+- Update status: OnTheWay → Arrived at Pickup milestone → Waiting Window → OnTrip → Completed
+- Saat milestone `Arrived at Pickup`, layar harus menampilkan waiting timer
+- Jika waiting charge atau driver delay deduction aktif, perubahan breakdown harus terlihat
+- Breakdown final harus tetap bisa dilihat selama trip aktif:
+  - `baseTripEstimatedPrice`
+  - `pickupSurchargeAmount`
+  - `waitingChargeAmount`
+  - `driverDelayDeductionAmount`
+  - `gearDiscountAmount`
 - Tombol cancel dengan konfirmasi
+- Reason cancel/no-show/mismatch harus tetap bisa dipilih sebelum `OnTrip`
 
 **Acceptance Criteria:**
 - [ ] Active trip screen muncul setelah order accepted
 - [ ] Tombol maps, telepon, WhatsApp berfungsi
 - [ ] Status bisa diupdate oleh kedua pihak
+- [ ] Waiting timer muncul setelah driver menandai sudah sampai pickup
+- [ ] Breakdown aktif berubah saat fairness component berubah
 - [ ] Cancel dengan konfirmasi sebelum dieksekusi
 - [ ] State persisten jika app di-background dan dibuka ulang
 - [ ] Audit event untuk setiap transisi status tercatat

@@ -1077,11 +1077,14 @@ type OrderContactRevealPayload = {
 ### 15.3B Incoming Order Decision Rules
 - Incoming order screen di sisi mitra wajib menampilkan:
   - `customerDisplayName`
+  - `serviceType`
+  - `passengerCount` jika relevan
   - `bookingMode`
   - `bookingIntent`
   - `riderDeclaredName` dan `riderPhoneMasked` jika `for_other`
+  - `paymentMethod`
   - pickup, destination, jarak mitra ke pickup
-  - `baseTripEstimatedPrice`, `pickupSurchargeAmount`, dan `estimatedPrice`
+  - `baseTripEstimatedPrice`, `pickupSurchargeAmount`, `gearDiscountAmount` jika ada, admin fee split jika ada, dan `estimatedPrice`
   - countdown sisa waktu respons
 - Mitra hanya boleh `Accept` jika:
   - payload masih valid dan belum expired
@@ -1094,6 +1097,25 @@ type OrderContactRevealPayload = {
 - Reject sistem memakai `payload_invalid` atau `expired`
 - Jika `bookingMode = manual`, reject/expired mengakhiri attempt dan customer kembali memilih mitra
 - Jika `bookingMode = auto`, reject/expired boleh memicu attempt berikutnya **secara berurutan** dalam `bookingSessionId` yang sama
+
+### 15.3C Incoming Order Screen Contract
+- Header: nama customer + `serviceType` badge + countdown
+- Body summary:
+  - pickup
+  - destination
+  - passenger context
+  - rider declaration
+  - payment method
+- Financial breakdown:
+  - `baseTripEstimatedPrice`
+  - `pickupSurchargeAmount`
+  - `gearDiscountAmount` bila relevan
+  - admin fee split bila aktif
+  - total estimasi
+- Footer actions:
+  - `Accept`
+  - `Reject`
+  - optional `Open Maps to Pickup`
 
 ### 15.4 Aturan Exposure Data
 - Presence/discovery **tidak boleh** membawa nomor telepon penuh
@@ -1680,6 +1702,37 @@ Rules:
 - `Arrived at Pickup` adalah milestone aktif, bukan status order baru
 - `waitingChargeAmount` dan `driverDelayDeductionAmount` tidak boleh aktif pada interval yang sama
 - Cancel/no-show/mismatch masih sah sebelum `OnTrip`
+
+### 22.4C Active Trip Screen Contract
+- Sisi mitra dan customer sama-sama harus melihat:
+  - nama pihak lawan
+  - `serviceType`
+  - `paymentMethod`
+  - status order utama
+  - milestone aktif
+- Sisi mitra perlu action:
+  - `Berangkat ke Pickup`
+  - `Saya Sampai`
+  - `Customer Naik / Mulai Trip`
+  - `Selesaikan`
+- Sisi customer perlu melihat:
+  - indikator driver menuju pickup
+  - indikator driver sudah sampai
+  - waiting timer jika aktif
+  - breakdown trip aktif yang terus diperbarui
+- Breakdown aktif minimum:
+  - `baseTripEstimatedPrice`
+  - `pickupSurchargeAmount`
+  - `waitingChargeAmount`
+  - `driverDelayDeductionAmount`
+  - `gearDiscountAmount`
+  - `estimatedPrice`
+- Cancel sheet sebelum `OnTrip` harus menyediakan reason:
+  - `no_show`
+  - `identity_mismatch`
+  - `unsafe_or_suspicious`
+  - `pickup_mismatch`
+  - `other`
 
 ### 22.5 Complete Order
 ```
