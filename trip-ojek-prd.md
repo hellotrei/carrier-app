@@ -1,10 +1,12 @@
-# PRD — TRIP Local-First Ride Coordination Platform
+# PRD — Carrier App Project
 
 **Versi:** 1.0 (CEO-reviewed)
 **Owner:** CEO / Product Direction
-**Project:** TRIP
+**Project:** Carrier App Project
+**Motto:** Just Fair
+**Previous Working Name:** TRIP
 **Document Type:** Product Requirements Document (PRD)
-**Source Reference:** BRD — TRIP v1.0
+**Source Reference:** BRD — Carrier App Project v1.0
 **Status:** Approved for design and engineering execution
 
 ---
@@ -19,13 +21,14 @@
 
 ## 1. Ringkasan Produk
 
-TRIP adalah aplikasi mobile cross-platform — **satu aplikasi untuk dua peran**: **customer** (penumpang) dan **mitra** (pengemudi ojek). Produk ini dirancang dengan pendekatan **local-first**, **low-backend**, dan **biaya operasional minimal**.
+Carrier App Project adalah aplikasi mobile cross-platform — **satu aplikasi untuk dua peran**: **customer** (penumpang) dan **mitra/driver** (pengemudi). Produk ini dirancang dengan pendekatan **local-first**, **low-backend**, dan **biaya operasional minimal**.
 
-**Nilai inti yang TRIP janjikan:**
+**Nilai inti yang Carrier App Project janjikan:**
 
 - **Customer:** Temukan mitra di sekitar dengan cepat. Harga jelas sebelum pesan. Koordinasi mudah via WhatsApp/telepon langsung.
 - **Mitra:** Atur tarif sendiri. Pilih order yang cocok. Tidak ada sistem penalti algoritmik yang tidak transparan.
 - **Operator:** Jalankan platform dengan biaya infrastruktur minimal. Audit trail tersedia tanpa server besar.
+- **Brand promise:** `Just Fair` — adil untuk driver, customer, dan pengembang.
 
 ---
 
@@ -39,7 +42,7 @@ Platform ride-hailing tradisional tidak layak ditiru dari awal karena membawa ov
 - Compliance reporting
 - Third-party API berbayar
 
-TRIP mengambil pendekatan yang lebih realistis: **ride coordination**, bukan **ride-hailing**. Perbedaannya fundamental:
+Carrier App Project mengambil pendekatan yang lebih realistis: **ride coordination**, bukan **ride-hailing**. Perbedaannya fundamental:
 - Ride-hailing: platform yang mengalokasikan driver secara otomatis
 - Ride coordination: platform yang mempertemukan supply dan demand, lalu memberikan kontrol kepada kedua pihak
 
@@ -198,6 +201,27 @@ Mangkal di depan minimarket, dapat order dari kenalan, atau sesekali online di G
 | Compliance reporting otomatis | Phase 3 |
 | Cloud backup wajib | Phase 2 |
 | Background discovery saat app closed | Terlalu kompleks, battery drain |
+
+### 6.3 Expanded Product Direction (Post-MVP / Bertahap)
+
+Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
+
+- **Freelance driver mode**
+  Semua user dapat memakai aplikasi sebagai customer maupun driver. Model ini mendukung orang yang sesekali membawa penumpang untuk menutup biaya bensin atau perjalanan pulang kerja.
+- **Community and office rides**
+  Booking dapat dipakai untuk nebeng teman kantor atau perjalanan komunitas dengan harga yang dapat dinegosiasikan dalam batas fairness policy produk.
+- **Multi-vehicle categories**
+  Motor, mobil, bajaj, dan angkot didukung sebagai kelas layanan berbeda. Mobil dan bajaj menggunakan model harga per orang/kursi.
+- **Waiting fairness policy**
+  Ada batas waiting gratis 5 menit setelah driver tiba. Kelipatan 5 menit berikutnya menambah biaya setara tarif per km. Sebaliknya, bila driver tidak bergerak dari titik awal setelah 5 menit accepted, customer mendapat pengurang tarif yang simetris.
+- **Safety and preference features**
+  Customer perempuan dapat memilih preferensi driver perempuan. Saat order aktif, app dapat masuk ke mode standby background dengan update lokasi periodik dan SOS.
+- **Warm service layer**
+  UI dan copywriting mendorong interaksi yang ramah, personal, dan humble: menanyakan kabar, tujuan perjalanan, mengingatkan barang bawaan, dan memastikan tidak ada yang tertinggal.
+- **Payment evolution**
+  Metode pembayaran berkembang dari cash dan transfer manual ke payment gateway aplikasi dengan pembagian biaya admin yang fair.
+- **Push and temporary chat**
+  Firebase FCM akan dipakai untuk push notification. Firebase Realtime Database/Storage dapat dipakai untuk chat sementara dan file chat agar local storage tidak terbebani berlebihan.
 
 ---
 
@@ -576,6 +600,145 @@ Mangkal di depan minimarket, dapat order dari kenalan, atau sesekali online di G
 
 ---
 
+### F-015: Driver Readiness dan Multi-Vehicle Profile
+**Deskripsi:** Semua user bisa menjadi driver, tetapi hanya user yang memenuhi syarat minimum yang boleh online sebagai driver.
+
+**Requirements:**
+- Driver dapat menyimpan lebih dari satu kendaraan
+- Jenis kendaraan minimum yang didukung roadmap: `motor`, `mobil`, `bajaj`, `angkot`
+- Data driver yang perlu disimpan lokal:
+  - nama lengkap sesuai identitas
+  - nomor identitas
+  - foto profil
+  - daftar kendaraan
+  - nomor plat kendaraan
+  - status/legalitas SIM
+  - kelengkapan helm
+  - kelengkapan jas hujan
+  - tarif per km
+  - rating
+  - review ringkas
+  - total trip
+  - account bank (bisa lebih dari satu)
+- Driver motor baru boleh online jika deklarasi helm dua tersedia
+- Driver hanya boleh online jika legalitas minimum untuk kendaraan yang aktif telah dinyatakan lengkap
+
+**Acceptance Criteria:**
+- [ ] User bisa memiliki lebih dari satu profil kendaraan
+- [ ] Driver motor tanpa helm cadangan tidak bisa `ready to online`
+- [ ] Data profil driver persisten di local storage
+
+**Prioritas:** P1
+
+---
+
+### F-016: Fair Waiting Policy
+**Deskripsi:** Sistem menerapkan aturan tunggu yang adil untuk driver dan customer.
+
+**Requirements:**
+- Setelah driver tiba di pickup, 5 menit pertama gratis
+- Setiap kelipatan 5 menit berikutnya menambah biaya tunggu setara 1x tarif per km yang berlaku
+- Jika driver tidak bergerak dari titik awal selama > 5 menit setelah order accepted, customer mendapat pengurang tarif dengan formula simetris
+- Waiting charge dan waiting deduction harus terlihat di order breakdown
+
+**Acceptance Criteria:**
+- [ ] Driver melihat waiting timer setelah status tiba di pickup
+- [ ] Customer melihat waiting charge atau waiting deduction secara transparan
+- [ ] Audit event fairness tercatat saat charge/deduction terjadi
+
+**Prioritas:** P1
+
+---
+
+### F-017: Safety Preference dan Driver Recommendation
+**Deskripsi:** Produk memberi kontrol lebih besar pada customer untuk memilih opsi yang aman dan bernilai.
+
+**Requirements:**
+- Customer perempuan dapat mengaktifkan toggle preferensi driver perempuan saat booking
+- Nilai toggle tersimpan di cache untuk booking berikutnya
+- Sistem menampilkan top recommendation driver berdasarkan kombinasi harga, kualitas layanan, kendaraan, dan kecocokan rute
+- Rating/review dipakai untuk recommendation hanya setelah source of truth cukup matang
+
+**Acceptance Criteria:**
+- [ ] Toggle preferensi driver perempuan tersedia dan persisten lokal
+- [ ] Recommendation tetap menjelaskan alasan rekomendasi secara transparan
+
+**Prioritas:** P1
+
+---
+
+### F-018: Rating Default dan Warm Interaction
+**Deskripsi:** Produk mendorong pengalaman hangat dan apresiatif tanpa membebani user.
+
+**Requirements:**
+- Secara default setiap trip selesai diberi rating 5 bintang
+- Jika customer memberi rating manual, rating manual menggantikan default
+- App menampilkan micro-copy yang ramah, humble, dan personal di titik interaksi penting
+- App mengingatkan barang bawaan dan keselamatan secara kontekstual
+
+**Acceptance Criteria:**
+- [ ] Trip tanpa input rating manual tetap menghasilkan rating 5
+- [ ] Trip dengan rating manual memakai rating manual
+- [ ] Copy utama konsisten dengan tone hangat dan sopan
+
+**Prioritas:** P1
+
+---
+
+### F-019: Rider Gear Discount
+**Deskripsi:** Customer yang membawa perlengkapan sendiri dapat memperoleh harga lebih ringan untuk layanan motor.
+
+**Requirements:**
+- Jika customer membawa helm sendiri, ada potongan Rp 500 per km
+- Jika kondisi hujan dan customer membawa jas hujan sendiri, ada tambahan potongan Rp 500 per km
+- Informasi ini harus terlihat ke driver di incoming order
+- Potongan hanya berlaku untuk kategori kendaraan yang relevan, terutama motor
+
+**Acceptance Criteria:**
+- [ ] Driver melihat status helm/jas hujan milik customer pada order yang relevan
+- [ ] Breakdown harga menampilkan gear discount secara jelas
+
+**Prioritas:** P1
+
+---
+
+### F-020: Payment Evolution
+**Deskripsi:** Sistem pembayaran berkembang bertahap dari yang paling ringan sampai yang paling terintegrasi.
+
+**Requirements:**
+- Metode pembayaran yang direncanakan:
+  - cash
+  - transfer manual
+  - payment gateway aplikasi
+- Untuk payment gateway aplikasi, biaya admin dibagi dua antara driver dan customer
+- Metode pembayaran harus dipilih sebelum trip dimulai
+
+**Acceptance Criteria:**
+- [ ] Payment method tampil di review order
+- [ ] Metode cash dan transfer manual bisa ditandai tanpa gateway integration
+
+**Prioritas:** P1
+
+---
+
+### F-021: Push Notification, Temporary Chat, dan SOS
+**Deskripsi:** Sistem menambah komunikasi dan safety layer dengan biaya serendah mungkin.
+
+**Requirements:**
+- Firebase Cloud Messaging dipakai untuk push notification dasar
+- Firebase Realtime Database/Storage dapat dipakai untuk chat sementara dan file chat sementara
+- Data chat bersifat temporary dan tidak menjadi source of truth utama
+- Saat order aktif, app dapat masuk ke mode standby/background service terbatas untuk update lat/long periodik dan SOS
+
+**Acceptance Criteria:**
+- [ ] Push notification bisa dipakai untuk order penting saat app tidak foreground
+- [ ] Temporary chat punya TTL/retention policy yang jelas
+- [ ] SOS mengirim lokasi dan keterangan bahaya minimum
+
+**Prioritas:** P2
+
+---
+
 ## 9. Non-Functional Requirements
 
 ### 9.1 Platform
@@ -606,6 +769,12 @@ Mangkal di depan minimarket, dapat order dari kenalan, atau sesekali online di G
 ### 9.6 Biaya
 - Tidak ada third-party berbayar di MVP
 - Relay server < Rp 2 juta/bulan pada beban pilot
+
+### 9.7 UX dan Visual Direction
+- Warna soft dan bersih
+- Border seminimal mungkin
+- Shadow tipis dan tidak berat
+- Nada interaksi harus humble, hangat, dan menenangkan
 
 ---
 
@@ -655,11 +824,42 @@ type UserProfile = {
   userId: string              // UUID lokal
   displayName: string
   phoneNumber?: string
+  legalFullName?: string
+  identityNumber?: string
+  profilePhotoUri?: string
   activeRoles: AppRole[]
   currentRole: AppRole
   deviceAuthEnabled: boolean
+  vehicles?: VehicleProfile[]
+  bankAccounts?: BankAccount[]
+  favoritePickupAddresses?: SavedAddress[]
+  ratingAverage?: number
+  reviewCount?: number
+  totalTrips?: number
+  hasSpareHelmet?: boolean
+  hasRaincoatSpare?: boolean
+  prefersFemaleDriver?: boolean
   createdAt: string
   updatedAt: string
+}
+
+type VehicleProfile = {
+  vehicleId: string
+  vehicleType: 'motor' | 'mobil' | 'bajaj' | 'angkot'
+  plateNumber?: string
+  perSeatPricing?: boolean
+}
+
+type BankAccount = {
+  bankName: string
+  accountNumberMasked: string
+  accountHolderName: string
+}
+
+type SavedAddress = {
+  label: string
+  latitude: number
+  longitude: number
 }
 
 // Pricing
@@ -820,12 +1020,13 @@ Setelah PRD ini, yang dibutuhkan:
 
 ## 17. Ringkasan Keputusan Produk
 
-TRIP dibangun sebagai **single cross-platform mobile app**, dual role, local-first, dengan:
+Carrier App Project dibangun sebagai **single cross-platform mobile app**, dual role, local-first, dengan:
 - pricing transparency sebagai core differentiator,
 - external handoff untuk maps/call/chat,
 - anti-abuse dasar sebagai keharusan MVP,
 - transaction log untuk monetisasi,
-- dan audit lokal sebagai fondasi kepercayaan.
+- audit lokal sebagai fondasi kepercayaan,
+- dan arah produk `Just Fair` yang memperluas fairness ke pricing, waiting, safety, dan tone interaksi.
 
 MVP sengaja tidak membangun backend berat, routing engine, payment gateway, atau chat sistem. Validasi dilakukan dahulu — lalu scale dengan evidence.
 

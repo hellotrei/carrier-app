@@ -1,12 +1,14 @@
 # SDD — Software Design Document
-## TRIP Local-First Ride Coordination Platform
+## Carrier App Project
 
 **Versi:** 1.0 (CEO-reviewed)
 **Owner:** CTO / Engineering Direction
-**Project:** TRIP
+**Project:** Carrier App Project
+**Motto:** Just Fair
+**Previous Working Name:** TRIP
 **Document Type:** Software Design Document (SDD)
 **Status:** Approved for engineering execution
-**Source Reference:** PRD — TRIP v1.0
+**Source Reference:** PRD — Carrier App Project v1.0
 
 ---
 
@@ -20,7 +22,7 @@
 
 ## 1. Ringkasan
 
-Dokumen ini menjabarkan desain perangkat lunak untuk **TRIP** — aplikasi mobile cross-platform, **satu aplikasi untuk dua peran** (customer dan mitra), dengan pendekatan **local-first, low-backend, tanpa third-party berbayar di fase awal**.
+Dokumen ini menjabarkan desain perangkat lunak untuk **Carrier App Project** — aplikasi mobile cross-platform, **satu aplikasi untuk dua peran** (customer dan mitra), dengan pendekatan **local-first, low-backend, tanpa third-party berbayar di fase awal**.
 
 SDD ini menurunkan PRD ke level implementasi: arsitektur sistem, komponen, desain storage lokal, desain audit, desain relay, contract module, state machine, strategi keamanan, dan batasan arsitektur MVP.
 
@@ -54,6 +56,8 @@ SDD ini menurunkan PRD ke level implementasi: arsitektur sistem, komponen, desai
 6. **Audit by Default** — semua event bisnis penting wajib tercatat lokal
 7. **Trust from Day One** — anti-abuse basic bukan phase 2, ini wajib ada di MVP
 8. **Revenue Visible** — transaction log untuk komisi bukan afterthought, ini bagian arsitektur
+9. **Just Fair** — aturan waiting, pricing, punishment, dan recommendation harus seimbang untuk kedua sisi
+10. **Warm Product Layer** — copywriting, reminder, dan tone UI diperlakukan sebagai bagian dari desain sistem
 
 ---
 
@@ -100,6 +104,19 @@ Relay **wajib ada** (tidak murni optional) untuk discovery dan signaling. Dua op
 - Direkomendasikan di phase 2 jika biaya relay hosted mulai membebani
 
 **Keputusan MVP:** Mulai dengan **Supabase Realtime** — zero ops overhead, free tier cukup, mudah diganti. Evaluasi ulang di 500+ daily active users.
+
+### 4.3A Firebase Boundary (Push dan Temporary Communication)
+- Firebase Cloud Messaging dipakai untuk push notification dasar
+- Firebase Realtime Database dapat dipakai untuk temporary live chat atau ephemeral coordination data yang bukan source of truth utama
+- Firebase Storage dapat dipakai untuk file chat sementara dengan cleanup policy
+- Order state, audit state, transaction state, dan auth state tetap berada di local-first core storage
+
+### 4.3B Maps Strategy (Free First)
+- Navigasi berbasis deep link latitude/longitude
+- Android memprioritaskan Google Maps jika tersedia
+- iOS memprioritaskan Apple Maps sebagai default fallback platform
+- Tidak menggunakan routing/geocoding API berbayar di fase awal
+- Label alamat hanya pembantu UX; koordinat tetap source of truth untuk navigasi
 
 ### 4.4 Audit Format
 - **MessagePack** untuk serialisasi compact
@@ -374,15 +391,54 @@ getTransactionSummary(period)       ← BARU
 type UserProfile = {
   userId: string               // UUID, generated locally
   displayName: string
+  legalFullName?: string
+  identityNumberMasked?: string
+  profilePhotoUri?: string
   phoneMasked?: string
   phoneHash?: string
   activeRoles: AppRole[]
   currentRole: AppRole
   deviceAuthEnabled: boolean
+  vehicles?: VehicleProfile[]
+  bankAccounts?: BankAccount[]
+  favoritePickupAddresses?: SavedAddress[]
+  ratingAverage?: number
+  reviewCount?: number
+  totalTrips?: number
+  hasSpareHelmet?: boolean
+  hasRaincoatSpare?: boolean
+  prefersFemaleDriver?: boolean
   identityStatus: 'draft' | 'active' | 'blocked'
   profileValidatedAt?: string
   createdAt: string            // ISO 8601
   updatedAt: string
+}
+```
+
+### 10.1A Profile Extension Types
+```ts
+type VehicleProfile = {
+  vehicleId: string
+  vehicleType: 'motor' | 'mobil' | 'bajaj' | 'angkot'
+  plateNumber?: string
+  driverLicenseClass?: string
+  seatCapacity?: number
+  pricingMode: 'per_vehicle' | 'per_seat'
+  isActiveForBooking: boolean
+}
+
+type BankAccount = {
+  bankAccountId: string
+  bankName: string
+  accountHolderName: string
+  accountNumberMasked: string
+}
+
+type SavedAddress = {
+  savedAddressId: string
+  label: string
+  latitude: number
+  longitude: number
 }
 ```
 
@@ -647,6 +703,20 @@ CREATE TABLE app_settings (
 - `phoneE164` disimpan di Secure Storage
 - SQLite **tidak** menyimpan nomor telepon penuh
 - `phoneHash` dipakai untuk referensi aman dan integritas profil, bukan untuk menggantikan nomor telepon asli saat handoff
+
+### 12.2B Expanded Local Profile Storage
+- Profil lokal dapat diperluas untuk menyimpan:
+  - nama legal
+  - nomor identitas dalam bentuk masked
+  - foto profil URI
+  - daftar kendaraan
+  - plat kendaraan
+  - kelas/status SIM
+  - kelengkapan helm dan jas hujan
+  - rating agregat, review count, total trip
+  - daftar rekening bank
+  - alamat jemput favorit
+- Data sensitif dengan nilai raw tinggi tetap memakai masking/hash atau dipindah ke secure storage
 
 ### 12.3 Migrations
 - Semua schema changes melalui versioned migration
@@ -1002,6 +1072,31 @@ function resolveAppliedPrice(
 }
 ```
 
+### 16.1A Multi-Vehicle Pricing Direction
+- `motor` default memakai pricing `per_vehicle`
+- `mobil`, `bajaj`, dan `angkot` boleh memakai pricing `per_seat`
+- Untuk `per_seat`, tarif terdiri dari:
+  - `basePricePerKm` untuk penumpang pertama
+  - `additionalPassengerPricePerKm` untuk setiap penumpang tambahan
+- Discovery dan review order wajib menjelaskan mode harga ini secara eksplisit
+
+### 16.1B Driver Readiness Rules
+- Semua user boleh menjadi driver, tetapi baru `ready to online` jika kendaraan aktif dan legalitas minimum terisi
+- Jika kendaraan aktif adalah `motor`, `hasSpareHelmet` wajib `true`
+- Jika readiness belum lolos, user tetap bisa memakai app sebagai customer
+
+### 16.1C Waiting Fairness Policy
+- Setelah driver tiba di pickup, 5 menit pertama gratis
+- Setiap kelipatan 5 menit berikutnya menghasilkan waiting charge sebesar `pricePerKmApplied`
+- Jika driver tidak bergerak secara material dari titik awal selama lebih dari 5 menit setelah `Accepted`, customer mendapat deduction dengan formula simetris
+- Charge dan deduction wajib tampil transparan di breakdown akhir
+
+### 16.1D Gear Discount Policy
+- Untuk layanan motor:
+  - customer membawa helm sendiri → potongan `Rp 500/km`
+  - saat hujan dan customer membawa jas hujan sendiri → tambahan potongan `Rp 500/km`
+- Status perlengkapan customer harus terlihat ke driver di incoming order
+
 ### 16.2 Tampilan
 - Discovery list: tampilkan `visiblePricePerKm` masing-masing mitra
 - Review order: tampilkan jarak estimasi + tarif terpakai + estimasi total
@@ -1031,6 +1126,19 @@ function calculateCommission(baseTripEstimatedPrice: number): number {
 - `pickupSurchargeAmount` sepenuhnya milik mitra dan tidak dihitung sebagai basis komisi platform
 
 > **Catatan CEO:** Ini memang manual dan tidak scalable jangka panjang. Tapi ini cukup untuk validasi dan mulai membangun data transaksi nyata sebelum investasi ke payment integration.
+
+### 17.4 Payment Method Evolution
+- Metode pembayaran yang diakomodasi desain:
+  - `cash`
+  - `manual_transfer`
+  - `gateway`
+- MVP tetap local-first dan tidak wajib menyelesaikan settlement otomatis
+- Jika `gateway` dipakai di fase lanjut, biaya admin dibagi dua antara customer dan driver
+
+### 17.5 Default Rating Policy
+- Setiap trip selesai akan menghasilkan rating default `5`
+- Jika customer mengirim rating manual, rating manual menggantikan default
+- Rating default dimaksudkan sebagai baseline apresiasi, bukan mekanisme manipulasi reputasi
 
 ---
 
@@ -1191,6 +1299,13 @@ Invariants:
 - `restricted` tidak boleh membuat order baru
 - `suspended` tidak boleh menggunakan fitur transaksi utama sama sekali
 
+### 18.10 Safety Preference dan Background Standby
+- Customer perempuan dapat menyimpan preferensi `prefersFemaleDriver`
+- Preference ini adalah filter pemesanan, bukan jaminan absolut bila supply tidak tersedia
+- Background standby hanya boleh aktif saat ada order aktif, bukan untuk discovery terus-menerus
+- Saat order aktif, app boleh melakukan update lokasi periodik minimum untuk kebutuhan sinkronisasi dan SOS
+- SOS minimal membawa `actorUserId`, `orderId` bila ada, lokasi terakhir, dan keterangan bahaya singkat
+
 ---
 
 ## 19. Desain Offline dan Recovery
@@ -1264,6 +1379,13 @@ type RootState = {
 - **Zustand** atau **Redux Toolkit** — keduanya valid
 - Hindari Context API murni untuk state yang sering update (performa)
 - Discovery snapshot boleh di-cache lokal, tapi active order harus di-persist SQLite
+
+### 20.3 UX Direction
+- Warna lembut dan bersih
+- Border minimal
+- Shadow tipis
+- Copy utama harus hangat, humble, dan sopan
+- Reminder seperti "jangan lupa barang bawaan" dan "pastikan tidak ada yang tertinggal" diperlakukan sebagai bagian experience, bukan teks tambahan acak
 
 ---
 
@@ -1520,6 +1642,10 @@ anti_abuse_enabled             ← default true, TIDAK BOLEH false di prod
 - Rating sederhana (1-5 bintang, lokal dulu)
 - Export/import audit lebih aman
 - Sync recovery lebih robust
+- Firebase FCM untuk push notification
+- Waiting fairness automation
+- Multi-vehicle profile
+- Women preference toggle
 
 ### Fase 3 — Expansion
 - Payment integration (QRIS settlement)
@@ -1528,6 +1654,9 @@ anti_abuse_enabled             ← default true, TIDAK BOLEH false di prod
 - Optional cloud backup user-owned
 - Model operator/franchise daerah
 - Custom relay (self-hosted, bukan Supabase)
+- Temporary live chat berbasis Firebase
+- SOS dan active-order background safety mode
+- Driver recommendation berbasis value score yang lebih matang
 
 ---
 
@@ -1574,11 +1703,12 @@ anti_abuse_enabled             ← default true, TIDAK BOLEH false di prod
 
 ## 29. Ringkasan Keputusan Teknis
 
-TRIP dibangun sebagai **single cross-platform mobile app** dengan:
+Carrier App Project dibangun sebagai **single cross-platform mobile app** dengan:
 
 - **React Native + TypeScript** sebagai stack utama
 - **SQLite** sebagai local persistence utama
 - **Supabase Realtime** sebagai thin coordination relay
+- **Firebase FCM** untuk push notification dan boundary jelas untuk temporary communication
 - **MessagePack** sebagai format audit compact
 - **Anti-abuse validation** sebagai komponen wajib MVP (bukan phase 2)
 - **Transaction log** sebagai fondasi monetisasi

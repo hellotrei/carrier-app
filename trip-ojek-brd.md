@@ -1,8 +1,10 @@
-# BRD — TRIP Local-First Ride Coordination Platform
+# BRD — Carrier App Project
 
 **Versi:** 1.0 (CEO-reviewed)
 **Owner:** CEO / CTO / Product Direction
-**Project:** TRIP
+**Project:** Carrier App Project
+**Motto:** Just Fair
+**Previous Working Name:** TRIP
 **Document Type:** Business Requirements Document (BRD)
 **Status:** Approved for product and engineering execution
 
@@ -18,15 +20,18 @@
 
 ## 1. Executive Summary
 
-TRIP adalah platform koordinasi transportasi berbasis mobile yang mempertemukan **customer** (penumpang) dan **mitra** (pengemudi ojek) dalam **satu aplikasi** dengan pendekatan **local-first, transparan, dan biaya operasional minimal**.
+Carrier App Project adalah platform koordinasi transportasi berbasis mobile yang mempertemukan **customer** (penumpang) dan **mitra** (pengemudi) dalam **satu aplikasi** dengan pendekatan **local-first, transparan, dan biaya operasional minimal**.
 
-TRIP bukan replika mini Gojek/Grab. TRIP adalah **kategori baru**: ride coordination platform yang dirancang untuk area dan komunitas yang kurang terlayani oleh platform besar, dengan proposisi nilai yang berbeda:
+Carrier App Project bukan replika mini Gojek/Grab. Produk ini adalah **kategori baru**: ride coordination platform yang dirancang untuk area dan komunitas yang kurang terlayani oleh platform besar, dengan proposisi nilai yang berbeda:
 
 - **Untuk mitra:** kontrol lebih besar atas tarif, transparansi penuh atas order, beban operasional ringan
 - **Untuk customer:** transparansi harga sejak awal, koordinasi langsung, proses booking sederhana
 - **Untuk operator/pengembang:** infrastruktur ringan, biaya rendah, cepat diluncurkan
+- **Untuk ekosistem lokal:** membuka model freelance driver, nebeng pulang kerja, dan perjalanan komunitas yang fair
 
-**Fase awal TRIP berfokus pada validasi produk-market fit** di 1-2 area pilot yang terseleksi, sebelum ekspansi lebih luas.
+**Motto produk:** `Just Fair` — adil untuk driver, customer, dan pengembang.
+
+**Fase awal Carrier App Project berfokus pada validasi produk-market fit** di 1-2 area pilot yang terseleksi, sebelum ekspansi lebih luas.
 
 ---
 
@@ -83,9 +88,9 @@ Platform besar (Gojek, Grab) beroperasi secara ekonomis hanya di kota besar deng
 
 > **"Jadikan koordinasi transportasi sesederhana ngobrol dengan tetangga yang tahu jalan."**
 
-TRIP membangun ekosistem transportasi berbasis kepercayaan dan transparansi, di mana mitra dan customer bertemu secara langsung dengan aturan yang jelas, tanpa overhead platform yang berlebihan.
+Carrier App Project membangun ekosistem transportasi berbasis kepercayaan dan transparansi, di mana driver dan customer bertemu secara langsung dengan aturan yang jelas, tanpa overhead platform yang berlebihan.
 
-**Visi jangka panjang (3 tahun):** TRIP menjadi infrastruktur ride coordination untuk 50+ kota tier 2-3 di Indonesia, dioperasikan oleh operator lokal dengan model white-label atau franchise ringan, dengan total mitra aktif yang memberi pendapatan sustainable bagi ekosistem.
+**Visi jangka panjang (3 tahun):** Carrier App Project menjadi infrastruktur ride coordination untuk 50+ kota tier 2-3 di Indonesia, dioperasikan oleh operator lokal dengan model white-label atau franchise ringan, dengan total mitra aktif yang memberi pendapatan sustainable bagi ekosistem.
 
 ---
 
@@ -220,6 +225,15 @@ Akuisisi 50-100 mitra di 1 area pilot melalui:
 7. **Build for the Field, Not for the Demo**
    Koneksi 3G, ponsel mid-range, baterai 20% — produk harus bekerja dalam kondisi nyata di lapangan, bukan hanya di kantor.
 
+8. **Just Fair**
+   Setiap aturan produk harus adil untuk tiga pihak sekaligus: driver, customer, dan pengembang. Tidak boleh ada biaya, punishment, atau fitur yang berat sebelah.
+
+9. **No Work, No Pay**
+   Driver tidak boleh menerima penalti hanya karena sedang offline. Kehadiran online adalah pilihan sadar, bukan kewajiban permanen.
+
+10. **Warmth Wins**
+   Produk harus terasa ramah, humble, dan hangat. Interaksi tidak boleh terasa dingin seperti dispatch machine semata.
+
 ---
 
 ## 9. Scope
@@ -247,6 +261,27 @@ Akuisisi 50-100 mitra di 1 area pilot melalui:
 **Monetisasi Dasar:**
 - Pencatatan nilai transaksi per order
 - Log komisi yang harusnya dipungut (untuk rekap manual di fase awal)
+
+### 9.3 Strategic Expansion Direction
+
+Fase setelah MVP akan mematangkan Carrier App Project ke arah berikut:
+
+- **Freelance driver economy**
+  Pengguna biasa bisa beralih menjadi driver ketika memang siap membawa penumpang, misalnya saat pulang kerja untuk menutup biaya bensin.
+- **Community ride coordination**
+  Skenario nebeng teman kantor atau perjalanan komunitas dengan harga yang bisa dinegosiasi tetap didukung dalam koridor fairness policy produk.
+- **Multi-vehicle service**
+  Motor, mobil, bajaj, dan angkot didukung sebagai kategori kendaraan yang berbeda. Motor bersifat personal ride, sedangkan mobil/bajaj/angkot punya model harga per kursi/orang.
+- **Seat-based pricing**
+  Untuk mobil dan bajaj, driver dapat menetapkan tarif dasar per km untuk 1 penumpang pertama dan tarif tambahan per penumpang per km.
+- **Fair waiting**
+  Setelah driver tiba di pickup, 5 menit pertama gratis. Setiap kelipatan 5 menit berikutnya dapat menambah waiting charge. Sebaliknya, jika driver tidak bergerak dari titik awal setelah accepted, customer mendapat pengurang tarif dengan formula simetris.
+- **Safety preferences**
+  Customer perempuan dapat mengaktifkan preferensi driver perempuan untuk setiap pemesanan.
+- **Friendly service layer**
+  Aplikasi aktif mengingatkan barang bawaan, kondisi perjalanan, dan percakapan kecil yang sopan untuk membangun rasa aman dan nyaman.
+- **Safety active-order mode**
+  Saat order aktif, aplikasi dapat masuk ke mode standby background terbatas untuk update lokasi periodik dan SOS.
 
 ### 9.2 Out of Scope — MVP
 
@@ -384,6 +419,16 @@ Ini harus dikomunikasikan sebagai **nilai lebih** kepada pengguna dan regulator.
 | BR-008 | Order hanya dianggap selesai jika customer dan mitra mengkonfirmasi |
 | BR-009 | Satu order aktif per pasangan customer-mitra pada satu waktu |
 | BR-010 | Data mitra dan customer tidak dijual atau dibagikan ke pihak ketiga |
+| BR-011 | Semua user dapat mengaktifkan mode customer dan driver dalam satu aplikasi |
+| BR-012 | Tidak ada penalti hanya karena driver offline; punishment hanya boleh lahir dari perilaku bermasalah yang terverifikasi |
+| BR-013 | Driver baru boleh online jika data kendaraan, legalitas, dan kelengkapan minimum untuk jenis kendaraannya sudah valid |
+| BR-014 | Motor wajib punya helm tambahan; mobil/bajaj/angkot wajib mendukung model kapasitas penumpang yang jelas |
+| BR-015 | Waiting policy harus simetris: customer bisa dikenai biaya tunggu setelah batas gratis, dan customer juga berhak mendapat pengurang jika driver terlalu lama diam setelah accept |
+| BR-016 | Untuk mobil/bajaj, tarif dapat terdiri dari tarif dasar per km dan tarif tambahan per penumpang per km |
+| BR-017 | Customer perempuan dapat mengaktifkan preferensi driver perempuan sebagai toggle pemesanan |
+| BR-018 | Secara default sistem memberi rating 5 bintang saat trip selesai kecuali customer memberi rating manual |
+| BR-019 | Pembayaran yang direncanakan mencakup cash, transfer manual, dan payment gateway dengan biaya admin dibagi dua |
+| BR-020 | Maps integration harus memprioritaskan Google Maps dan Apple Maps berbasis latitude/longitude tanpa API berbayar |
 
 ---
 
@@ -459,7 +504,9 @@ Tambahan:
 - export audit,
 - riwayat order yang lebih lengkap,
 - reputasi sederhana (bintang 1-5),
-- UX improvement dari feedback phase 1.
+- UX improvement dari feedback phase 1,
+- onboarding kelayakan driver dan validasi kendaraan,
+- top recommendation driver yang lebih bernilai dari sisi harga dan layanan.
 
 ### Phase 3 — Scale Decision (bulan 7-12)
 **Fokus:** Apakah model ini bisa direplikasi?
@@ -468,7 +515,11 @@ Evaluasi:
 - relay service permanen,
 - integrasi payment QRIS,
 - admin dashboard sederhana untuk operator,
-- model franchise/operator daerah.
+- model franchise/operator daerah,
+- waiting fairness automation,
+- women preference toggle,
+- background safety mode + SOS,
+- Firebase-backed push notification dan temporary chat.
 
 ---
 
@@ -484,7 +535,7 @@ Evaluasi:
 
 ## 19. Final Decision
 
-TRIP akan dibangun sebagai **ride coordination platform** — bukan platform ride-hailing tradisional. Dengan pendekatan **single app, dual role, local-first, transparent pricing**, dan **lightweight infrastructure**, TRIP punya peluang nyata untuk menciptakan ekosistem transportasi yang lebih fair, lebih murah dioperasikan, dan lebih dapat dipercaya oleh kedua sisi pasar.
+Carrier App Project akan dibangun sebagai **ride coordination platform** — bukan platform ride-hailing tradisional. Dengan pendekatan **single app, dual role, local-first, transparent pricing**, dan **lightweight infrastructure**, produk ini punya peluang nyata untuk menciptakan ekosistem transportasi yang lebih fair, lebih murah dioperasikan, dan lebih dapat dipercaya oleh kedua sisi pasar.
 
 **Kunci keberhasilan bukan pada teknologinya, tetapi pada eksekusi go-to-market dan pembangunan trust di area pilot.**
 

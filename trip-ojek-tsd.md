@@ -1,12 +1,14 @@
 # TSD — Technical Specification Document
-## TRIP Local-First Ride Coordination Platform
+## Carrier App Project
 
 **Versi:** 1.0 (CEO-reviewed)
 **Owner:** CTO / Engineering Direction
-**Project:** TRIP
+**Project:** Carrier App Project
+**Motto:** Just Fair
+**Previous Working Name:** TRIP
 **Document Type:** Technical Specification Document (TSD)
 **Status:** Approved for engineering execution
-**Source Reference:** SDD — TRIP v1.0
+**Source Reference:** SDD — Carrier App Project v1.0
 
 ---
 
@@ -20,7 +22,7 @@
 
 ## 1. Ringkasan
 
-TSD ini menjabarkan spesifikasi implementasi teknis untuk **TRIP** — single app dual role, local-first, thin relay. Dokumen ini menurunkan SDD ke level yang langsung bisa dieksekusi oleh engineer: module contracts, payload schemas, SQLite schema lengkap, audit binary format, lifecycle specs, error model, dan testing requirements.
+TSD ini menjabarkan spesifikasi implementasi teknis untuk **Carrier App Project** — single app dual role, local-first, thin relay. Dokumen ini menurunkan SDD ke level yang langsung bisa dieksekusi oleh engineer: module contracts, payload schemas, SQLite schema lengkap, audit binary format, lifecycle specs, error model, dan testing requirements.
 
 **Prinsip utama yang tidak boleh dilanggar:**
 1. Source of truth data user ada di local storage device
@@ -75,6 +77,8 @@ Relay Service:      Supabase (hosted)
                     - Realtime channels untuk order signaling
                     - PostgreSQL sebagai backing store (ephemeral data)
 Supabase SDK:       @supabase/supabase-js
+Push Notification:  Firebase Cloud Messaging
+Temp Chat/Files:    Firebase Realtime Database / Firebase Storage (opsional, non-source-of-truth)
 ```
 
 ### 3.3 Integration Libraries
@@ -85,6 +89,8 @@ Biometrics:         react-native-biometrics
 Maps:               custom deep link builder (tidak perlu library)
 Dialer:             Linking.openURL('tel:...')
 WhatsApp:           Linking.openURL('whatsapp://...')
+Firebase:           @react-native-firebase/app
+                    @react-native-firebase/messaging
 ```
 
 ### 3.4 Dependency Principles
@@ -289,6 +295,8 @@ export type BookingIntent = 'self' | 'for_other'
 
 export type BookingMode = 'manual' | 'auto'
 
+export type PaymentMethod = 'cash' | 'manual_transfer' | 'gateway'
+
 export type OrderRejectReasonCode =
   | 'busy'
   | 'pickup_too_far'
@@ -301,15 +309,53 @@ export type OrderRejectReasonCode =
 export type UserProfile = {
   userId: string
   displayName: string
+  legalFullName?: string
+  identityNumberMasked?: string
+  profilePhotoUri?: string
   phoneMasked?: string
   phoneHash?: string
   activeRoles: AppRole[]
   currentRole: AppRole
   deviceAuthEnabled: boolean
+  vehicles?: VehicleProfile[]
+  bankAccounts?: BankAccount[]
+  favoritePickupAddresses?: SavedAddress[]
+  ratingAverage?: number
+  reviewCount?: number
+  totalTrips?: number
+  hasSpareHelmet?: boolean
+  hasRaincoatSpare?: boolean
+  prefersFemaleDriver?: boolean
   identityStatus: IdentityStatus
   profileValidatedAt?: string
   createdAt: string
   updatedAt: string
+}
+
+export type VehicleProfile = {
+  vehicleId: string
+  vehicleType: 'motor' | 'mobil' | 'bajaj' | 'angkot'
+  plateNumber?: string
+  driverLicenseClass?: string
+  seatCapacity?: number
+  pricingMode: 'per_vehicle' | 'per_seat'
+  basePricePerKm?: number
+  additionalPassengerPricePerKm?: number
+  isActiveForBooking: boolean
+}
+
+export type BankAccount = {
+  bankAccountId: string
+  bankName: string
+  accountHolderName: string
+  accountNumberMasked: string
+}
+
+export type SavedAddress = {
+  savedAddressId: string
+  label: string
+  latitude: number
+  longitude: number
 }
 
 export type PricingProfile = {
@@ -366,6 +412,7 @@ export type Order = {
   baseTripEstimatedPrice: number
   pickupSurchargeAmount: number
   estimatedPrice: number
+  paymentMethod?: PaymentMethod
   status: OrderStatus
   cancelReason?: string
   createdAt: string
@@ -762,6 +809,9 @@ const APP_SETTINGS_KEYS = {
   LAST_PRESENCE_PUBLISH_AT: 'last_presence_publish_at', // ISO string
   RELAY_ENABLED: 'relay_enabled',               // '0' | '1'
   ANTI_ABUSE_ENABLED: 'anti_abuse_enabled',     // '0' | '1' — default '1'
+  FEMALE_DRIVER_PREFERENCE_ENABLED: 'female_driver_preference_enabled', // '0' | '1'
+  ACTIVE_VEHICLE_ID: 'active_vehicle_id',       // string | null
+  ACTIVE_PAYMENT_METHOD: 'active_payment_method', // cash | manual_transfer | gateway
 }
 ```
 
@@ -772,6 +822,7 @@ const SECURE_STORAGE_KEYS = {
   DEVICE_BINDING_ID: 'trip.device_binding_id',
   AUDIT_EXPORT_GUARD_ENABLED: 'trip.audit_export_guard_enabled',
   LAST_AUTHENTICATED_AT: 'trip.last_authenticated_at',
+  USER_IDENTITY_NUMBER_RAW: 'trip.user_identity_number_raw',
 }
 ```
 
@@ -781,6 +832,11 @@ const SECURE_STORAGE_KEYS = {
 - `deviceBindingId` dibuat saat first launch dan wajib ada sebelum user boleh online
 - `identity_status = active` hanya boleh diberikan setelah display name dan phone number lolos normalisasi dan validasi
 - `identity_status = blocked` mencegah publish presence dan submit order baru sampai data diperbaiki
+
+Driver readiness tambahan:
+- jika role yang hendak online adalah `mitra`, harus ada `activeVehicle`
+- jika `activeVehicle.vehicleType = motor`, `hasSpareHelmet` wajib `true`
+- vehicle pricing mode dan legalitas minimum harus tersedia sebelum publish presence
 
 ### 10.6 Online Readiness Contract
 ```ts
@@ -806,6 +862,24 @@ async function validateOnlineReadiness(userId: string, role: AppRole): Promise<R
     if (!pricing?.partnerPricePerKm) {
       return err({ code: 'INVALID_PRICE_PER_KM' })
     }
+  }
+
+  return ok(undefined)
+}
+```
+
+### 10.6A Driver Readiness Extension
+```ts
+async function validateDriverReadiness(profile: UserProfile): Promise<Result<void>> {
+  const activeVehicle = profile.vehicles?.find(vehicle => vehicle.isActiveForBooking)
+  if (!activeVehicle) return err({ code: 'PROFILE_NOT_READY', context: { reason: 'active_vehicle_missing' } })
+
+  if (activeVehicle.vehicleType === 'motor' && !profile.hasSpareHelmet) {
+    return err({ code: 'PROFILE_NOT_READY', context: { reason: 'spare_helmet_required' } })
+  }
+
+  if (!activeVehicle.pricingMode) {
+    return err({ code: 'PROFILE_NOT_READY', context: { reason: 'pricing_mode_missing' } })
   }
 
   return ok(undefined)
@@ -1503,6 +1577,10 @@ export const PRICING_CONSTRAINTS = {
   maxPartnerPricePerKm: 8000,     // Rp 8.000 (configurable)
   roundingUnit: 500,              // Pembulatan ke Rp 500 terdekat
   freePickupRadiusKm: 3,          // Jarak penjemputan gratis sampai 3 km
+  freeWaitingSeconds: 300,        // 5 menit gratis
+  waitingStepSeconds: 300,        // kelipatan 5 menit
+  helmetDiscountPerKm: 500,
+  rainGearDiscountPerKm: 500,
   currency: 'IDR' as const,
 }
 ```
@@ -1569,6 +1647,65 @@ export function resolveAppliedPrice(
 }
 ```
 
+### 15.3A Multi-Vehicle and Per-Seat Pricing
+```ts
+export function calculateSeatBasedEstimatedPrice(params: {
+  distanceKm: number
+  basePricePerKm: number
+  additionalPassengerPricePerKm: number
+  passengerCount: number
+}): number {
+  const additionalPassengers = Math.max(0, params.passengerCount - 1)
+  const effectivePricePerKm =
+    params.basePricePerKm + (additionalPassengers * params.additionalPassengerPricePerKm)
+
+  return calculateEstimatedPrice(params.distanceKm, effectivePricePerKm)
+}
+```
+
+Rules:
+- `motor` default `pricingMode = per_vehicle`
+- `mobil`, `bajaj`, `angkot` boleh `pricingMode = per_seat`
+- Untuk `per_seat`, passenger count wajib ada di booking draft
+
+### 15.3B Waiting Fairness Calculation
+```ts
+export function calculateWaitingCharge(waitingSeconds: number, pricePerKm: number): number {
+  if (waitingSeconds <= PRICING_CONSTRAINTS.freeWaitingSeconds) return 0
+
+  const chargeableSeconds = waitingSeconds - PRICING_CONSTRAINTS.freeWaitingSeconds
+  const steps = Math.ceil(chargeableSeconds / PRICING_CONSTRAINTS.waitingStepSeconds)
+  return steps * pricePerKm
+}
+
+export function calculateDriverDelayDeduction(idleSecondsAfterAccept: number, pricePerKm: number): number {
+  if (idleSecondsAfterAccept <= PRICING_CONSTRAINTS.freeWaitingSeconds) return 0
+
+  const chargeableSeconds = idleSecondsAfterAccept - PRICING_CONSTRAINTS.freeWaitingSeconds
+  const steps = Math.ceil(chargeableSeconds / PRICING_CONSTRAINTS.waitingStepSeconds)
+  return steps * pricePerKm
+}
+```
+
+### 15.3C Rider Gear Discount
+```ts
+export function calculateRiderGearDiscount(params: {
+  vehicleType: VehicleProfile['vehicleType']
+  bringsOwnHelmet: boolean
+  bringsOwnRaincoat: boolean
+  isRaining: boolean
+  distanceKm: number
+}): number {
+  if (params.vehicleType !== 'motor') return 0
+
+  let discountPerKm = 0
+  if (params.bringsOwnHelmet) discountPerKm += PRICING_CONSTRAINTS.helmetDiscountPerKm
+  if (params.isRaining && params.bringsOwnRaincoat) discountPerKm += PRICING_CONSTRAINTS.rainGearDiscountPerKm
+
+  return Math.round(params.distanceKm * discountPerKm)
+}
+```
+
 ---
 
 ## 16. Transaction Log Specification
@@ -1618,6 +1755,20 @@ async function recordCompletedTrip(order: Order): Promise<Result<void>> {
   }))
   
   return ok(undefined)
+}
+```
+
+### 16.3 Payment Method Boundary
+Rules:
+- `cash` dan `manual_transfer` dapat dipakai tanpa backend settlement
+- `gateway` adalah fase lanjut dan harus diproteksi feature flag
+- Jika `gateway` aktif, biaya admin dibagi dua dan breakdown wajib terlihat di review order
+
+### 16.4 Default Rating Completion Policy
+```ts
+export function resolveCompletedTripRating(manualRating?: number): number {
+  if (!manualRating) return 5
+  return Math.max(1, Math.min(5, Math.round(manualRating)))
 }
 ```
 
@@ -1678,6 +1829,29 @@ async function openMaps(params: {
   
   await Linking.openURL(url)
   await appendAuditEvent(buildEvent('HANDOFF_MAPS_OPENED', { dest }))
+}
+```
+
+Rules:
+- Gunakan koordinat `latitude,longitude` sebagai input utama
+- Android: coba Google Maps terlebih dahulu
+- iOS: fallback ke Apple Maps jika Google Maps tidak tersedia
+- Jangan bergantung pada geocoding API berbayar untuk flow inti
+
+### 18.1A Apple Maps Fallback
+```ts
+function buildAppleMapsUrl(params: {
+  origin?: LocationPoint
+  destination: LocationPoint
+}): string {
+  const dest = `${params.destination.latitude},${params.destination.longitude}`
+  const origin = params.origin
+    ? `${params.origin.latitude},${params.origin.longitude}`
+    : undefined
+
+  return origin
+    ? `http://maps.apple.com/?saddr=${origin}&daddr=${dest}&dirflg=d`
+    : `http://maps.apple.com/?daddr=${dest}&dirflg=d`
 }
 ```
 
@@ -2123,6 +2297,11 @@ const FEATURE_FLAGS = {
   whatsapp_handoff_enabled: true,
   transaction_log_enabled: true,
   anti_abuse_enabled: true,            // TIDAK BOLEH false di prod
+  firebase_push_enabled: true,
+  temporary_chat_enabled: false,
+  women_preference_enabled: false,
+  active_order_background_tracking_enabled: false,
+  sos_enabled: false,
 }
 ```
 
@@ -2195,10 +2374,11 @@ const FEATURE_FLAGS = {
 
 ## 27. Keputusan Teknis Final
 
-TRIP diimplementasikan sebagai **single cross-platform React Native app dengan TypeScript**, dengan:
+Carrier App Project diimplementasikan sebagai **single cross-platform React Native app dengan TypeScript**, dengan:
 
 - **SQLite** (op-sqlite) sebagai local persistence utama
 - **Supabase Realtime** sebagai thin relay untuk presence dan order signaling
+- **Firebase FCM** sebagai push layer dan Firebase temp store untuk komunikasi sementara yang non-kritikal
 - **MessagePack** sebagai format audit compact dengan binary record format
 - **Zustand** sebagai state management
 - **Anti-abuse validation** sebagai wajib MVP (bukan opsional)
