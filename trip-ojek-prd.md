@@ -686,12 +686,23 @@ Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
 **Requirements:**
 - Customer perempuan dapat mengaktifkan toggle preferensi driver perempuan saat booking
 - Nilai toggle tersimpan di cache untuk booking berikutnya
-- Sistem menampilkan top recommendation driver berdasarkan kombinasi harga, kualitas layanan, kendaraan, dan kecocokan rute
+- Preferensi ini bersifat opt-in dan tidak aktif secara default
+- Jika tidak ada driver perempuan eligible, sistem harus jujur memberi tahu bahwa supply tidak tersedia; tidak boleh diam-diam fallback tanpa penjelasan
+- Sistem menampilkan top recommendation driver berdasarkan kombinasi yang transparan:
+  - freshness snapshot
+  - jarak driver ke pickup
+  - total estimasi biaya customer
+  - kecocokan service type / kendaraan
+  - trust/readiness status
+  - preferensi driver perempuan jika aktif
 - Rating/review dipakai untuk recommendation hanya setelah source of truth cukup matang
+- Recommendation tidak boleh menyembunyikan opsi lain; customer tetap bisa melihat daftar kandidat yang lebih lengkap
 
 **Acceptance Criteria:**
 - [ ] Toggle preferensi driver perempuan tersedia dan persisten lokal
-- [ ] Recommendation tetap menjelaskan alasan rekomendasi secara transparan
+- [ ] Jika supply driver perempuan tidak ada, user mendapat pesan yang jelas
+- [ ] Recommendation menjelaskan alasan rekomendasi secara transparan
+- [ ] Customer tetap bisa melihat kandidat lain di luar top recommendation
 
 **Prioritas:** P1
 
@@ -924,6 +935,7 @@ type UserProfile = {
   identityNumber?: string
   profilePhotoUri?: string
   driverReadinessStatus?: 'draft' | 'declared' | 'minimum_valid' | 'flagged' | 'blocked'
+  genderDeclaration?: 'female' | 'male' | 'unspecified'
   activeRoles: AppRole[]
   currentRole: AppRole
   deviceAuthEnabled: boolean

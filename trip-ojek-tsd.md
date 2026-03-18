@@ -313,6 +313,7 @@ export type UserProfile = {
   identityNumberMasked?: string
   profilePhotoUri?: string
   driverReadinessStatus?: 'draft' | 'declared' | 'minimum_valid' | 'flagged' | 'blocked'
+  genderDeclaration?: 'female' | 'male' | 'unspecified'
   phoneMasked?: string
   phoneHash?: string
   activeRoles: AppRole[]
@@ -1375,6 +1376,36 @@ Rules:
 - Jika ingin retry kandidat berikutnya setelah reject/timeout, lakukan **sequential retry** dengan attempt baru yang masih membawa `bookingSessionId` yang sama
 - Rating/review publik dan kualitas kendaraan **tidak** dipakai untuk ranking MVP karena source of truth belum cukup kuat
 - Ranking auto booking harus memperhitungkan pickup surcharge agar kandidat yang dipilih tetap masuk akal dari sisi total biaya customer
+
+### 13.2C.1 Safety Preference Filter dan Recommendation Contract
+```ts
+function filterCandidatesBySafetyPreference(params: {
+  candidates: UserProfile[]
+  prefersFemaleDriver: boolean
+}): UserProfile[] {
+  if (!params.prefersFemaleDriver) return params.candidates
+  return params.candidates.filter(candidate => candidate.genderDeclaration === 'female')
+}
+
+function buildRecommendationReason(params: {
+  matchedFemalePreference: boolean
+  cheaperTotal: boolean
+  closerPickup: boolean
+}): string[] {
+  const reasons: string[] = []
+  if (params.matchedFemalePreference) reasons.push('sesuai preferensi driver perempuan')
+  if (params.closerPickup) reasons.push('lebih dekat ke pickup')
+  if (params.cheaperTotal) reasons.push('estimasi total lebih ringan')
+  return reasons
+}
+```
+
+Rules:
+- `prefersFemaleDriver` default `false`
+- `genderDeclaration` driver pada MVP bersifat deklaratif
+- Jika preference aktif dan hasil filter kosong, UI harus mengembalikan state `no_matching_driver_for_preference`
+- Recommendation tidak boleh menjadi black box; minimal satu alasan rekomendasi harus ditampilkan ke customer
+- Recommendation tidak boleh menghilangkan akses ke daftar kandidat lain yang masih eligible bila preference tidak aktif
 
 ### 13.2A Booking Validation dan Freeze Contract
 ```ts

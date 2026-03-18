@@ -395,6 +395,7 @@ type UserProfile = {
   identityNumberMasked?: string
   profilePhotoUri?: string
   driverReadinessStatus?: 'draft' | 'declared' | 'minimum_valid' | 'flagged' | 'blocked'
+  genderDeclaration?: 'female' | 'male' | 'unspecified'
   phoneMasked?: string
   phoneHash?: string
   activeRoles: AppRole[]
@@ -921,11 +922,21 @@ Mitra menerima order:
   - jarak mitra ke pickup
   - total estimasi biaya ke customer setelah pickup surcharge
   - trust status mitra jika tersedia
+- Faktor tambahan jika preference aktif:
+  - kecocokan `genderDeclaration` mitra dengan preferensi customer
 - Faktor yang **belum dipakai** di MVP:
   - rating/review publik
   - kualitas kendaraan
   - scoring kompleks berbasis histori
 - Jika tidak ada kandidat eligible, app harus menampilkan hasil yang jelas dan tidak mengirim request
+
+### 15.1C.1 Safety Preference dan Recommendation Boundary
+- `prefersFemaleDriver` bersifat opt-in, default `false`
+- Preference ini hanya dapat dipakai jika mitra memiliki `genderDeclaration`
+- `genderDeclaration` pada MVP bersifat deklaratif, bukan verifikasi identitas kuat
+- Jika preference aktif dan tidak ada kandidat yang cocok, UI harus menjelaskan bahwa supply tidak tersedia
+- Recommendation harus tetap explainable: tampilkan alasan singkat seperti "lebih dekat", "estimasi lebih rendah", atau "sesuai preferensi"
+- Recommendation tidak boleh menyembunyikan daftar kandidat lain yang masih eligible
 
 ### 15.1D Pickup Surcharge Policy
 - Mitra tidak boleh dirugikan untuk jarak penjemputan yang jauh
@@ -1356,6 +1367,7 @@ Invariants:
 ### 18.10 Safety Preference dan Background Standby
 - Customer perempuan dapat menyimpan preferensi `prefersFemaleDriver`
 - Preference ini adalah filter pemesanan, bukan jaminan absolut bila supply tidak tersedia
+- Gender driver pada MVP bersifat `genderDeclaration`, bukan verifikasi identitas kuat
 - Background standby hanya boleh aktif saat ada order aktif, bukan untuk discovery terus-menerus
 - Saat order aktif, app boleh melakukan update lokasi periodik minimum untuk kebutuhan sinkronisasi dan SOS
 - SOS minimal membawa `actorUserId`, `orderId` bila ada, lokasi terakhir, dan keterangan bahaya singkat

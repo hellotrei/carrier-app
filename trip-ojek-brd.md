@@ -438,6 +438,8 @@ Ini harus dikomunikasikan sebagai **nilai lebih** kepada pengguna dan regulator.
 | BR-020 | Maps integration harus memprioritaskan Google Maps dan Apple Maps berbasis latitude/longitude tanpa API berbayar |
 | BR-021 | Driver verification MVP bersifat deklaratif dan minimum-valid, bukan KYC legal penuh |
 | BR-022 | Data driver yang tidak lengkap, tidak konsisten, atau mencurigakan tidak boleh lolos ke status ready-to-online |
+| BR-023 | Preferensi driver perempuan hanya aktif jika customer memilihnya secara eksplisit dan supply yang cocok tersedia |
+| BR-024 | Sistem rekomendasi driver harus transparan, explainable, dan tidak boleh menjadi black box yang menyembunyikan opsi penting |
 
 ---
 
