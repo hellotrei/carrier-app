@@ -547,11 +547,17 @@ type AuditEvent = {
 type TransactionLog = {
   logId: string
   orderId: string
+  serviceType: VehicleProfile['vehicleType']
   customerId: string
   partnerId: string
   estimatedPrice: number
+  paymentMethod?: PaymentMethod
+  paymentAdminFeeTotal?: number
+  customerAdminFeeShare?: number
+  partnerAdminFeeShare?: number
   pricePerKm: number
   distanceKm: number
+  commissionBaseAmount: number
   commissionRate: number     // 0.10 = 10%
   commissionAmount: number
   completedAt: string
@@ -1265,6 +1271,33 @@ function calculateCommission(baseTripEstimatedPrice: number): number {
 
 > **Catatan CEO:** Ini memang manual dan tidak scalable jangka panjang. Tapi ini cukup untuk validasi dan mulai membangun data transaksi nyata sebelum investasi ke payment integration.
 
+### 17.3A Transaction Log View UX
+- Transaction log screen harus mudah dipindai dan tidak terasa seperti tabel mentah
+- List minimum menampilkan:
+  - short order id
+  - tanggal selesai
+  - service type
+  - payment method
+  - total estimasi
+  - basis komisi
+  - commission amount
+  - payment admin fee bila ada
+- Detail log tidak boleh menghitung ulang angka secara diam-diam; semua nilai diambil dari snapshot order saat trip selesai
+- Export CSV wajib memakai kolom yang tetap dan human-readable agar operator mudah rekap manual
+
+### 17.3B History Detail UX
+- History list harus menampilkan ringkasan yang mudah dipahami: role lawan transaksi, service type, status akhir, waktu, dan total
+- History detail minimum menampilkan:
+  - pickup dan destination ringkas
+  - payment method
+  - base trip price
+  - pickup surcharge
+  - gear discount bila ada
+  - waiting charge atau driver delay deduction bila ada
+  - estimated/final payable total
+  - cancel reason, no-show, atau mismatch reason bila order tidak selesai normal
+- History detail wajib membantu user menelusuri apa yang terjadi pada trip, bukan sekadar membuka object order mentah
+
 ### 17.4 Payment Method Evolution
 - Metode pembayaran yang diakomodasi desain:
   - `cash`
@@ -1284,6 +1317,17 @@ function calculateCommission(baseTripEstimatedPrice: number): number {
   - hanya aktif jika feature flag dan integrasi pembayaran sudah siap
   - breakdown wajib menampilkan `paymentAdminFeeTotal`, `customerAdminFeeShare`, dan `partnerAdminFeeShare`
   - basis komisi platform tetap `baseTripEstimatedPrice`, bukan biaya admin payment
+
+### 17.4B Audit Export UX Boundary
+- Audit export screen minimum menampilkan:
+  - rentang tanggal export
+  - opsi semua event vs periode tertentu
+  - indicator progress export
+  - hasil file export saat sukses
+  - error message yang jelas saat gagal
+- Export berjalan async agar layar tetap responsif
+- Hasil export harus memberikan path file atau share sheet yang jelas, bukan hanya toast generik
+- Bila device auth gagal, user harus kembali ke screen dengan state aman dan pesan yang bisa dipahami
 
 ### 17.5 Default Rating Policy
 - Setiap trip selesai akan menghasilkan rating default `5`
@@ -1526,8 +1570,18 @@ type RootState = {
     syncing: boolean
     recoveryMode: boolean
   }
+  history: {
+    filter: 'all' | 'completed' | 'canceled'
+    loading: boolean
+  }
+  transactionLog: {
+    fromDate?: string
+    toDate?: string
+    loading: boolean
+  }
   audit: {
     exportInProgress: boolean
+    lastExportFilePath?: string
   }
   connectivity: {            // BARU
     relayConnected: boolean

@@ -621,6 +621,8 @@ Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
 - Append-only, tidak bisa diedit
 - Export ke file `.tripaudit` via share sheet
 - Guard export dengan device PIN/biometric
+- Audit export UX harus menampilkan rentang tanggal, progress export, dan hasil file dengan jelas
+- Jika export gagal, alasan error harus tampil jelas tanpa istilah teknis berlebihan
 
 **Acceptance Criteria:**
 - [ ] Setiap event wajib menghasilkan audit entry
@@ -628,6 +630,7 @@ Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
 - [ ] Export menghasilkan file yang bisa dibuka
 - [ ] Export ter-guard oleh device auth
 - [ ] Audit tidak membesar tak terkendali (rotation per bulan)
+- [ ] Export screen menampilkan progress dan hasil file dengan jelas
 
 **Prioritas:** P0 (write), P1 (export UI)
 
@@ -641,11 +644,19 @@ Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
 - Filter: semua / selesai / dibatalkan
 - Tap item untuk lihat detail
 - Bisa diakses offline
+- Detail history harus menampilkan:
+  - service type
+  - payment method
+  - status akhir
+  - breakdown finansial utama
+  - reason cancel/no-show/mismatch jika ada
+- Riwayat harus membantu user menelusuri kejadian, bukan hanya daftar mentah
 
 **Acceptance Criteria:**
 - [ ] Order completed dan canceled muncul di riwayat
 - [ ] Detail order bisa dibuka tanpa koneksi
 - [ ] Filter berfungsi
+- [ ] Detail history menampilkan breakdown dan reason akhir bila ada
 
 **Prioritas:** P1
 
@@ -680,11 +691,20 @@ Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
 - Log tersedia untuk di-export oleh operator
 - Komisi dihitung hanya dari `baseTripEstimatedPrice`, bukan dari `pickupSurchargeAmount`
 - Biaya penjemputan tambahan sepenuhnya milik mitra dan tidak masuk basis komisi platform di MVP
+- Transaction log view harus menampilkan breakdown yang mudah dibaca:
+  - order id singkat
+  - service type
+  - payment method
+  - total estimasi
+  - base komisi
+  - commission amount
+  - payment admin fee jika ada
 
 **Acceptance Criteria:**
 - [ ] Setiap order completed memiliki transaction log entry
 - [ ] Export transaction log tersedia untuk operator
 - [ ] Nilai komisi terhitung dan tercatat
+- [ ] Transaction log view konsisten dengan breakdown order selesai
 
 **Prioritas:** P1
 

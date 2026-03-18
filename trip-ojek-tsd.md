@@ -451,6 +451,7 @@ export type AuditEvent = {
 export type TransactionLog = {
   logId: string
   orderId: string
+  serviceType: VehicleProfile['vehicleType']
   customerId: string
   partnerId: string
   estimatedPrice: number
@@ -460,6 +461,7 @@ export type TransactionLog = {
   partnerAdminFeeShare?: number
   pricePerKm: number
   distanceKm: number
+  commissionBaseAmount: number
   commissionRate: number
   commissionAmount: number
   completedAt: string
@@ -566,6 +568,56 @@ export type ExportParams = {
   fromDate?: string
   toDate?: string
   includeAllEvents?: boolean
+}
+
+export type HistoryListItemViewModel = {
+  orderId: string
+  shortOrderId: string
+  serviceType: VehicleProfile['vehicleType']
+  status: OrderStatus
+  paymentMethod?: PaymentMethod
+  totalAmount: number
+  counterpartyDisplayName: string
+  happenedAt: string
+}
+
+export type HistoryDetailViewModel = {
+  orderId: string
+  serviceType: VehicleProfile['vehicleType']
+  status: OrderStatus
+  pickupLabel: string
+  destinationLabel: string
+  paymentMethod?: PaymentMethod
+  baseTripEstimatedPrice: number
+  pickupSurchargeAmount: number
+  gearDiscountAmount?: number
+  waitingChargeAmount?: number
+  driverDelayDeductionAmount?: number
+  paymentAdminFeeTotal?: number
+  estimatedPrice: number
+  cancelReason?: string
+  updatedAt: string
+}
+
+export type TransactionLogListItemViewModel = {
+  logId: string
+  shortOrderId: string
+  serviceType: VehicleProfile['vehicleType']
+  paymentMethod?: PaymentMethod
+  estimatedPrice: number
+  commissionBaseAmount: number
+  commissionAmount: number
+  paymentAdminFeeTotal?: number
+  completedAt: string
+}
+
+export type AuditExportViewModel = {
+  fromDate?: string
+  toDate?: string
+  includeAllEvents: boolean
+  exportInProgress: boolean
+  exportedFilePath?: string
+  errorMessage?: string
 }
 ```
 
@@ -1939,6 +1991,7 @@ async function recordCompletedTrip(order: Order): Promise<Result<void>> {
   const log: TransactionLog = {
     logId: uuid(),
     orderId: order.orderId,
+    serviceType: order.serviceType,
     customerId: order.customerId,
     partnerId: order.partnerId,
     estimatedPrice: order.estimatedPrice,
@@ -1948,6 +2001,7 @@ async function recordCompletedTrip(order: Order): Promise<Result<void>> {
     partnerAdminFeeShare: order.partnerAdminFeeShare,
     pricePerKm: order.pricePerKmApplied,
     distanceKm: order.distanceEstimateKm,
+    commissionBaseAmount: order.baseTripEstimatedPrice,
     commissionRate: COMMISSION.rate,
     commissionAmount,
     completedAt: order.updatedAt,
@@ -1969,6 +2023,13 @@ Rules:
 - `cash` dan `manual_transfer` dapat dipakai tanpa backend settlement
 - `gateway` adalah fase lanjut dan harus diproteksi feature flag
 - Jika `gateway` aktif, biaya admin dibagi dua dan breakdown wajib terlihat di review order
+
+### 16.3B Log Presentation Contract
+Rules:
+- `TransactionLogListItemViewModel` harus mengambil angka dari `TransactionLog`, bukan menghitung ulang dari `Order`
+- `shortOrderId` dipakai untuk list agar mudah dipindai operator, tetapi `orderId` penuh tetap tersedia untuk trace
+- History detail dan transaction log wajib konsisten pada `serviceType`, `paymentMethod`, dan angka final yang ditampilkan
+- CSV export harus memakai header yang stabil agar operator tidak perlu mengubah template rekap setiap export
 
 ### 16.3A Payment Quote Contract
 ```ts
@@ -2492,6 +2553,105 @@ Rules:
 - Progress indicator
 - Clear error handling jika export gagal
 
+### 20.7A History Screen Contract
+```ts
+async function buildHistoryList(currentUserId: string, status?: OrderStatus): Promise<HistoryListItemViewModel[]> {
+  const orders = await OrderRepository.listHistory(status, 50, 0)
+
+  return orders.map(order => ({
+    orderId: order.orderId,
+    shortOrderId: order.orderId.slice(0, 8).toUpperCase(),
+    serviceType: order.serviceType,
+    status: order.status,
+    paymentMethod: order.paymentMethod,
+    totalAmount: order.estimatedPrice,
+    counterpartyDisplayName: resolveCounterpartyDisplayName(order, currentUserId),
+    happenedAt: order.updatedAt,
+  }))
+}
+
+async function buildHistoryDetail(orderId: string): Promise<HistoryDetailViewModel | null> {
+  const order = await OrderRepository.getOrderById(orderId)
+  if (!order) return null
+
+  return {
+    orderId: order.orderId,
+    serviceType: order.serviceType,
+    status: order.status,
+    pickupLabel: order.pickup.label ?? `${order.pickup.latitude},${order.pickup.longitude}`,
+    destinationLabel: order.destination.label ?? `${order.destination.latitude},${order.destination.longitude}`,
+    paymentMethod: order.paymentMethod,
+    baseTripEstimatedPrice: order.baseTripEstimatedPrice,
+    pickupSurchargeAmount: order.pickupSurchargeAmount,
+    gearDiscountAmount: order.gearDiscountAmount,
+    waitingChargeAmount: order.waitingChargeAmount,
+    driverDelayDeductionAmount: order.driverDelayDeductionAmount,
+    paymentAdminFeeTotal: order.paymentAdminFeeTotal,
+    estimatedPrice: order.estimatedPrice,
+    cancelReason: order.cancelReason,
+    updatedAt: order.updatedAt,
+  }
+}
+```
+
+Rules:
+- History screen harus bisa dibuka offline dari data lokal
+- Filter minimum: `all`, `Completed`, `Canceled`
+- Detail screen wajib menampilkan breakdown finansial utama dan reason terminal bila ada
+
+### 20.7B Transaction Log Screen Contract
+```ts
+async function buildTransactionLogList(fromDate?: string, toDate?: string): Promise<TransactionLogListItemViewModel[]> {
+  const logs = await TransactionRepository.listTransactions(fromDate, toDate)
+
+  return logs.map(log => ({
+    logId: log.logId,
+    shortOrderId: log.orderId.slice(0, 8).toUpperCase(),
+    serviceType: log.serviceType,
+    paymentMethod: log.paymentMethod,
+    estimatedPrice: log.estimatedPrice,
+    commissionBaseAmount: log.commissionBaseAmount,
+    commissionAmount: log.commissionAmount,
+    paymentAdminFeeTotal: log.paymentAdminFeeTotal,
+    completedAt: log.completedAt,
+  }))
+}
+```
+
+Rules:
+- Operator harus bisa membedakan `estimatedPrice` vs `commissionBaseAmount` dengan jelas
+- Jika `paymentAdminFeeTotal` kosong, UI tidak boleh menampilkan angka nol yang menyesatkan seolah gateway dipakai
+
+### 20.7C Audit Export View Contract
+```ts
+async function runAuditExport(params: ExportParams): Promise<Result<AuditExportViewModel>> {
+  const auth = await DeviceAuth.prompt()
+  if (!auth.ok) return err({ code: 'DEVICE_AUTH_REQUIRED' })
+
+  store.setAuditExportInProgress(true)
+
+  try {
+    const exportedFilePath = await AuditRepository.exportBundle(params)
+    return ok({
+      fromDate: params.fromDate,
+      toDate: params.toDate,
+      includeAllEvents: !!params.includeAllEvents,
+      exportInProgress: false,
+      exportedFilePath,
+    })
+  } catch {
+    return err({ code: 'AUDIT_EXPORT_FAILED' })
+  } finally {
+    store.setAuditExportInProgress(false)
+  }
+}
+```
+
+Rules:
+- Progress state harus terlihat selama bundle sedang dibuat
+- Saat sukses, UI harus menampilkan file path atau membuka share sheet
+- Saat gagal, user harus mendapat pesan yang bisa ditindaklanjuti tanpa jargon teknis
+
 ---
 
 ## 21. Logging Specification
@@ -2624,6 +2784,8 @@ NetInfo.addEventListener(state => {
 ### 23.6 Transaction Log
 - [ ] Setiap order Completed membuat TransactionLog entry
 - [ ] Commission amount terhitung benar (unit test)
+- [ ] Transaction log screen membedakan `estimatedPrice` dan `commissionBaseAmount` dengan jelas
+- [ ] CSV export memakai kolom yang stabil dan human-readable
 - [ ] TRANSACTION_RECORDED audit event tercatat
 
 ### 23.7 Audit
@@ -2631,6 +2793,7 @@ NetInfo.addEventListener(state => {
 - [ ] CRC32 checksum valid untuk setiap event file
 - [ ] Export bundle menghasilkan valid ZIP
 - [ ] Export ter-guard device auth jika fitur aktif
+- [ ] Audit export screen menampilkan progress dan hasil file dengan jelas
 
 ### 23.8 External Handoff
 - [ ] Maps buka dengan koordinat yang benar
