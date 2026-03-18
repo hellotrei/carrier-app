@@ -967,6 +967,10 @@ type OrderRequestPayload = {
   pricePerKmApplied: number
   baseTripEstimatedPrice: number
   pickupSurchargeAmount: number
+  paymentMethod?: 'cash' | 'manual_transfer' | 'gateway'
+  paymentAdminFeeTotal?: number
+  customerAdminFeeShare?: number
+  partnerAdminFeeShare?: number
   estimatedPrice: number
   expiresAt: string           // createdAt + 60 detik
   createdAt: string
@@ -1005,8 +1009,8 @@ type OrderContactRevealPayload = {
 - Customer tidak boleh memilih dirinya sendiri sebagai mitra
 - Pickup dan destination wajib valid, lengkap, dan tidak boleh identik secara tidak masuk akal
 - Snapshot mitra yang dipilih harus masih fresh saat konfirmasi; jika sudah stale, customer harus pilih ulang atau refresh discovery
-- `pricePerKmApplied`, `baseTripEstimatedPrice`, `pickupSurchargeAmount`, dan `estimatedPrice` yang dikirim ke mitra adalah nilai yang dibekukan saat submit, bukan dihitung ulang diam-diam di sisi mitra
-- Setelah `Requested`, field yang dianggap immutable: `partnerId`, `bookingMode`, `pickup`, `destination`, `bookingIntent`, `riderDeclaredName`, `riderPhoneMasked`, `pricePerKmApplied`, `pickupDistanceFromPartnerKm`, `baseTripEstimatedPrice`, `pickupSurchargeAmount`, `estimatedPrice`
+- `pricePerKmApplied`, `baseTripEstimatedPrice`, `pickupSurchargeAmount`, `paymentMethod`, komponen admin fee, dan `estimatedPrice` yang dikirim ke mitra adalah nilai yang dibekukan saat submit, bukan dihitung ulang diam-diam di sisi mitra
+- Setelah `Requested`, field yang dianggap immutable: `partnerId`, `bookingMode`, `pickup`, `destination`, `bookingIntent`, `riderDeclaredName`, `riderPhoneMasked`, `pricePerKmApplied`, `pickupDistanceFromPartnerKm`, `baseTripEstimatedPrice`, `pickupSurchargeAmount`, `paymentMethod`, `paymentAdminFeeTotal`, `customerAdminFeeShare`, `partnerAdminFeeShare`, `estimatedPrice`
 
 ### 15.3B Incoming Order Decision Rules
 - Incoming order screen di sisi mitra wajib menampilkan:
@@ -1172,6 +1176,18 @@ function calculateCommission(baseTripEstimatedPrice: number): number {
   - `gateway`
 - MVP tetap local-first dan tidak wajib menyelesaikan settlement otomatis
 - Jika `gateway` dipakai di fase lanjut, biaya admin dibagi dua antara customer dan driver
+
+### 17.4A Payment Flow Boundary
+- `cash`
+  - customer membayar langsung ke driver
+  - aplikasi hanya mencatat metode bayar dan nilai transaksi
+- `manual_transfer`
+  - customer dan driver menyelesaikan transfer di luar settlement aplikasi
+  - aplikasi hanya mencatat deklarasi metode bayar
+- `gateway`
+  - hanya aktif jika feature flag dan integrasi pembayaran sudah siap
+  - breakdown wajib menampilkan `paymentAdminFeeTotal`, `customerAdminFeeShare`, dan `partnerAdminFeeShare`
+  - basis komisi platform tetap `baseTripEstimatedPrice`, bukan biaya admin payment
 
 ### 17.5 Default Rating Policy
 - Setiap trip selesai akan menghasilkan rating default `5`
@@ -1529,21 +1545,23 @@ interface AuditGateway {
 3. Customer pilih mode: `manual select` atau `auto booking`
 4. Customer pilih `bookingIntent`: untuk diri sendiri atau untuk orang lain
 5. Jika untuk orang lain, customer wajib isi rider name dan contact minimum
-6. Hitung haversine distance
-7. Hitung estimasi perjalanan
-8. Hitung jarak mitra ke pickup dan biaya penjemputan tambahan jika > 3 km
-9. Tampilkan breakdown total ke customer
-10. Jika `manual`, customer pilih mitra dari discovery list
-11. Jika `auto`, app meranking kandidat lalu memilih target terbaik secara lokal
-12. Buat Order dengan status Draft
-13. Tulis audit ORDER_DRAFT_CREATED
-14. Customer review dan confirm
-15. Update status ke Requested
-16. Simpan lokal
-17. Kirim OrderRequestPayload ke relay
-18. Tulis audit ORDER_REQUESTED
-19. Mulai timeout 60 detik di client
-20. Tampilkan "Menunggu konfirmasi mitra"
+6. Customer pilih `paymentMethod`
+7. Hitung haversine distance
+8. Hitung estimasi perjalanan
+9. Hitung jarak mitra ke pickup dan biaya penjemputan tambahan jika > 3 km
+10. Jika `gateway` aktif, hitung admin fee dan split customer/driver
+11. Tampilkan breakdown total ke customer
+12. Jika `manual`, customer pilih mitra dari discovery list
+13. Jika `auto`, app meranking kandidat lalu memilih target terbaik secara lokal
+14. Buat Order dengan status Draft
+15. Tulis audit ORDER_DRAFT_CREATED
+16. Customer review dan confirm
+17. Update status ke Requested
+18. Simpan lokal
+19. Kirim OrderRequestPayload ke relay
+20. Tulis audit ORDER_REQUESTED
+21. Mulai timeout 60 detik di client
+22. Tampilkan "Menunggu konfirmasi mitra"
 ```
 
 ### 22.4 Mitra Accept Order

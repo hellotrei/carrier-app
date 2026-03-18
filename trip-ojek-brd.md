@@ -134,11 +134,18 @@ TRIP mengambil **komisi dari setiap perjalanan yang selesai**, dalam batas regul
 
 Fase MVP:
 - **Cash** — mitra menerima pembayaran langsung dari customer, platform tidak terlibat dalam alur uang
+- **Transfer manual** — customer dan driver menyelesaikan transfer di luar flow settlement aplikasi
 - Platform hanya mencatat nilai transaksi untuk audit dan perhitungan komisi
 
 Fase selanjutnya (post-validation):
-- **QRIS/transfer** via integrasi payment yang ringan
+- **QRIS/payment gateway** via integrasi payment yang ringan
 - Sistem komisi otomatis via settlement periodik ke rekening mitra
+- Biaya admin payment gateway dibagi dua secara simetris antara customer dan driver
+
+Rule bisnis pembayaran:
+- Basis komisi platform tetap dari `baseTripEstimatedPrice`, bukan dari biaya admin payment
+- Jika metode bayar `cash` atau `transfer manual`, aplikasi tidak boleh mengklaim settlement berhasil secara otomatis
+- Jika metode bayar `gateway`, breakdown biaya admin harus terlihat sebelum customer mengonfirmasi order
 
 ### 6.3 Revenue Projection (Konservatif, Area Pilot)
 

@@ -422,6 +422,9 @@ export type Order = {
   arrivedAtPickupAt?: string
   estimatedPrice: number
   paymentMethod?: PaymentMethod
+  paymentAdminFeeTotal?: number
+  customerAdminFeeShare?: number
+  partnerAdminFeeShare?: number
   status: OrderStatus
   cancelReason?: string
   createdAt: string
@@ -445,6 +448,10 @@ export type TransactionLog = {
   customerId: string
   partnerId: string
   estimatedPrice: number
+  paymentMethod?: PaymentMethod
+  paymentAdminFeeTotal?: number
+  customerAdminFeeShare?: number
+  partnerAdminFeeShare?: number
   pricePerKm: number
   distanceKm: number
   commissionRate: number
@@ -472,6 +479,10 @@ export type OrderRequestPayload = {
   pricePerKmApplied: number
   baseTripEstimatedPrice: number
   pickupSurchargeAmount: number
+  paymentMethod?: PaymentMethod
+  paymentAdminFeeTotal?: number
+  customerAdminFeeShare?: number
+  partnerAdminFeeShare?: number
   estimatedPrice: number
   expiresAt: string           // ISO 8601, createdAt + 60s
   createdAt: string
@@ -1784,6 +1795,10 @@ async function recordCompletedTrip(order: Order): Promise<Result<void>> {
     customerId: order.customerId,
     partnerId: order.partnerId,
     estimatedPrice: order.estimatedPrice,
+    paymentMethod: order.paymentMethod,
+    paymentAdminFeeTotal: order.paymentAdminFeeTotal,
+    customerAdminFeeShare: order.customerAdminFeeShare,
+    partnerAdminFeeShare: order.partnerAdminFeeShare,
     pricePerKm: order.pricePerKmApplied,
     distanceKm: order.distanceEstimateKm,
     commissionRate: COMMISSION.rate,
@@ -1807,6 +1822,45 @@ Rules:
 - `cash` dan `manual_transfer` dapat dipakai tanpa backend settlement
 - `gateway` adalah fase lanjut dan harus diproteksi feature flag
 - Jika `gateway` aktif, biaya admin dibagi dua dan breakdown wajib terlihat di review order
+
+### 16.3A Payment Quote Contract
+```ts
+export function buildPaymentQuote(params: {
+  estimatedPrice: number
+  paymentMethod: PaymentMethod
+  paymentAdminFeeTotal?: number
+}): {
+  customerPayableAmount: number
+  partnerSettlementEstimate: number
+  customerAdminFeeShare: number
+  partnerAdminFeeShare: number
+} {
+  if (params.paymentMethod !== 'gateway') {
+    return {
+      customerPayableAmount: params.estimatedPrice,
+      partnerSettlementEstimate: params.estimatedPrice,
+      customerAdminFeeShare: 0,
+      partnerAdminFeeShare: 0,
+    }
+  }
+
+  const totalAdminFee = params.paymentAdminFeeTotal ?? 0
+  const customerAdminFeeShare = Math.ceil(totalAdminFee / 2)
+  const partnerAdminFeeShare = totalAdminFee - customerAdminFeeShare
+
+  return {
+    customerPayableAmount: params.estimatedPrice + customerAdminFeeShare,
+    partnerSettlementEstimate: params.estimatedPrice - partnerAdminFeeShare,
+    customerAdminFeeShare,
+    partnerAdminFeeShare,
+  }
+}
+```
+
+Rules:
+- komisi platform tetap dihitung dari `baseTripEstimatedPrice`
+- admin fee payment bukan basis komisi
+- `partnerSettlementEstimate` hanyalah estimasi payment settlement, bukan final earning setelah komisi offline
 
 ### 16.4 Default Rating Completion Policy
 ```ts
@@ -2078,11 +2132,12 @@ async function bootstrapApp(): Promise<void> {
 - Customer dapat memilih `manual` atau `auto` booking
 - Customer wajib memilih `bookingIntent`: untuk diri sendiri atau untuk orang lain
 - Jika `bookingIntent = for_other`, `riderDeclaredName` wajib diisi dan `riderPhoneMasked` wajib tersedia sebelum submit
+- Customer wajib memilih `paymentMethod` sebelum confirm
 - Jika delegated booking sedang direstrict oleh trust enforcement, submit harus ditolak
 - Auto booking harus memilih target di client dengan ranking lokal yang transparan
 - Auto booking tidak boleh broadcast ke banyak mitra sekaligus
 - Jika pickup distance melebihi 3 km dari mitra target, biaya penjemputan tambahan harus dihitung dan ditampilkan sebelum confirm
-- Preview booking harus menampilkan breakdown: estimasi perjalanan, biaya penjemputan tambahan, dan total estimasi
+- Preview booking harus menampilkan breakdown: estimasi perjalanan, biaya penjemputan tambahan, admin fee share jika ada, dan total estimasi
 
 ### 20.5 Incoming Order (Mitra)
 **Input:** OrderRequestPayload dari relay subscription

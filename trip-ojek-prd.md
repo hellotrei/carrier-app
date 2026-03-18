@@ -742,10 +742,23 @@ Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
   - payment gateway aplikasi
 - Untuk payment gateway aplikasi, biaya admin dibagi dua antara driver dan customer
 - Metode pembayaran harus dipilih sebelum trip dimulai
+- Untuk `cash` dan `transfer manual`, aplikasi hanya mencatat pilihan metode bayar dan nilai transaksi
+- Untuk `gateway`, preview pembayaran wajib menampilkan:
+  - subtotal trip
+  - pickup surcharge
+  - waiting charge atau deduction
+  - gear discount
+  - total admin fee
+  - customer admin fee share
+  - partner admin fee share
+- Basis komisi platform tetap hanya dari `baseTripEstimatedPrice`
+- `gateway` tidak menjadi prasyarat MVP pilot dan harus bisa dimatikan via feature flag
 
 **Acceptance Criteria:**
 - [ ] Payment method tampil di review order
 - [ ] Metode cash dan transfer manual bisa ditandai tanpa gateway integration
+- [ ] Jika `gateway` aktif, fee split customer/driver terlihat jelas sebelum konfirmasi
+- [ ] Metode bayar tersimpan sebagai bagian order dan transaction log
 
 **Prioritas:** P1
 
@@ -978,6 +991,7 @@ type Order = {
   serviceType?: VehicleProfile['vehicleType']
   pricingMode?: VehicleProfile['pricingMode']
   passengerCount?: number
+  paymentMethod?: 'cash' | 'manual_transfer' | 'gateway'
   pickup: LocationPoint
   destination: LocationPoint
   distanceEstimateKm: number
@@ -985,6 +999,9 @@ type Order = {
   waitingChargeAmount?: number
   driverDelayDeductionAmount?: number
   gearDiscountAmount?: number
+  paymentAdminFeeTotal?: number
+  customerAdminFeeShare?: number
+  partnerAdminFeeShare?: number
   estimatedPrice: number
   status: OrderStatus
   createdAt: string
@@ -1007,6 +1024,8 @@ type AuditEvent = {
 type TransactionLog = {
   orderId: string
   estimatedPrice: number
+  paymentMethod?: 'cash' | 'manual_transfer' | 'gateway'
+  paymentAdminFeeTotal?: number
   pricePerKm: number
   distanceKm: number
   commissionRate: number      // 0.10 = 10%
