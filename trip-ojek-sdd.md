@@ -2193,6 +2193,18 @@ Rules:
 - QA + bug fixes
 - Error handling dan empty states
 
+### 28.1 Build Order Final
+| Sprint | Fokus | Exit Criteria |
+|---|---|---|
+| 1 | fondasi app, onboarding, profile, pricing, readiness | user bisa onboarding, switch role, simpan profile/pricing, dan gate driver tampil benar |
+| 2 | presence, discovery, home screens | mitra bisa online, discovery muncul, home customer/mitra stabil, state empty/error jelas |
+| 3 | booking, incoming order, active trip, cancel flow | order bisa berjalan end-to-end dari draft sampai terminal dengan fairness dan mismatch handling |
+| 4 | history, audit, transaction log, export, hardening | history/audit/log bisa ditelusuri, export jalan, recovery/error state rapi |
+
+Rules:
+- Sprint berikutnya tidak boleh mengambil fitur `Pilot Optional` sebelum exit criteria sprint sebelumnya tercapai
+- Jika ada dev capacity sisa, gunakan untuk hardening flow inti lebih dulu, bukan membuka phase 2
+
 ---
 
 ## 29. Ringkasan Keputusan Teknis

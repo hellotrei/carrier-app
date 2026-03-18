@@ -56,6 +56,17 @@ Carrier App Project mengambil pendekatan yang lebih realistis: **ride coordinati
 - Capai 1.000 trip selesai dalam 3 bulan pertama
 - Biaya infrastruktur MVP < Rp 3 juta/bulan
 
+### 3.2 Build Order MVP
+Urutan build yang dikunci untuk pilot:
+1. fondasi app, profile, pricing, dan readiness gate
+2. presence, discovery, dan home flow
+3. booking, incoming order, active trip, cancel/no-show/mismatch
+4. history, audit, transaction log, export, dan hardening UI state
+
+Rules:
+- jangan lompat ke fitur optional sebelum core order lifecycle stabil
+- `Pilot Optional` hanya boleh diaktifkan setelah jalur inti selesai end-to-end
+
 ### 3.2 Tujuan Pengguna
 - Customer menemukan mitra online dalam < 60 detik dari buka app
 - Customer melihat estimasi harga sebelum order dikirim

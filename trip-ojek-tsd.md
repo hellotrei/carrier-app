@@ -3546,6 +3546,12 @@ NetInfo.addEventListener(state => {
 - [ ] `temporary_chat_enabled=false` tidak memutus contact reveal atau handoff utama
 - [ ] Fitur `Phase 2+` tidak menjadi dependency wajib di MVP pilot
 
+### 23.16 Build Order Final
+- [ ] Fase fondasi selesai sebelum relay/discovery diintegrasikan
+- [ ] Fase presence/home selesai sebelum order core dianggap siap dibangun penuh
+- [ ] Order core harus stabil end-to-end sebelum pilot hardening dan fitur optional diprioritaskan
+- [ ] Build order yang dieksekusi tetap konsisten dengan `MVP Pilot` scope lock
+
 ---
 
 ## 24. Testing Specification
@@ -3693,6 +3699,56 @@ Feature flag intent:
 [ ] Empty states dan error states
 [ ] Debug log sanitization untuk prod
 ```
+
+### Fase E — Build Order Final
+```text
+1. Fondasi
+   Dependency: none
+   Deliverable minimum:
+   - bootstrap
+   - repositories inti
+   - onboarding
+   - role switch
+   - basic profile
+   - pricing settings
+   - readiness gate
+
+2. Presence dan Home
+   Dependency: fondasi selesai
+   Deliverable minimum:
+   - relay integration
+   - goOnline/goOffline
+   - discovery
+   - customer home
+   - driver home
+   - empty/error state dasar
+
+3. Order Core
+   Dependency: presence dan home stabil
+   Deliverable minimum:
+   - booking form
+   - review quote
+   - order signaling
+   - incoming order
+   - active trip
+   - cancel/no-show/mismatch
+   - recovery ke trip aktif
+
+4. Hardening Pilot
+   Dependency: order core end-to-end
+   Deliverable minimum:
+   - history
+   - audit export
+   - transaction log
+   - export CSV
+   - UI state matrix
+   - prod log sanitization
+```
+
+Rules:
+- `Pilot Optional` tidak boleh masuk dependency pada fase 1-4
+- Jika fase 3 belum end-to-end stabil, fase 4 hanya boleh mengambil hardening yang membantu flow inti
+- Phase 2 feature tidak boleh masuk ke build order final pilot
 
 ---
 
