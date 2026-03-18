@@ -918,6 +918,30 @@ export type UiStateConfig = {
   preserveContext: boolean
 }
 
+export type ScreenTone =
+  | 'welcoming'
+  | 'helpful'
+  | 'respectful'
+  | 'clear_fast'
+  | 'calm_contextual'
+  | 'appreciative'
+  | 'supportive'
+
+export type ScreenCopySpec = {
+  screenId:
+    | 'onboarding'
+    | 'customer_home'
+    | 'driver_home'
+    | 'incoming_order'
+    | 'active_trip'
+    | 'post_trip_feedback'
+    | 'empty_state'
+    | 'error_state'
+  tone: ScreenTone
+  objective: string
+  avoid: string[]
+}
+
 // Result pattern — tidak lempar exception untuk flow normal
 export type Result<T, E = AppError> = 
   | { ok: true; value: T }
@@ -970,6 +994,57 @@ export const UI_STATE_MATRIX: Record<string, UiStateConfig> = {
 
 // Empty discovery tidak memakai error code; dia adalah state normal yang terpisah
 // CTA harus langsung relevan dengan penyebab state dan tetap menjaga context valid terakhir
+
+export const SCREEN_COPY_MATRIX: ScreenCopySpec[] = [
+  {
+    screenId: 'onboarding',
+    tone: 'welcoming',
+    objective: 'Menyambut user dan membuat flow awal terasa ringan.',
+    avoid: ['istilah teknis', 'kesan verifikasi berat'],
+  },
+  {
+    screenId: 'customer_home',
+    tone: 'helpful',
+    objective: 'Membantu user memilih layanan atau mitra tanpa tekanan.',
+    avoid: ['copy terlalu promosi', 'CTA yang memaksa'],
+  },
+  {
+    screenId: 'driver_home',
+    tone: 'respectful',
+    objective: 'Menghargai kesiapan driver dan menjelaskan gate dengan adil.',
+    avoid: ['nada menghakimi', 'frasa yang menyalahkan driver'],
+  },
+  {
+    screenId: 'incoming_order',
+    tone: 'clear_fast',
+    objective: 'Menyampaikan informasi penting dengan cepat dan jelas.',
+    avoid: ['kalimat panjang', 'copy panik'],
+  },
+  {
+    screenId: 'active_trip',
+    tone: 'calm_contextual',
+    objective: 'Menjaga user fokus pada langkah berikutnya selama perjalanan.',
+    avoid: ['reminder berulang', 'noise visual/copy'],
+  },
+  {
+    screenId: 'post_trip_feedback',
+    tone: 'appreciative',
+    objective: 'Menutup perjalanan dengan apresiasi tanpa memaksa feedback.',
+    avoid: ['guilt-trip rating', 'copy terlalu panjang'],
+  },
+  {
+    screenId: 'empty_state',
+    tone: 'supportive',
+    objective: 'Menjelaskan bahwa kondisi kosong adalah normal dan memberi arah lanjut.',
+    avoid: ['bahasa error', 'kesan sistem rusak'],
+  },
+  {
+    screenId: 'error_state',
+    tone: 'supportive',
+    objective: 'Menjelaskan masalah secara jujur dan memberi CTA yang bisa dilakukan.',
+    avoid: ['blaming user', 'istilah backend/internal'],
+  },
+]
 
 export function ok<T>(value: T): Result<T> {
   return { ok: true, value }
@@ -2705,6 +2780,7 @@ Rules:
 - CTA `auto booking` hanya boleh aktif bila candidate set hasil filter tidak kosong
 - Role switch entry harus tetap terlihat dari home
 - Jika `discoveryState !== ready`, home tetap menampilkan reason state yang jelas, bukan layar kosong
+- Copy di customer home harus mengikuti entry `customer_home` pada `SCREEN_COPY_MATRIX` agar rekomendasi terasa membantu, bukan mendorong
 
 ### 20.2B Empty dan Failure State Contract
 Rules:
@@ -2755,6 +2831,7 @@ Rules:
 - Jika `hasActiveOrder = true`, home mitra harus memprioritaskan banner kembali ke trip aktif dibanding discovery biasa
 - Toggle online tidak boleh aktif bila `onlineGateReason` ada
 - Jika readiness gagal, home mitra harus mengarahkan user ke screen yang relevan seperti pricing atau profile
+- Copy gate di home mitra harus menghormati driver dan menjelaskan langkah perbaikan tanpa nada menghakimi
 
 ### 20.4 Booking Flow
 **Input:** pickup (GPS/manual) + destination + selected mitra
@@ -3317,6 +3394,12 @@ NetInfo.addEventListener(state => {
 - [ ] `LOCATION_PERMISSION_DENIED` memunculkan CTA ke settings
 - [ ] `PROFILE_NOT_READY` memunculkan gate ke profile/pricing yang relevan
 - [ ] `EXTERNAL_APP_NOT_AVAILABLE` menawarkan fallback handoff lain bila tersedia
+
+### 23.12 Copy dan Tone Matrix
+- [ ] Onboarding memakai tone menyambut dan tidak terasa seperti flow verifikasi berat
+- [ ] Customer home memakai copy yang membantu memilih, bukan menekan untuk booking
+- [ ] Driver home memakai copy gate yang hormat dan memberi langkah perbaikan
+- [ ] Error dan empty states memakai bahasa manusiawi tanpa istilah backend/internal
 
 ---
 

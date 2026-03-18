@@ -1701,6 +1701,23 @@ type RootState = {
 - Copy utama harus hangat, humble, dan sopan
 - Reminder seperti "jangan lupa barang bawaan" dan "pastikan tidak ada yang tertinggal" diperlakukan sebagai bagian experience, bukan teks tambahan acak
 
+### 20.3C Copywriting dan Tone Matrix
+| Screen / Context | Tone Utama | Tujuan Copy | Hindari |
+|---|---|---|---|
+| Onboarding | menyambut dan menenangkan | membuat user merasa aplikasi mudah dipakai | bahasa teknis, kesan verifikasi berat |
+| Customer home | membantu dan ringan | bantu user memilih layanan atau mitra dengan tenang | memaksa booking, kalimat terlalu promosi |
+| Mitra home | menghargai dan lugas | jelaskan kesiapan online, gate, dan demand sekitar | nada menghakimi saat readiness belum lolos |
+| Incoming order | jelas dan cepat | bantu mitra ambil keputusan tanpa bingung | copy panik, alarmis, atau terlalu panjang |
+| Active trip | tenang dan kontekstual | menjaga fokus user pada langkah berikutnya | notifikasi berlebihan, repetitif |
+| Post-trip feedback | apresiatif | menutup perjalanan dengan hangat tanpa memaksa | guilt-trip untuk kasih rating |
+| Empty state | suportif | memberi arah tindakan berikutnya | menyamakan empty state dengan error |
+| Error state | jujur dan membantu | menjelaskan masalah dan CTA berikutnya | menyalahkan user atau istilah backend |
+
+Rules:
+- Copy tidak boleh terdengar seperti operator platform yang kaku
+- Kalimat sebaiknya pendek, manusiawi, dan langsung bisa ditindaklanjuti
+- Reminder keselamatan dan barang bawaan muncul kontekstual, bukan di setiap layar
+
 ### 20.3A Customer Home Contract
 - Customer home adalah entry point utama setelah onboarding atau role switch ke `customer`
 - Blok minimum yang harus tersedia:

@@ -855,6 +855,14 @@ Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
 - Review teks pada MVP diperlakukan sebagai catatan pengalaman, bukan sinyal publik untuk ranking otomatis
 - App menampilkan micro-copy yang ramah, humble, dan personal di titik interaksi penting
 - App mengingatkan barang bawaan dan keselamatan secara kontekstual
+- Tone matrix minimum per layar harus jelas:
+  - onboarding: menyambut dan menenangkan
+  - customer home: membantu memilih tanpa menekan
+  - driver home: menghargai kesiapan dan effort driver
+  - incoming order: jelas, cepat, tidak panik
+  - active trip: menenangkan dan kontekstual
+  - post-trip feedback: apresiatif dan ringan
+  - error/empty state: jujur, membantu, tidak menyalahkan user
 
 **Acceptance Criteria:**
 - [ ] Trip tanpa input rating manual tetap menghasilkan rating 5
@@ -862,6 +870,7 @@ Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
 - [ ] Post-trip feedback sheet dapat dilewati tanpa menghambat penyelesaian trip
 - [ ] Review teks opsional tidak mengubah ranking recommendation di MVP
 - [ ] Copy utama konsisten dengan tone hangat dan sopan
+- [ ] Layar utama memakai tone yang konsisten sesuai peran dan konteks
 
 **Prioritas:** P1
 
