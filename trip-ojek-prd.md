@@ -382,12 +382,17 @@ Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
 - Validasi input: hanya angka, dalam batas range
 - Perubahan tarif mitra tercatat di audit lokal
 - Tarif mitra tampil di presence snapshot yang di-publish
+- Jika mitra sedang online tanpa active order, perubahan tarif harus memperbarui presence untuk order berikutnya
+- Jika ada active order non-terminal, perubahan tarif tidak boleh mengubah breakdown order yang sedang berjalan
+- Pricing settings harus menjelaskan dengan jujur bahwa tarif baru berlaku untuk booking baru, bukan trip aktif
 
 **Acceptance Criteria:**
 - [ ] Mitra bisa menyimpan tarif yang valid dan tarif muncul di discovery customer
 - [ ] Input di luar range menampilkan error yang jelas
 - [ ] Perubahan tarif mitra tercatat di audit event PRICING_UPDATED
 - [ ] Customer bisa set offer price, atau tidak (default ikut tarif mitra)
+- [ ] Perubahan tarif saat ada active order tidak mengubah harga order aktif
+- [ ] Tarif baru muncul ke discovery/order berikutnya setelah save
 
 **Prioritas:** P0
 
@@ -724,6 +729,11 @@ Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
 **Deskripsi:** Semua user bisa menjadi driver, tetapi hanya user yang memenuhi syarat minimum yang boleh online sebagai driver.
 
 **Requirements:**
+- Profile flow minimum harus terbagi jelas:
+  - basic profile
+  - driver profile
+  - vehicle setup
+  - bank account dan favorite addresses
 - Driver dapat menyimpan lebih dari satu kendaraan
 - Jenis kendaraan minimum yang didukung roadmap: `motor`, `mobil`, `bajaj`, `angkot`
 - Data driver yang perlu disimpan lokal:
@@ -744,6 +754,9 @@ Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
 - Driver hanya boleh online jika legalitas minimum untuk kendaraan yang aktif telah dinyatakan lengkap
 - Verification MVP untuk driver bersifat `minimum-valid`, bukan KYC legal penuh
 - Data yang tidak lengkap, tidak konsisten, atau mencurigakan harus ditahan dari status online
+- Perubahan field kritikal seperti legal name, identitas, kendaraan aktif, plat, SIM, seat capacity, atau perlengkapan driver harus memicu revalidation readiness
+- Saat ada active order non-terminal, field operasional kritikal tidak boleh diubah agar trip yang sedang berjalan tidak ambigu
+- Field non-operasional seperti foto profil, rekening bank, dan favorite addresses tetap boleh diubah tanpa mengganggu trip aktif
 
 **Acceptance Criteria:**
 - [ ] User bisa memiliki lebih dari satu profil kendaraan
@@ -751,6 +764,8 @@ Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
 - [ ] Data profil driver persisten di local storage
 - [ ] Driver dengan data legal minimum yang tidak lengkap tidak bisa online
 - [ ] Driver dengan data mencurigakan masuk status flagged/blocked dan tidak bisa publish presence
+- [ ] Perubahan field kritikal memicu evaluasi ulang readiness
+- [ ] Active order memblok edit field operasional kritikal
 
 **Prioritas:** P1
 

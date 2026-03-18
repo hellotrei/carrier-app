@@ -738,6 +738,25 @@ CREATE TABLE app_settings (
   - alamat jemput favorit
 - Data sensitif dengan nilai raw tinggi tetap memakai masking/hash atau dipindah ke secure storage
 
+### 12.2C Profile Editing Boundary
+- Basic profile screen minimum mencakup:
+  - display name
+  - legal full name
+  - profile photo
+  - gender declaration
+  - favorite pickup addresses
+- Driver profile screen minimum mencakup:
+  - kendaraan aktif dan data kendaraan
+  - nomor plat
+  - kelas SIM
+  - seat capacity jika relevan
+  - helm/jas hujan cadangan
+  - bank accounts
+- Perubahan field kritikal driver harus memicu hitung ulang `driverReadinessStatus`
+- Jika perubahan membuat readiness tidak lolos, user tetap boleh memakai app sebagai customer tetapi tidak boleh online sebagai driver
+- Saat ada active order non-terminal, field kritikal operasional harus dibekukan sampai order terminal
+- Field non-operasional seperti foto profil, favorite address, dan rekening bank tetap boleh diubah saat ada active order
+
 ### 12.3 Migrations
 - Semua schema changes melalui versioned migration
 - Versi schema tersimpan di `user_version` SQLite pragma
@@ -1225,6 +1244,21 @@ Rule:
 - `minimum_valid` cukup untuk pilot, tetapi tidak boleh diklaim sebagai legal identity proof
 - Data yang saling bertentangan atau tampak palsu diperlakukan sebagai `flagged` atau `blocked`
 
+### 16.1B.2 Driver Profile Mutation Rules
+- Field yang dianggap kritikal untuk readiness:
+  - `legalFullName`
+  - `identityNumberMasked`
+  - `vehicleType`
+  - `plateNumber`
+  - `driverLicenseClass`
+  - `seatCapacity`
+  - `hasSpareHelmet`
+  - `hasRaincoatSpare`
+  - `isActiveForBooking`
+- Perubahan pada field kritikal harus memicu evaluasi ulang readiness dan validasi minimum
+- Jika hasil evaluasi turun ke `draft|declared|flagged|blocked`, home mitra wajib menampilkan gate reason yang sesuai
+- Order aktif yang sudah berjalan tidak boleh diubah maknanya oleh perubahan profile driver di tengah trip
+
 ### 16.1C Waiting Fairness Policy
 - Setelah driver tiba di pickup, 5 menit pertama gratis
 - Setiap kelipatan 5 menit berikutnya menghasilkan waiting charge sebesar `pricePerKmApplied`
@@ -1249,6 +1283,15 @@ Rule:
 - MVP pilot dikunci ke `motor` dan `mobil`
 - `bajaj` dan `angkot` tetap masuk desain, tetapi tidak boleh mempersulit core flow MVP
 - Angkot fixed-price membutuhkan policy terpisah dan tidak memakai seluruh rule pricing personal ride
+
+### 16.1F Pricing Update Boundary
+- Pricing settings screen minimum mencakup:
+  - partner price per km
+  - customer offer per km
+  - active pricing explanation untuk service type yang sedang dipakai
+- Saat mitra online tanpa active order, perubahan pricing harus memperbarui snapshot discovery untuk order berikutnya
+- Saat ada active order non-terminal, perubahan pricing tidak boleh mengubah quote, incoming order, atau breakdown trip aktif
+- UI pricing harus menampilkan copy yang jujur bahwa perubahan berlaku prospektif untuk booking baru
 
 ### 16.2 Tampilan
 - Discovery list: tampilkan `visiblePricePerKm` masing-masing mitra

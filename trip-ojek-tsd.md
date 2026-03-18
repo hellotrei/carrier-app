@@ -670,6 +670,25 @@ export type DriverHomeViewModel = {
   onlineGateReason?: string
   nearbyDemandCount: number
 }
+
+export type ProfileEditorViewModel = {
+  displayName: string
+  legalFullName?: string
+  profilePhotoUri?: string
+  genderDeclaration?: UserProfile['genderDeclaration']
+  driverReadinessStatus?: DriverReadinessStatus
+  editableWhileActiveOrder: boolean
+  blockedFields?: string[]
+}
+
+export type PricingSettingsViewModel = {
+  partnerPricePerKm?: number
+  customerOfferPerKm?: number
+  currency: 'IDR'
+  editableWhileActiveOrder: boolean
+  affectsCurrentOrder: false
+  helperText: string
+}
 ```
 
 ---
@@ -2387,6 +2406,112 @@ async function bootstrapApp(): Promise<void> {
 - `PROFILE_VALIDATED` audit event ditulis saat profil lolos validasi minimum
 - Profil dengan data mencurigakan dapat di-set ke `blocked` dan menghasilkan `IDENTITY_BLOCKED` audit event
 
+### 20.1A Profile Editor Contract
+```ts
+function buildProfileEditorViewModel(params: {
+  profile: UserProfile
+  hasActiveOrder: boolean
+}): ProfileEditorViewModel {
+  return {
+    displayName: params.profile.displayName,
+    legalFullName: params.profile.legalFullName,
+    profilePhotoUri: params.profile.profilePhotoUri,
+    genderDeclaration: params.profile.genderDeclaration,
+    driverReadinessStatus: params.profile.driverReadinessStatus,
+    editableWhileActiveOrder: !params.hasActiveOrder,
+    blockedFields: params.hasActiveOrder
+      ? ['legalFullName', 'identityNumberMasked', 'vehicles', 'hasSpareHelmet', 'hasRaincoatSpare']
+      : [],
+  }
+}
+
+function validateProfileMutation(params: {
+  currentProfile: UserProfile
+  nextProfile: UserProfile
+  hasActiveOrder: boolean
+}): Result<UserProfile> {
+  const touchesCriticalField =
+    params.currentProfile.legalFullName !== params.nextProfile.legalFullName
+    || params.currentProfile.identityNumberMasked !== params.nextProfile.identityNumberMasked
+    || JSON.stringify(params.currentProfile.vehicles ?? []) !== JSON.stringify(params.nextProfile.vehicles ?? [])
+    || params.currentProfile.hasSpareHelmet !== params.nextProfile.hasSpareHelmet
+    || params.currentProfile.hasRaincoatSpare !== params.nextProfile.hasRaincoatSpare
+
+  if (params.hasActiveOrder && touchesCriticalField) {
+    return err({ code: 'PROFILE_EDIT_LOCKED_DURING_ACTIVE_ORDER' })
+  }
+
+  return ok(params.nextProfile)
+}
+```
+
+Rules:
+- Perubahan field kritikal harus diikuti re-evaluasi `validateDriverReadiness()`
+- Jika hasilnya tidak lagi `minimum_valid`, user tetap boleh memakai role customer tetapi gate driver harus tertutup
+- Field non-kritikal seperti foto profil, favorite address, dan rekening bank tetap boleh diubah saat ada order aktif
+
+### 20.1B Pricing Settings Contract
+```ts
+function buildPricingSettingsViewModel(params: {
+  pricing: PricingProfile | null
+  hasActiveOrder: boolean
+}): PricingSettingsViewModel {
+  return {
+    partnerPricePerKm: params.pricing?.partnerPricePerKm,
+    customerOfferPerKm: params.pricing?.customerOfferPerKm,
+    currency: 'IDR',
+    editableWhileActiveOrder: true,
+    affectsCurrentOrder: false,
+    helperText: params.hasActiveOrder
+      ? 'Perubahan tarif hanya berlaku untuk booking baru, bukan trip aktif.'
+      : 'Tarif baru akan dipakai untuk discovery dan booking berikutnya.',
+  }
+}
+
+async function savePricingUpdate(params: {
+  userId: string
+  currentPricing: PricingProfile | null
+  nextPartnerPricePerKm?: number
+  nextCustomerOfferPerKm?: number
+  hasActiveOrder: boolean
+  isOnline: boolean
+}): Promise<Result<PricingProfile>> {
+  const partnerPriceResult =
+    params.nextPartnerPricePerKm === undefined
+      ? ok(undefined)
+      : validatePartnerPrice(params.nextPartnerPricePerKm)
+
+  if (!partnerPriceResult.ok) return partnerPriceResult
+
+  const nextPricing: PricingProfile = {
+    userId: params.userId,
+    partnerPricePerKm: params.nextPartnerPricePerKm ?? params.currentPricing?.partnerPricePerKm,
+    customerOfferPerKm: params.nextCustomerOfferPerKm ?? params.currentPricing?.customerOfferPerKm,
+    currency: 'IDR',
+    updatedAt: nowIso(),
+  }
+
+  await PricingRepository.savePricing(nextPricing)
+
+  if (params.isOnline && !params.hasActiveOrder) {
+    await publishCurrentPresence(params.userId)
+  }
+
+  await appendAuditEvent(buildEvent('PRICING_UPDATED', {
+    userId: params.userId,
+    partnerPricePerKm: nextPricing.partnerPricePerKm,
+    customerOfferPerKm: nextPricing.customerOfferPerKm,
+  }))
+
+  return ok(nextPricing)
+}
+```
+
+Rules:
+- Perubahan pricing tidak boleh mengubah `Order` yang sudah `Requested`, `Accepted`, `OnTheWay`, atau `OnTrip`
+- Jika user online dan tidak sedang punya active order, discovery snapshot boleh diperbarui setelah save sukses
+- Copy helper di pricing screen wajib menjelaskan bahwa efek pricing bersifat prospektif
+
 ### 20.2 Home Customer
 **Input:** UserProfile + PricingProfile + lokasi aktif
 **Output:** list mitra online di sekitar dengan jarak dan tarif
@@ -2959,11 +3084,14 @@ NetInfo.addEventListener(state => {
 - [ ] App membuat profile awal dan menyimpan ke SQLite
 - [ ] App me-load profile dan role aktif setelah restart
 - [ ] Bootstrap wajib menulis BOOTSTRAP_COMPLETE audit event
+- [ ] Edit profile kritikal ditolak saat ada active order non-terminal
 
 ### 23.2 Pricing
 - [ ] Input di luar range menampilkan error spesifik
 - [ ] Mitra tidak bisa online jika pricing belum di-set
 - [ ] PRICING_UPDATED audit event tercatat saat pricing berubah
+- [ ] Perubahan pricing tidak mengubah breakdown order aktif
+- [ ] Perubahan pricing saat online tanpa active order memperbarui snapshot untuk booking baru
 
 ### 23.3 Discovery
 - [ ] Mitra yang online muncul dalam < 10 detik
