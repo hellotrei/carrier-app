@@ -1619,6 +1619,23 @@ On bootstrap:
 - Active order detail tetap bisa dilihat offline
 - Tombol maps/dialer/WhatsApp tetap berfungsi offline
 
+### 19.3A Error dan Empty State Matrix
+| Kondisi | UI State | CTA Minimum | Yang Tetap Bisa Dilakukan |
+|---|---|---|---|
+| Lokasi belum diizinkan | education / permission required | buka settings / izinkan lokasi | buka app, lihat history lokal |
+| Relay tidak tersedia | mode terbatas / offline indicator | retry / pull to refresh | lihat home, history, active order lokal |
+| Discovery kosong | empty nearby state | refresh / ubah service type | tetap buka booking review jika ada kandidat tersimpan |
+| Driver readiness gagal | gate state | buka profile / pricing | tetap gunakan role customer |
+| Tidak ada kandidat auto booking | no candidate state | lihat kandidat manual / ubah filter | tetap edit booking draft |
+| Pricing invalid | form validation state | perbaiki input | tetap di screen pricing |
+| Audit export gagal | export failed state | coba lagi | tetap kembali ke history/audit screen |
+| External app tidak tersedia | handoff failed state | pilih fallback lain | tetap lanjut trip screen |
+
+Rules:
+- Empty state harus memakai copy yang membantu, bukan error generik
+- Error state harus mempertahankan context yang masih valid di layar
+- Jika recovery banner tersedia, CTA kembali ke active trip harus diprioritaskan di home
+
 ---
 
 ## 20. State Management UI

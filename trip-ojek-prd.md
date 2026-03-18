@@ -1044,6 +1044,16 @@ Aturan fairness lifecycle:
 - State lokal tidak bergantung pada koneksi aktif
 - Graceful degradation saat relay down: tunjukkan "mode terbatas" bukan crash
 
+### 9.5A Error dan Empty State Principles
+- Empty state tidak boleh terlihat seperti error
+- Error state tidak boleh membuat user kehilangan konteks terakhir yang masih valid
+- Setiap state utama minimal harus punya satu CTA yang jelas:
+  - retry
+  - buka settings
+  - kembali ke trip aktif
+  - ubah profile/pricing
+- Saat sistem masuk `mode terbatas`, app tetap harus jujur menjelaskan fitur apa yang sementara tidak tersedia
+
 ### 9.6 Biaya
 - Tidak ada third-party berbayar di MVP
 - Relay server < Rp 2 juta/bulan pada beban pilot

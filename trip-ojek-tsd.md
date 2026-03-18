@@ -900,10 +900,76 @@ export type AppError = {
   context?: Record<string, unknown>
 }
 
+export type UiStateKey =
+  | 'permission_required'
+  | 'limited_mode'
+  | 'empty_discovery'
+  | 'driver_gate'
+  | 'no_booking_candidate'
+  | 'form_invalid'
+  | 'export_failed'
+  | 'handoff_failed'
+
+export type UiStateConfig = {
+  key: UiStateKey
+  title: string
+  tone: 'info' | 'warning' | 'neutral'
+  primaryCta: 'retry' | 'open_settings' | 'open_profile' | 'open_pricing' | 'view_manual_candidates' | 'try_other_handoff'
+  preserveContext: boolean
+}
+
 // Result pattern — tidak lempar exception untuk flow normal
 export type Result<T, E = AppError> = 
   | { ok: true; value: T }
   | { ok: false; error: E }
+
+export const UI_STATE_MATRIX: Record<string, UiStateConfig> = {
+  LOCATION_PERMISSION_DENIED: {
+    key: 'permission_required',
+    title: 'Lokasi dibutuhkan untuk menemukan pengguna sekitar',
+    tone: 'warning',
+    primaryCta: 'open_settings',
+    preserveContext: true,
+  },
+  RELAY_UNAVAILABLE: {
+    key: 'limited_mode',
+    title: 'Mode terbatas. Koneksi realtime sedang tidak tersedia.',
+    tone: 'info',
+    primaryCta: 'retry',
+    preserveContext: true,
+  },
+  PROFILE_NOT_READY: {
+    key: 'driver_gate',
+    title: 'Lengkapi profil atau kendaraan agar siap online',
+    tone: 'warning',
+    primaryCta: 'open_profile',
+    preserveContext: true,
+  },
+  INVALID_PRICE_PER_KM: {
+    key: 'form_invalid',
+    title: 'Tarif belum valid',
+    tone: 'warning',
+    primaryCta: 'open_pricing',
+    preserveContext: true,
+  },
+  AUDIT_EXPORT_FAILED: {
+    key: 'export_failed',
+    title: 'Export belum berhasil',
+    tone: 'warning',
+    primaryCta: 'retry',
+    preserveContext: true,
+  },
+  EXTERNAL_APP_NOT_AVAILABLE: {
+    key: 'handoff_failed',
+    title: 'Aplikasi tujuan tidak tersedia di perangkat ini',
+    tone: 'info',
+    primaryCta: 'try_other_handoff',
+    preserveContext: true,
+  },
+}
+
+// Empty discovery tidak memakai error code; dia adalah state normal yang terpisah
+// CTA harus langsung relevan dengan penyebab state dan tetap menjaga context valid terakhir
 
 export function ok<T>(value: T): Result<T> {
   return { ok: true, value }
@@ -2640,6 +2706,13 @@ Rules:
 - Role switch entry harus tetap terlihat dari home
 - Jika `discoveryState !== ready`, home tetap menampilkan reason state yang jelas, bukan layar kosong
 
+### 20.2B Empty dan Failure State Contract
+Rules:
+- `discoveryState = empty` diperlakukan sebagai empty state normal, bukan error banner
+- `discoveryState = location_required` harus menampilkan CTA `open_settings`
+- `discoveryState = offline` harus menampilkan mode terbatas dan CTA `retry`
+- Jika auto booking tidak punya kandidat eligible, tampilkan state `no_booking_candidate` dengan CTA ke manual candidate list
+
 ### 20.3 Home Mitra
 **Input:** UserProfile + PricingProfile
 **Output:** online toggle + list customer aktif di sekitar + incoming order notification
@@ -3188,6 +3261,7 @@ NetInfo.addEventListener(state => {
 - [ ] Customer home menampilkan top recommendation dengan alasan singkat saat kandidat tersedia
 - [ ] Driver home menampilkan online gate reason saat readiness belum lolos
 - [ ] Home screens tetap informatif saat lokasi belum aktif atau relay tidak terhubung
+- [ ] Empty discovery diperlakukan sebagai state normal, bukan error banner
 
 ### 23.4 Anti-Abuse
 - [ ] Koordinat di luar range Indonesia ditolak (unit test)
@@ -3237,6 +3311,12 @@ NetInfo.addEventListener(state => {
 - [ ] Presence dan order coordination tetap berjalan saat `firebase_push_enabled = false`
 - [ ] FCM payload diperlakukan hanya sebagai wake-up/notice layer
 - [ ] Event `history`, `transaction_log`, `audit_export`, dan `feedback` tidak bergantung pada transport realtime
+
+### 23.11 Error dan Empty State Matrix
+- [ ] `RELAY_UNAVAILABLE` memunculkan mode terbatas tanpa menghapus context valid terakhir
+- [ ] `LOCATION_PERMISSION_DENIED` memunculkan CTA ke settings
+- [ ] `PROFILE_NOT_READY` memunculkan gate ke profile/pricing yang relevan
+- [ ] `EXTERNAL_APP_NOT_AVAILABLE` menawarkan fallback handoff lain bila tersedia
 
 ---
 
