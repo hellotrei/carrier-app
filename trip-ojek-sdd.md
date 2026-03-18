@@ -423,7 +423,8 @@ type VehicleProfile = {
   plateNumber?: string
   driverLicenseClass?: string
   seatCapacity?: number
-  pricingMode: 'per_vehicle' | 'per_seat'
+  pricingMode: 'per_vehicle' | 'per_seat' | 'fixed_price'
+  additionalPassengerPricePerKm?: number
   isActiveForBooking: boolean
 }
 
@@ -495,6 +496,9 @@ type Order = {
   bookingSessionId: string
   customerId: string
   partnerId: string
+  serviceType?: VehicleProfile['vehicleType']
+  pricingMode?: VehicleProfile['pricingMode']
+  passengerCount?: number
   bookingMode: 'manual' | 'auto'
   bookingIntent: 'self' | 'for_other'
   riderDeclaredName: string
@@ -506,6 +510,10 @@ type Order = {
   pricePerKmApplied: number
   baseTripEstimatedPrice: number
   pickupSurchargeAmount: number
+  waitingChargeAmount?: number
+  driverDelayDeductionAmount?: number
+  gearDiscountAmount?: number
+  arrivedAtPickupAt?: string
   estimatedPrice: number
   status: OrderStatus
   cancelReason?: string
@@ -1074,7 +1082,8 @@ function resolveAppliedPrice(
 
 ### 16.1A Multi-Vehicle Pricing Direction
 - `motor` default memakai pricing `per_vehicle`
-- `mobil`, `bajaj`, dan `angkot` boleh memakai pricing `per_seat`
+- `mobil` dan `bajaj` boleh memakai pricing `per_seat`
+- `angkot` diarahkan ke pricing `fixed_price` berbasis rute/tarif tetap
 - Untuk `per_seat`, tarif terdiri dari:
   - `basePricePerKm` untuk penumpang pertama
   - `additionalPassengerPricePerKm` untuk setiap penumpang tambahan
@@ -1096,6 +1105,19 @@ function resolveAppliedPrice(
   - customer membawa helm sendiri → potongan `Rp 500/km`
   - saat hujan dan customer membawa jas hujan sendiri → tambahan potongan `Rp 500/km`
 - Status perlengkapan customer harus terlihat ke driver di incoming order
+
+### 16.1E Service Matrix dan Scope Lock
+| Service Type | Pricing Mode | Rule Penting | Scope |
+|---|---|---|---|
+| `motor` | `per_vehicle` | 1 rider utama, gear discount aktif, helm dua wajib | MVP Pilot |
+| `mobil` | `per_seat` | base passenger + additional passenger per km | MVP Pilot |
+| `bajaj` | `per_seat` | serupa mobil dengan kapasitas lebih kecil | Phase 2 |
+| `angkot` | `fixed_price` | model rute/tarif tetap, bukan order personal penuh | Phase 2+ |
+
+Rule:
+- MVP pilot dikunci ke `motor` dan `mobil`
+- `bajaj` dan `angkot` tetap masuk desain, tetapi tidak boleh mempersulit core flow MVP
+- Angkot fixed-price membutuhkan policy terpisah dan tidak memakai seluruh rule pricing personal ride
 
 ### 16.2 Tampilan
 - Discovery list: tampilkan `visiblePricePerKm` masing-masing mitra
@@ -1529,6 +1551,24 @@ interface AuditGateway {
 10. Jika bookingMode=manual, customer kembali pilih mitra
 11. Jika bookingMode=auto, customer boleh lanjut ke kandidat berikutnya secara berurutan
 ```
+
+### 22.4B Active Trip Lifecycle
+```
+1. Order sudah Accepted
+2. Driver mulai bergerak ke pickup → status OnTheWay
+3. Saat driver menekan "Saya Sampai", simpan milestone arrivedAtPickupAt
+4. Mulai waiting timer 5 menit gratis
+5. Jika customer belum naik setelah grace period, tambahkan waitingChargeAmount per kelipatan 5 menit
+6. Jika driver tidak bergerak material dari titik awal > 5 menit setelah Accepted, tambahkan driverDelayDeductionAmount secara simetris
+7. Saat customer naik, transition ke OnTrip
+8. Freeze kalkulasi fairness aktif; trip berjalan ke destination
+9. Saat selesai, transition ke Completed dan simpan breakdown final
+```
+
+Rules:
+- `Arrived at Pickup` adalah milestone aktif, bukan status order baru
+- `waitingChargeAmount` dan `driverDelayDeductionAmount` tidak boleh aktif pada interval yang sama
+- Cancel/no-show/mismatch masih sah sebelum `OnTrip`
 
 ### 22.5 Complete Order
 ```

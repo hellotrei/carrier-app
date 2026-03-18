@@ -338,7 +338,7 @@ export type VehicleProfile = {
   plateNumber?: string
   driverLicenseClass?: string
   seatCapacity?: number
-  pricingMode: 'per_vehicle' | 'per_seat'
+  pricingMode: 'per_vehicle' | 'per_seat' | 'fixed_price'
   basePricePerKm?: number
   additionalPassengerPricePerKm?: number
   isActiveForBooking: boolean
@@ -400,6 +400,9 @@ export type Order = {
   bookingSessionId: string
   customerId: string
   partnerId: string
+  serviceType?: VehicleProfile['vehicleType']
+  pricingMode?: VehicleProfile['pricingMode']
+  passengerCount?: number
   bookingMode: BookingMode
   bookingIntent: BookingIntent
   riderDeclaredName: string
@@ -411,6 +414,10 @@ export type Order = {
   pricePerKmApplied: number
   baseTripEstimatedPrice: number
   pickupSurchargeAmount: number
+  waitingChargeAmount?: number
+  driverDelayDeductionAmount?: number
+  gearDiscountAmount?: number
+  arrivedAtPickupAt?: string
   estimatedPrice: number
   paymentMethod?: PaymentMethod
   status: OrderStatus
@@ -1665,8 +1672,18 @@ export function calculateSeatBasedEstimatedPrice(params: {
 
 Rules:
 - `motor` default `pricingMode = per_vehicle`
-- `mobil`, `bajaj`, `angkot` boleh `pricingMode = per_seat`
+- `mobil` dan `bajaj` boleh `pricingMode = per_seat`
+- `angkot` diarahkan ke `fixed_price` berbasis rute/tarif tetap
 - Untuk `per_seat`, passenger count wajib ada di booking draft
+- `angkot` eventual `fixed_price` membutuhkan flow terpisah dan tidak masuk MVP pilot
+
+### 15.3A.1 Service Matrix Lock
+| Service Type | Pricing Mode | Booking Model | Scope |
+|---|---|---|---|
+| `motor` | `per_vehicle` | personal ride | MVP Pilot |
+| `mobil` | `per_seat` | personal/shared small group | MVP Pilot |
+| `bajaj` | `per_seat` | personal/shared small group | Phase 2 |
+| `angkot` | `fixed_price` | route/fixed fare | Phase 2+ |
 
 ### 15.3B Waiting Fairness Calculation
 ```ts
@@ -2070,6 +2087,31 @@ async function bootstrapApp(): Promise<void> {
 - State persisten di SQLite
 - Restore dari lokal jika app di-kill
 - All handoff buttons harus punya clear error state
+
+### 20.6A Active Trip Lifecycle Contract
+```ts
+export type ActiveTripMilestone =
+  | 'accepted'
+  | 'departing_to_pickup'
+  | 'arrived_at_pickup'
+  | 'waiting_free_window'
+  | 'waiting_charge_running'
+  | 'on_trip'
+  | 'completed'
+```
+
+Rules:
+- milestone aktif tidak mengganti `OrderStatus`, tetapi menjadi penjelas operasional di dalam `Accepted`, `OnTheWay`, dan `OnTrip`
+- saat driver tap `Arrived at Pickup`, set `arrivedAtPickupAt`
+- waiting timer hanya berjalan setelah `arrivedAtPickupAt`
+- jika driver tidak bergerak material setelah `Accepted`, hitung `driverDelayDeductionAmount`
+- saat `OnTrip` dimulai, beku-kan kalkulasi waiting/delay fairness
+- breakdown final order harus membawa:
+  - `baseTripEstimatedPrice`
+  - `pickupSurchargeAmount`
+  - `waitingChargeAmount`
+  - `driverDelayDeductionAmount`
+  - `gearDiscountAmount`
 
 ### 20.7 Audit Export
 **Input:** date range + device auth

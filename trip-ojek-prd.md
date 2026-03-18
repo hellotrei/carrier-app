@@ -739,6 +739,53 @@ Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
 
 ---
 
+### 8.1A Service Matrix
+
+| Service Type | Model Harga | Aturan Utama | Kelayakan Driver | Status Produk |
+|---|---|---|---|---|
+| `motor` | `per_vehicle` per km | 1 penumpang utama, pickup surcharge, gear discount, waiting fairness | SIM aktif, plat aktif, helm dua wajib | MVP Pilot |
+| `mobil` | `per_seat` per km | harga dasar untuk penumpang pertama + tambahan per penumpang per km | SIM aktif, plat aktif, seat capacity jelas | MVP Pilot |
+| `bajaj` | `per_seat` per km | serupa mobil tetapi kapasitas lebih kecil dan tarif tambahan penumpang wajib jelas | legalitas kendaraan aktif, seat capacity jelas | Phase 2 |
+| `angkot` | `fixed_price` / rute tetap | tidak mengikuti model pricing order personal penuh | legalitas kendaraan aktif, rute/kapasitas jelas | Phase 2+ |
+
+Aturan penguncian scope:
+- `MVP Pilot` dikunci ke `motor` dan `mobil`
+- `bajaj` dan `angkot` tetap bagian arah produk, tetapi tidak boleh mempersulit core order flow MVP
+- Gear discount hanya berlaku untuk `motor`
+- Women preference filter berlaku untuk service yang supply drivernya memungkinkan
+- Waiting fairness berlaku untuk semua service personal ride, kecuali angkot fixed-route yang akan punya policy terpisah
+
+### 8.1B Active Trip Lifecycle
+
+Lifecycle aktif yang dikunci untuk MVP pilot:
+1. `Accepted`
+   Driver sudah menerima order. App mulai memonitor apakah driver bergerak wajar dari titik awal.
+2. `OnTheWay`
+   Driver menekan aksi berangkat ke pickup.
+3. `Arrived at Pickup` milestone
+   Bukan status order baru, tetapi milestone operasional yang menyalakan waiting timer.
+4. `Waiting Window`
+   5 menit pertama gratis untuk customer.
+5. `Waiting Charge Steps`
+   Setelah grace period habis, setiap kelipatan 5 menit menambah waiting charge setara 1x tarif per km yang berlaku.
+6. `OnTrip`
+   Customer sudah naik dan trip ke destination dimulai.
+7. `Completed`
+   Trip selesai, breakdown final dibekukan, rating default 5 bintang disiapkan, dan transaction log ditulis.
+
+Aturan fairness lifecycle:
+- Jika driver belum bergerak secara material setelah 5 menit sejak `Accepted`, customer berhak mendapat `driver delay deduction`
+- `waiting charge` dan `driver delay deduction` tidak boleh aktif pada interval waktu yang sama
+- Cancel karena mismatch, no-show, atau unsafe condition tetap boleh terjadi di `Accepted`, `OnTheWay`, atau `Arrived at Pickup`
+- Breakdown akhir wajib memisahkan:
+  - `baseTripEstimatedPrice`
+  - `pickupSurchargeAmount`
+  - `waitingChargeAmount`
+  - `driverDelayDeductionAmount`
+  - `gearDiscountAmount`
+
+---
+
 ## 9. Non-Functional Requirements
 
 ### 9.1 Platform
@@ -814,6 +861,12 @@ Expired [TERMINAL]
 - Satu order aktif per user pada satu waktu
 - Semua transisi wajib menulis audit event
 
+### 10.1 Active Trip Milestones
+- `Arrived at Pickup` diperlakukan sebagai milestone aktif di dalam flow `OnTheWay`, bukan status order baru
+- Waiting timer baru boleh mulai setelah milestone `Arrived at Pickup`
+- Customer no-show, mismatch rider, atau kondisi tidak aman dapat mengakhiri flow sebelum `OnTrip`
+- Setelah `OnTrip`, waiting fairness tidak lagi berjalan; yang berlaku hanya trip completion atau cancel darurat
+
 ---
 
 ## 11. Data Entities (Minimal)
@@ -847,7 +900,9 @@ type VehicleProfile = {
   vehicleId: string
   vehicleType: 'motor' | 'mobil' | 'bajaj' | 'angkot'
   plateNumber?: string
-  perSeatPricing?: boolean
+  pricingMode?: 'per_vehicle' | 'per_seat' | 'fixed_price'
+  seatCapacity?: number
+  additionalPassengerPricePerKm?: number
 }
 
 type BankAccount = {
@@ -888,10 +943,16 @@ type Order = {
   orderId: string
   customerId: string
   partnerId: string
+  serviceType?: VehicleProfile['vehicleType']
+  pricingMode?: VehicleProfile['pricingMode']
+  passengerCount?: number
   pickup: LocationPoint
   destination: LocationPoint
   distanceEstimateKm: number
   pricePerKmApplied: number
+  waitingChargeAmount?: number
+  driverDelayDeductionAmount?: number
+  gearDiscountAmount?: number
   estimatedPrice: number
   status: OrderStatus
   createdAt: string
