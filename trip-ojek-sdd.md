@@ -110,6 +110,9 @@ Relay **wajib ada** (tidak murni optional) untuk discovery dan signaling. Dua op
 - Firebase Realtime Database dapat dipakai untuk temporary live chat atau ephemeral coordination data yang bukan source of truth utama
 - Firebase Storage dapat dipakai untuk file chat sementara dengan cleanup policy
 - Order state, audit state, transaction state, dan auth state tetap berada di local-first core storage
+- Chat sementara wajib punya retention policy pendek, target awal `24 jam setelah order terminal`
+- Firebase tidak boleh menjadi penyimpan permanen histori trip, histori pembayaran, atau histori audit
+- Jika chat/Firebase gagal, order core flow tetap harus jalan dengan relay utama dan local state
 
 ### 4.3B Maps Strategy (Free First)
 - Navigasi berbasis deep link latitude/longitude
@@ -1371,6 +1374,8 @@ Invariants:
 - Background standby hanya boleh aktif saat ada order aktif, bukan untuk discovery terus-menerus
 - Saat order aktif, app boleh melakukan update lokasi periodik minimum untuk kebutuhan sinkronisasi dan SOS
 - SOS minimal membawa `actorUserId`, `orderId` bila ada, lokasi terakhir, dan keterangan bahaya singkat
+- Frekuensi target update lokasi background: sekitar 60 detik sekali bila OS mengizinkan
+- Background safety mode harus diposisikan sebagai best-effort capability, bukan jaminan tracking kontinu di semua device
 
 ### 18.11 Treatment Data Driver Palsu atau Tidak Konsisten
 - Jika data driver belum lengkap → `driverReadinessStatus = draft|declared`

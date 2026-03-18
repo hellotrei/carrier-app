@@ -289,6 +289,8 @@ Fase setelah MVP akan mematangkan Carrier App Project ke arah berikut:
   Aplikasi aktif mengingatkan barang bawaan, kondisi perjalanan, dan percakapan kecil yang sopan untuk membangun rasa aman dan nyaman.
 - **Safety active-order mode**
   Saat order aktif, aplikasi dapat masuk ke mode standby background terbatas untuk update lokasi periodik dan SOS.
+- **Push and temporary communication**
+  Firebase hanya dipakai untuk push notification dan komunikasi sementara yang tidak menjadi sumber kebenaran utama data bisnis.
 
 ### 9.2 Out of Scope — MVP
 

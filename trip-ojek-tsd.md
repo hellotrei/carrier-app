@@ -93,6 +93,11 @@ Firebase:           @react-native-firebase/app
                     @react-native-firebase/messaging
 ```
 
+Firebase rules:
+- FCM dipakai hanya untuk push notifikasi penting
+- Firebase Realtime Database/Storage hanya untuk temporary chat/file yang non-source-of-truth
+- Jika Firebase down, order core flow tidak boleh ikut gagal
+
 ### 3.4 Dependency Principles
 - Hindari SDK berbayar
 - Pilih library dengan maintainer aktif dan stars > 1000
@@ -2226,6 +2231,32 @@ Rules:
   - `driverDelayDeductionAmount`
   - `gearDiscountAmount`
 
+### 20.6B Background Safety Mode Boundary
+Rules:
+- hanya aktif saat order non-terminal sedang berjalan
+- tidak boleh dipakai untuk discovery background
+- target update lokasi periodik: `~60 detik` bila OS mengizinkan
+- jika OS menghentikan background updates, app harus fallback ke last known location tanpa menganggap itu error fatal
+- entering/exiting safety mode wajib menulis audit event ringan
+
+### 20.6C SOS Contract
+```ts
+export type SosPayload = {
+  actorUserId: string
+  orderId?: string
+  serviceType?: VehicleProfile['vehicleType']
+  latitude: number
+  longitude: number
+  dangerNote: string
+  createdAt: string
+}
+```
+
+Rules:
+- SOS payload harus minimum dan cepat dikirim
+- jangan lampirkan data sensitif yang tidak relevan
+- SOS tidak boleh bergantung pada upload file besar
+
 ### 20.7 Audit Export
 **Input:** date range + device auth
 **Output:** `.tripaudit` ZIP file via share sheet
@@ -2459,6 +2490,12 @@ const FEATURE_FLAGS = {
   sos_enabled: false,
 }
 ```
+
+Feature flag intent:
+- `firebase_push_enabled`: boleh aktif lebih awal untuk incoming order dan update penting
+- `temporary_chat_enabled`: tetap `false` sampai retention/cleanup policy siap
+- `active_order_background_tracking_enabled`: aktif hanya jika pengujian baterai dan OS behavior sudah aman
+- `sos_enabled`: aktif hanya jika payload, routing notifikasi, dan fallback UX sudah jelas
 
 ### 25.3 Config Rules
 - Prod config tidak boleh enable verbose logging

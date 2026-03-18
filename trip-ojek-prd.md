@@ -783,11 +783,24 @@ Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
 - Firebase Realtime Database/Storage dapat dipakai untuk chat sementara dan file chat sementara
 - Data chat bersifat temporary dan tidak menjadi source of truth utama
 - Saat order aktif, app dapat masuk ke mode standby/background service terbatas untuk update lat/long periodik dan SOS
+- Push notification hanya dipakai untuk event penting seperti incoming order, response order, atau SOS-related notice
+- Temporary chat wajib punya retention policy yang pendek dan jelas, misalnya auto-expire 24 jam setelah order terminal
+- File chat tidak boleh menjadi arsip permanen produk di MVP
+- Background tracking tidak boleh dipakai untuk discovery background terus-menerus; hanya untuk active order
+- Update lokasi background harus hemat baterai dan bersifat periodik minimum, target awal 60 detik sekali bila OS mengizinkan
+- SOS wajib membawa:
+  - orderId jika ada
+  - actorUserId
+  - serviceType
+  - lokasi terakhir
+  - teks singkat alasan bahaya
 
 **Acceptance Criteria:**
 - [ ] Push notification bisa dipakai untuk order penting saat app tidak foreground
 - [ ] Temporary chat punya TTL/retention policy yang jelas
 - [ ] SOS mengirim lokasi dan keterangan bahaya minimum
+- [ ] Background safety mode tidak mengaktifkan discovery background
+- [ ] User diberi penjelasan bahwa chat dan tracking ini bersifat terbatas saat active order
 
 **Prioritas:** P2
 
