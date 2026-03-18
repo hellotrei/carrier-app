@@ -4,9 +4,30 @@
 >
 > Adil untuk driver, customer, dan pengembang.
 
+![Status](https://img.shields.io/badge/status-planning%20%2B%20execution%20prep-0a7ea4)
+![Scope](https://img.shields.io/badge/scope-MVP%20Pilot-1f7a1f)
+![Architecture](https://img.shields.io/badge/architecture-local--first%20%2B%20thin%20relay-5c4ee5)
+![Contributors](https://img.shields.io/badge/contributors-wanted-f08c00)
+
 Carrier App Project adalah gagasan ride-hailing local-first yang mencoba mengambil jalan berbeda dari model platform konvensional: lebih ringan, lebih transparan, lebih ramah untuk mitra, dan lebih realistis untuk dibangun oleh tim kecil.
 
 Repo ini saat ini berada di fase **planning + architecture hardening**. Source code React Native akan ditempatkan di root repo ini, sementara seluruh dokumen spesifikasi sudah dipusatkan di [`docs/`](./docs).
+
+---
+
+## Quick Navigation
+
+- [Why This Project Matters](#why-this-project-matters)
+- [Project Snapshot](#project-snapshot)
+- [Vision](#vision)
+- [Comparison](#comparison)
+- [Architecture](#architecture)
+- [MVP Wireflow](#mvp-wireflow)
+- [Project Principles](#project-principles)
+- [Roadmap Timeline](#roadmap-timeline)
+- [How to Contribute](#how-to-contribute)
+- [Open Roles](#open-roles)
+- [Start Reading Here](#start-reading-here)
 
 ---
 
@@ -66,6 +87,18 @@ Membangun platform mobilitas yang adil, ringan, dan manusiawi, tempat siapa pun 
 | Fair to builders | arsitektur tidak langsung menuntut backend mahal |
 | Local-first by design | data inti tetap dekat dengan pemiliknya |
 | Warm product experience | copy, tone, dan flow terasa menenangkan |
+
+---
+
+## Project Principles
+
+| Principle | What it means in practice |
+|---|---|
+| Just Fair | fairness bukan slogan; masuk ke pricing, waiting, mismatch, dan trust policy |
+| Build lean first | pilot harus bisa jalan tanpa backend berat |
+| Truth close to user | profile, order, history, dan audit tetap dekat dengan pemilik data |
+| Human product tone | interaksi harus terasa membantu, bukan menghakimi |
+| Scope discipline | fitur keren yang belum perlu harus ditunda |
 
 ---
 
@@ -205,6 +238,49 @@ Area kontribusi yang paling bernilai:
 - audit/export system
 - mobile design system
 - copy and UX interaction
+
+---
+
+## Roadmap Timeline
+
+| Stage | Target Outcome |
+|---|---|
+| Sprint 1 | fondasi app, onboarding, profile, pricing, readiness gate |
+| Sprint 2 | presence, discovery, customer home, driver home |
+| Sprint 3 | booking, signaling, incoming order, active trip, recovery |
+| Sprint 4 | history, audit, transaction log, export, hardening |
+| After Pilot | active optional rollout, fraud learnings, selective phase 2 expansion |
+
+---
+
+## Open Roles
+
+Kontributor yang paling dibutuhkan saat ini:
+
+| Role | Why it matters now |
+|---|---|
+| React Native engineer | mulai membangun fondasi app dan navigation |
+| Mobile architect | menjaga local-first, recovery, dan data flow tetap rapi |
+| Product-minded frontend engineer | menerjemahkan spec ke flow yang tidak kaku |
+| Realtime / sync engineer | membangun presence dan signaling dengan aman |
+| UX / design system contributor | menjaga visual tetap konsisten dan tidak generik |
+| Technical writer | membantu menjaga docs tetap sinkron dengan implementasi |
+
+---
+
+## How to Contribute
+
+1. Mulai dari [`docs/README.md`](./docs/README.md).
+2. Baca PRD, SDD, dan TSD sebelum mengubah arsitektur atau flow.
+3. Pilih issue spec sprint yang sesuai dari folder [`docs/`](./docs).
+4. Jaga scope lock: jangan campur fitur `Phase 2+` ke jalur `MVP Pilot`.
+5. Jika menambah keputusan baru, sinkronkan ke dokumen yang relevan, bukan hanya ke code.
+
+Prinsip kontribusi:
+- kecil tapi tuntas
+- jangan menambah dependency tanpa alasan kuat
+- jangan mengubah source of truth model tanpa dokumentasi
+- utamakan core flow pilot di atas fitur optional
 
 ---
 
