@@ -904,10 +904,18 @@ Mitra menerima order:
 
 ### 15.1A Booking Draft Lifecycle
 - `Draft` adalah state order yang masih boleh diedit oleh customer
-- Selama masih `Draft`, customer masih boleh mengubah pickup, destination, mode booking, partner terpilih, dan `bookingIntent`
+- Selama masih `Draft`, customer masih boleh mengubah `serviceType`, pickup, destination, mode booking, partner terpilih, `bookingIntent`, `passengerCount`, `paymentMethod`, dan field perlengkapan yang relevan
 - Setiap perubahan field inti harus memicu re-calculate jarak estimasi dan estimasi harga
 - Saat customer menekan konfirmasi, app harus membekukan field yang akan dikirim ke mitra lalu mengubah order ke `Requested`
 - Setelah menjadi `Requested`, field inti tidak boleh berubah diam-diam; perubahan harus lewat cancel lalu buat order baru
+
+### 15.1A.1 Service Selector dan Adaptive Form
+- Booking flow dimulai dengan `serviceType` selector
+- Untuk MVP pilot, opsi yang aktif hanya `motor` dan `mobil`
+- Form harus adaptif:
+  - `motor`: `bookingIntent`, rider declaration, `bringsOwnHelmet`, `bringsOwnRaincoat`
+  - `mobil`: `bookingIntent`, rider declaration, `passengerCount`
+- Quote tidak boleh dibangun sebelum field minimum untuk `serviceType` aktif terpenuhi
 
 ### 15.1B Dua Mode Booking
 - `Manual select`
@@ -941,6 +949,16 @@ Mitra menerima order:
 - Recommendation harus tetap explainable: tampilkan alasan singkat seperti "lebih dekat", "estimasi lebih rendah", atau "sesuai preferensi"
 - Recommendation tidak boleh menyembunyikan daftar kandidat lain yang masih eligible
 
+### 15.1C.2 Candidate Filtering sebelum Ranking
+- Sebelum manual select atau auto ranking, candidate set harus disaring berdasarkan:
+  - `serviceType` cocok dengan kendaraan aktif mitra
+  - `driverReadinessStatus = minimum_valid`
+  - `vehicle.verificationStatus = minimum_valid`
+  - kapasitas kursi cukup jika `pricingMode = per_seat`
+  - preference filter jika aktif
+  - snapshot discovery masih fresh
+- Candidate yang gagal salah satu filter tidak boleh tampil sebagai target booking yang valid
+
 ### 15.1D Pickup Surcharge Policy
 - Mitra tidak boleh dirugikan untuk jarak penjemputan yang jauh
 - Jika jarak mitra ke pickup `<= 3 km`, tidak ada biaya tambahan
@@ -950,6 +968,36 @@ Mitra menerima order:
   - `pickupSurchargeAmount = pickupSurchargeKm × pricePerKmApplied`
 - Breakdown ini harus terlihat sebelum booking di sisi customer dan saat incoming order di sisi mitra
 - Karena itu ranking `auto booking` harus melihat total estimasi, bukan hanya tarif per-km mentah
+
+### 15.1E Final Quote Builder
+- Review order harus menjadi titik pembekuan quote final sebelum submit
+- Breakdown minimum yang harus tampil:
+  - `baseTripEstimatedPrice`
+  - `pickupSurchargeAmount`
+  - `waitingChargeAmount` jika sudah relevan
+  - `driverDelayDeductionAmount` jika sudah relevan
+  - `gearDiscountAmount` jika ada
+  - `paymentMethod`
+  - admin fee split jika `gateway` aktif
+  - total estimasi customer
+- Jika satu komponen belum dapat dihitung dengan valid, tombol confirm harus tetap disabled
+
+### 15.1F Auto Booking Retry UX
+- `auto booking` harus menampilkan progress attempt ke customer
+- Customer perlu tahu:
+  - kandidat ke berapa yang sedang dicoba
+  - apakah attempt sebelumnya reject atau timeout
+  - kapan sistem sudah kehabisan kandidat
+- Retry tetap berurutan, tidak paralel
+
+### 15.1G Failure States
+- Booking flow wajib punya state yang manusiawi untuk:
+  - `no_eligible_driver`
+  - `no_matching_driver_for_preference`
+  - `selected_driver_stale`
+  - `auto_booking_candidates_exhausted`
+  - `booking_form_incomplete`
+  - `payment_method_not_ready`
 
 ### 15.2 Payload
 ```ts
@@ -1557,28 +1605,33 @@ interface AuditGateway {
 
 ### 22.3 Submit Order
 ```
-1. Customer isi pickup (GPS atau manual pin)
-2. Customer isi destination
-3. Customer pilih mode: `manual select` atau `auto booking`
-4. Customer pilih `bookingIntent`: untuk diri sendiri atau untuk orang lain
-5. Jika untuk orang lain, customer wajib isi rider name dan contact minimum
-6. Customer pilih `paymentMethod`
-7. Hitung haversine distance
-8. Hitung estimasi perjalanan
-9. Hitung jarak mitra ke pickup dan biaya penjemputan tambahan jika > 3 km
-10. Jika `gateway` aktif, hitung admin fee dan split customer/driver
-11. Tampilkan breakdown total ke customer
-12. Jika `manual`, customer pilih mitra dari discovery list
-13. Jika `auto`, app meranking kandidat lalu memilih target terbaik secara lokal
-14. Buat Order dengan status Draft
-15. Tulis audit ORDER_DRAFT_CREATED
-16. Customer review dan confirm
-17. Update status ke Requested
-18. Simpan lokal
-19. Kirim OrderRequestPayload ke relay
-20. Tulis audit ORDER_REQUESTED
-21. Mulai timeout 60 detik di client
-22. Tampilkan "Menunggu konfirmasi mitra"
+1. Customer pilih `serviceType`
+2. Customer isi pickup (GPS atau manual pin)
+3. Customer isi destination
+4. Form adaptif tampil sesuai `serviceType`
+5. Customer pilih mode: `manual select` atau `auto booking`
+6. Customer pilih `bookingIntent`: untuk diri sendiri atau untuk orang lain
+7. Jika untuk orang lain, customer wajib isi rider name dan contact minimum
+8. Customer pilih `paymentMethod`
+9. Filter candidate set berdasarkan readiness, service type, capacity, preference, dan freshness
+10. Hitung haversine distance
+11. Hitung estimasi perjalanan
+12. Hitung jarak mitra ke pickup dan biaya penjemputan tambahan jika > 3 km
+13. Hitung gear discount / komponen quote lain yang relevan
+14. Jika `gateway` aktif, hitung admin fee dan split customer/driver
+15. Tampilkan breakdown total ke customer
+16. Jika `manual`, customer pilih mitra dari candidate set
+17. Jika `auto`, app meranking kandidat lalu memilih target terbaik secara lokal
+18. Buat Order dengan status Draft
+19. Tulis audit ORDER_DRAFT_CREATED
+20. Customer review dan confirm
+21. Update status ke Requested
+22. Simpan lokal
+23. Kirim OrderRequestPayload ke relay
+24. Tulis audit ORDER_REQUESTED
+25. Mulai timeout 60 detik di client
+26. Jika `auto`, tampilkan progress attempt
+27. Tampilkan state menunggu atau failure yang sesuai
 ```
 
 ### 22.4 Mitra Accept Order

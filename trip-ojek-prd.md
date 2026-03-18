@@ -413,12 +413,29 @@ Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
 **Deskripsi:** Customer membuat dan mengirim order ke mitra.
 
 **Requirements:**
+- Customer harus memilih `serviceType` di awal flow (`motor` atau `mobil` untuk MVP pilot)
 - Customer isi pickup (GPS auto-fill atau manual pin di map)
 - Customer isi destination (search atau manual pin)
 - Customer dapat memilih **2 mode booking**:
   - `Manual select`: customer klik salah satu mitra nearby
   - `Auto booking`: app memilih kandidat mitra terbaik secara otomatis dari nearby list
-- Preview order: mitra, pickup, destination, jarak estimasi, harga estimasi
+- Booking form harus adaptif terhadap `serviceType`
+  - `motor`: rider intent, bawa helm sendiri, bawa jas hujan sendiri
+  - `mobil`: jumlah penumpang, rider intent
+- Candidate driver harus difilter dulu sebelum ranking atau selection:
+  - service type cocok
+  - driver readiness valid
+  - capacity cukup
+  - preference filter jika aktif
+  - snapshot masih fresh
+- Preview order: mitra, pickup, destination, service type, jarak estimasi, harga estimasi
+- Preview order harus menampilkan breakdown final yang relevan:
+  - `baseTripEstimatedPrice`
+  - `pickupSurchargeAmount`
+  - `gearDiscountAmount` jika ada
+  - `paymentMethod`
+  - admin fee share jika aktif
+  - total estimasi
 - Customer confirm dan kirim order
 - Order tersimpan lokal dengan status `Requested`
 - Signaling dikirim ke mitra via relay
@@ -427,11 +444,22 @@ Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
 - `Auto booking` **tidak** boleh broadcast ke banyak mitra sekaligus
 - Rating/review dan kualitas kendaraan **belum** dipakai untuk auto ranking di MVP
 - Customer harus diberi tahu jika ada biaya penjemputan tambahan sebelum menekan konfirmasi
+- Jika `auto booking` retry ke kandidat berikutnya, progress harus terlihat ke customer
+- Failure state harus jelas untuk:
+  - tidak ada driver cocok
+  - preference tidak terpenuhi
+  - semua kandidat auto booking reject/timeout
+  - driver yang dipilih sudah stale/offline
+  - form belum lengkap atau payment belum valid
 
 **Acceptance Criteria:**
 - [ ] Order bisa dibuat dan dikirim end-to-end dari customer ke mitra
 - [ ] Customer bisa memilih mode `manual select` atau `auto booking`
+- [ ] Customer bisa memilih `serviceType` sebelum quote dibangun
+- [ ] Form booking berubah sesuai `serviceType`
 - [ ] Preview order menampilkan semua detail yang relevan sebelum konfirmasi
+- [ ] Kandidat yang tidak eligible tidak ikut masuk ranking/selection
+- [ ] Retry `auto booking` terlihat jelas progresnya ke customer
 - [ ] Order tersimpan lokal sebelum sinyal dikirim (tidak hilang jika koneksi putus saat kirim)
 - [ ] Timeout 60 detik berjalan dan order auto-expire
 - [ ] Audit event ORDER_REQUESTED tercatat
@@ -821,6 +849,16 @@ Aturan penguncian scope:
 - Gear discount hanya berlaku untuk `motor`
 - Women preference filter berlaku untuk service yang supply drivernya memungkinkan
 - Waiting fairness berlaku untuk semua service personal ride, kecuali angkot fixed-route yang akan punya policy terpisah
+
+### 8.1C Booking Enhancement Scope
+- MVP pilot booking flow dikunci untuk:
+  - `service selector`
+  - `adaptive booking form`
+  - `filtered candidate set`
+  - `final quote builder`
+  - `auto-book retry progress`
+  - `clear failure states`
+- Enhancement ini diprioritaskan sebelum fitur visual sekunder atau rekomendasi yang lebih kompleks
 
 ### 8.1B Active Trip Lifecycle
 

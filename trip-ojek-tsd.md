@@ -1351,6 +1351,38 @@ function resolveBookingTarget(params: {
 }
 ```
 
+### 13.2B.1 Candidate Filtering Contract
+```ts
+function filterEligibleBookingCandidates(params: {
+  discoveryItems: PresenceSnapshot[]
+  candidateProfiles: UserProfile[]
+  serviceType: VehicleProfile['vehicleType']
+  passengerCount?: number
+  prefersFemaleDriver: boolean
+  pickup: LocationPoint
+  now: number
+}): PresenceSnapshot[] {
+  const freshCandidates = filterAndSortDiscovery(
+    params.discoveryItems,
+    params.pickup,
+    DISCOVERY_DEFAULT_RADIUS_KM,
+    params.now
+  )
+
+  return freshCandidates.filter(snapshot => {
+    const profile = params.candidateProfiles.find(candidate => candidate.userId === snapshot.userId)
+    const activeVehicle = profile?.vehicles?.find(vehicle => vehicle.isActiveForBooking)
+    if (!profile || !activeVehicle) return false
+    if (profile.driverReadinessStatus !== 'minimum_valid') return false
+    if (activeVehicle.verificationStatus && activeVehicle.verificationStatus !== 'minimum_valid') return false
+    if (activeVehicle.vehicleType !== params.serviceType) return false
+    if (params.prefersFemaleDriver && profile.genderDeclaration !== 'female') return false
+    if (activeVehicle.pricingMode === 'per_seat' && params.passengerCount && activeVehicle.seatCapacity && activeVehicle.seatCapacity < params.passengerCount) return false
+    return true
+  })
+}
+```
+
 ### 13.2C Auto Booking Ranking Contract
 ```ts
 function rankAutoBookingCandidates(
@@ -1417,6 +1449,7 @@ Rules:
 function validateBookingDraft(params: {
   customerId: string
   currentRole: AppRole
+  serviceType: VehicleProfile['vehicleType']
   pickup: LocationPoint
   destination: LocationPoint
   bookingMode: BookingMode
@@ -1424,6 +1457,10 @@ function validateBookingDraft(params: {
   bookingIntent: BookingIntent
   riderDeclaredName: string
   riderPhoneMasked?: string
+  passengerCount?: number
+  paymentMethod?: PaymentMethod
+  bringsOwnHelmet?: boolean
+  bringsOwnRaincoat?: boolean
   activeOrder: Order | null
 }): Result<void> {
   if (params.currentRole !== 'customer') {
@@ -1442,6 +1479,10 @@ function validateBookingDraft(params: {
     return err({ code: 'ANTI_ABUSE_INVALID_COORDS' })
   }
 
+  if (!params.paymentMethod) {
+    return err({ code: 'PROFILE_NOT_READY', context: { reason: 'payment_method_missing' } })
+  }
+
   if (params.selectedPartnerSnapshot.role !== 'mitra' || !params.selectedPartnerSnapshot.isOnline) {
     return err({ code: 'DISCOVERY_UNAVAILABLE', context: { reason: 'partner_not_available' } })
   }
@@ -1457,6 +1498,10 @@ function validateBookingDraft(params: {
 
   if (params.bookingIntent === 'for_other' && (!params.riderDeclaredName.trim() || !params.riderPhoneMasked)) {
     return err({ code: 'DELEGATED_BOOKING_REQUIRES_DECLARATION' })
+  }
+
+  if (params.serviceType === 'mobil' && (!params.passengerCount || params.passengerCount <= 0)) {
+    return err({ code: 'PROFILE_NOT_READY', context: { reason: 'passenger_count_required' } })
   }
 
   return ok(undefined)
@@ -1490,6 +1535,68 @@ Booking mode rules:
 - `bookingMode = manual` → `selectedPartnerSnapshot` wajib berasal dari pilihan eksplisit user
 - `bookingMode = auto` → `selectedPartnerSnapshot` wajib berasal dari hasil `resolveBookingTarget()`
 - `bookingMode = auto` tidak boleh mengirim request paralel ke banyak mitra
+
+### 13.2A.1 Final Quote Builder Contract
+```ts
+function buildFinalBookingQuote(params: {
+  serviceType: VehicleProfile['vehicleType']
+  tripDistanceKm: number
+  pickupDistanceFromPartnerKm: number
+  pricePerKm: number
+  paymentMethod: PaymentMethod
+  passengerCount?: number
+  additionalPassengerPricePerKm?: number
+  bringsOwnHelmet?: boolean
+  bringsOwnRaincoat?: boolean
+  isRaining?: boolean
+  paymentAdminFeeTotal?: number
+}) {
+  const baseTripEstimatedPrice =
+    params.serviceType === 'mobil' && params.passengerCount && params.passengerCount > 1
+      ? calculateSeatBasedEstimatedPrice({
+          distanceKm: params.tripDistanceKm,
+          basePricePerKm: params.pricePerKm,
+          additionalPassengerPricePerKm: params.additionalPassengerPricePerKm ?? 0,
+          passengerCount: params.passengerCount,
+        })
+      : calculateEstimatedPrice(params.tripDistanceKm, params.pricePerKm)
+
+  const pickupSurchargeAmount = calculatePickupSurcharge(params.pickupDistanceFromPartnerKm, params.pricePerKm)
+  const gearDiscountAmount = calculateRiderGearDiscount({
+    vehicleType: params.serviceType,
+    bringsOwnHelmet: !!params.bringsOwnHelmet,
+    bringsOwnRaincoat: !!params.bringsOwnRaincoat,
+    isRaining: !!params.isRaining,
+    distanceKm: params.tripDistanceKm,
+  })
+
+  const estimatedPrice = Math.max(0, baseTripEstimatedPrice + pickupSurchargeAmount - gearDiscountAmount)
+  const paymentQuote = buildPaymentQuote({
+    estimatedPrice,
+    paymentMethod: params.paymentMethod,
+    paymentAdminFeeTotal: params.paymentAdminFeeTotal,
+  })
+
+  return {
+    baseTripEstimatedPrice,
+    pickupSurchargeAmount,
+    gearDiscountAmount,
+    estimatedPrice,
+    ...paymentQuote,
+  }
+}
+```
+
+### 13.2A.2 Failure State Contract
+```ts
+export type BookingFailureState =
+  | 'booking_form_incomplete'
+  | 'payment_method_not_ready'
+  | 'no_eligible_driver'
+  | 'no_matching_driver_for_preference'
+  | 'selected_driver_stale'
+  | 'auto_booking_candidates_exhausted'
+```
 
 ### 13.3 Idempotency Rules
 - `orderId` dibuat UUID v4 di client, dijamin unik
@@ -2159,6 +2266,7 @@ async function bootstrapApp(): Promise<void> {
 **Output:** Order tersimpan lokal + sinyal dikirim ke mitra
 
 **Technical requirements:**
+- Customer wajib memilih `serviceType` di awal
 - Pickup auto-fill dari GPS
 - Destination: text search menggunakan device keyboard (tidak butuh geocoding API)
 - Haversine distance calculation
@@ -2166,14 +2274,18 @@ async function bootstrapApp(): Promise<void> {
 - Booking session ID dibuat client-side untuk mengelompokkan retry dalam satu sesi booking
 - Persist lokal sebelum kirim sinyal
 - Customer dapat memilih `manual` atau `auto` booking
+- Booking form harus adaptif sesuai `serviceType`
 - Customer wajib memilih `bookingIntent`: untuk diri sendiri atau untuk orang lain
 - Jika `bookingIntent = for_other`, `riderDeclaredName` wajib diisi dan `riderPhoneMasked` wajib tersedia sebelum submit
 - Customer wajib memilih `paymentMethod` sebelum confirm
+- Candidate set wajib difilter dulu sebelum selection/ranking
 - Jika delegated booking sedang direstrict oleh trust enforcement, submit harus ditolak
 - Auto booking harus memilih target di client dengan ranking lokal yang transparan
 - Auto booking tidak boleh broadcast ke banyak mitra sekaligus
 - Jika pickup distance melebihi 3 km dari mitra target, biaya penjemputan tambahan harus dihitung dan ditampilkan sebelum confirm
 - Preview booking harus menampilkan breakdown: estimasi perjalanan, biaya penjemputan tambahan, admin fee share jika ada, dan total estimasi
+- Auto booking retry progress harus terlihat ke customer
+- Failure state booking harus eksplisit dan tidak boleh collapse ke generic error
 
 ### 20.5 Incoming Order (Mitra)
 **Input:** OrderRequestPayload dari relay subscription
