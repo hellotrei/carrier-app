@@ -963,6 +963,33 @@ export type CoreComponentId =
   | 'secondary_button'
   | 'recovery_banner'
 
+export type AppRouteId =
+  | 'bootstrap'
+  | 'onboarding'
+  | 'role_selection'
+  | 'basic_profile'
+  | 'pricing_setup'
+  | 'customer_home'
+  | 'driver_home'
+  | 'booking_form'
+  | 'order_review'
+  | 'waiting_response'
+  | 'incoming_order'
+  | 'active_trip'
+  | 'post_trip_feedback'
+  | 'history_list'
+  | 'history_detail'
+  | 'profile'
+  | 'pricing_settings'
+  | 'transaction_log'
+  | 'audit_export'
+
+export type WireflowEdge = {
+  from: AppRouteId
+  to: AppRouteId
+  when: string
+}
+
 // Result pattern — tidak lempar exception untuk flow normal
 export type Result<T, E = AppError> = 
   | { ok: true; value: T }
@@ -1087,6 +1114,36 @@ export const CORE_COMPONENTS: CoreComponentId[] = [
   'primary_button',
   'secondary_button',
   'recovery_banner',
+]
+
+export const MVP_WIREFLOW: WireflowEdge[] = [
+  { from: 'bootstrap', to: 'onboarding', when: 'first install' },
+  { from: 'bootstrap', to: 'customer_home', when: 'currentRole=customer and no active order' },
+  { from: 'bootstrap', to: 'driver_home', when: 'currentRole=mitra and no active order' },
+  { from: 'bootstrap', to: 'active_trip', when: 'active order restored from local state' },
+  { from: 'onboarding', to: 'role_selection', when: 'intro complete' },
+  { from: 'role_selection', to: 'basic_profile', when: 'role chosen' },
+  { from: 'basic_profile', to: 'pricing_setup', when: 'role includes mitra' },
+  { from: 'basic_profile', to: 'customer_home', when: 'customer only flow complete' },
+  { from: 'pricing_setup', to: 'driver_home', when: 'pricing minimum saved' },
+  { from: 'customer_home', to: 'booking_form', when: 'start booking' },
+  { from: 'booking_form', to: 'order_review', when: 'draft valid' },
+  { from: 'order_review', to: 'waiting_response', when: 'submit order' },
+  { from: 'waiting_response', to: 'active_trip', when: 'order accepted' },
+  { from: 'driver_home', to: 'incoming_order', when: 'incoming order received' },
+  { from: 'incoming_order', to: 'active_trip', when: 'partner accepts' },
+  { from: 'active_trip', to: 'post_trip_feedback', when: 'completed by customer flow' },
+  { from: 'post_trip_feedback', to: 'history_detail', when: 'feedback submitted or skipped' },
+  { from: 'active_trip', to: 'history_detail', when: 'terminal order on partner flow' },
+  { from: 'customer_home', to: 'history_list', when: 'open history' },
+  { from: 'driver_home', to: 'history_list', when: 'open history' },
+  { from: 'driver_home', to: 'pricing_settings', when: 'open pricing' },
+  { from: 'customer_home', to: 'profile', when: 'open profile' },
+  { from: 'driver_home', to: 'profile', when: 'open profile' },
+  { from: 'history_list', to: 'history_detail', when: 'open one item' },
+  { from: 'profile', to: 'pricing_settings', when: 'role mitra and needs pricing correction' },
+  { from: 'driver_home', to: 'transaction_log', when: 'operator mode available' },
+  { from: 'history_list', to: 'audit_export', when: 'open audit tools' },
 ]
 
 export function ok<T>(value: T): Result<T> {
@@ -2651,6 +2708,13 @@ async function bootstrapApp(): Promise<void> {
 
 ## 20. Feature Technical Breakdown
 
+### 20.0 MVP Wireflow Contract
+Rules:
+- `MVP_WIREFLOW` adalah peta transisi layar minimum untuk pilot
+- Recovery ke `active_trip` dari `bootstrap` harus diprioritaskan dibanding home biasa bila ada order non-terminal
+- `customer_home` dan `driver_home` adalah hub utama setelah onboarding selesai
+- Flow support seperti `profile`, `pricing_settings`, `history_list`, dan `audit_export` tidak boleh memutus recovery path ke trip aktif
+
 ### 20.1 Onboarding
 **Input:** none (first launch)
 **Output:** UserProfile tersimpan, role aktif tersimpan
@@ -3364,6 +3428,7 @@ NetInfo.addEventListener(state => {
 - [ ] App me-load profile dan role aktif setelah restart
 - [ ] Bootstrap wajib menulis BOOTSTRAP_COMPLETE audit event
 - [ ] Edit profile kritikal ditolak saat ada active order non-terminal
+- [ ] Jika ada active order non-terminal, bootstrap memprioritaskan recovery path ke `active_trip`
 
 ### 23.2 Pricing
 - [ ] Input di luar range menampilkan error spesifik
@@ -3451,6 +3516,12 @@ NetInfo.addEventListener(state => {
 - [ ] CTA utama lebih menonjol dari status sekunder tanpa terasa agresif
 - [ ] Border tetap minimal dan shadow tetap tipis di layar utama
 - [ ] Komponen inti seperti card, badge, breakdown, dan recovery banner konsisten lintas screen
+
+### 23.14 MVP Wireflow
+- [ ] Entry flow membawa user ke home sesuai role setelah onboarding selesai
+- [ ] Customer flow tersambung dari home → booking → waiting → active trip → feedback → history
+- [ ] Mitra flow tersambung dari home → incoming order → active trip → history
+- [ ] Flow support seperti profile/pricing/history tidak memutus jalur kembali ke trip aktif
 
 ---
 

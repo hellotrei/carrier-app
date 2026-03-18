@@ -1723,6 +1723,38 @@ type RootState = {
   - recovery banner
 - Customer dan mitra harus terasa satu design system yang sama, hanya beda konteks dan prioritas informasi
 
+### 20.3D MVP Screen Map
+- Entry flow:
+  - splash / bootstrap
+  - onboarding
+  - role selection
+  - basic profile
+  - pricing setup opsional untuk mitra
+  - home sesuai role
+- Customer flow:
+  - customer home
+  - booking form
+  - order review
+  - waiting response
+  - active trip
+  - post-trip feedback
+  - history detail
+- Mitra flow:
+  - mitra home
+  - pricing / profile correction bila belum ready
+  - incoming order
+  - active trip
+  - history detail
+- Support flow:
+  - profile
+  - pricing settings
+  - transaction log
+  - audit export
+
+Rules:
+- Active order selalu mengalahkan navigasi biasa; jika ada order non-terminal, recovery banner harus menjadi pintu kembali utama
+- Customer dan mitra memakai screen map yang berbagi komponen inti, bukan dua subtree UI yang benar-benar terpisah
+
 ### 20.3C Copywriting dan Tone Matrix
 | Screen / Context | Tone Utama | Tujuan Copy | Hindari |
 |---|---|---|---|

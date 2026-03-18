@@ -1339,6 +1339,18 @@ Setelah PRD ini, yang dibutuhkan:
 - **UX Spec** — wireframe dan alur layar per screen
 - **Sprint breakdown** — task engineering per sprint
 
+### 16.1 MVP Wireflow Ringkas
+- `First install`:
+  onboarding → role selection → basic profile → pricing awal jika role mitra → home sesuai role
+- `Customer journey utama`:
+  customer home → booking form → review quote → waiting response → active trip → post-trip feedback → history
+- `Mitra journey utama`:
+  mitra home → go online → incoming order → active trip → history / kembali ke home
+- `Recovery journey`:
+  app restart saat ada order aktif → recovery banner di home → active trip
+- `Support journey`:
+  home → profile / pricing settings / history / audit export
+
 ---
 
 ## 17. Ringkasan Keputusan Produk
