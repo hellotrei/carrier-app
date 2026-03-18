@@ -942,6 +942,27 @@ export type ScreenCopySpec = {
   avoid: string[]
 }
 
+export type DesignTokenSpec = {
+  colorBackground: 'soft_light'
+  colorSurface: 'clean_white'
+  shadowStyle: 'soft_sm'
+  borderStyle: 'minimal'
+  radiusStyle: 'md'
+  spacingStyle: 'comfortable_mobile'
+}
+
+export type CoreComponentId =
+  | 'app_bar'
+  | 'role_switch'
+  | 'service_selector'
+  | 'nearby_card'
+  | 'recommendation_card'
+  | 'pricing_breakdown'
+  | 'status_badge'
+  | 'primary_button'
+  | 'secondary_button'
+  | 'recovery_banner'
+
 // Result pattern — tidak lempar exception untuk flow normal
 export type Result<T, E = AppError> = 
   | { ok: true; value: T }
@@ -1044,6 +1065,28 @@ export const SCREEN_COPY_MATRIX: ScreenCopySpec[] = [
     objective: 'Menjelaskan masalah secara jujur dan memberi CTA yang bisa dilakukan.',
     avoid: ['blaming user', 'istilah backend/internal'],
   },
+]
+
+export const DESIGN_TOKEN_SPEC: DesignTokenSpec = {
+  colorBackground: 'soft_light',
+  colorSurface: 'clean_white',
+  shadowStyle: 'soft_sm',
+  borderStyle: 'minimal',
+  radiusStyle: 'md',
+  spacingStyle: 'comfortable_mobile',
+}
+
+export const CORE_COMPONENTS: CoreComponentId[] = [
+  'app_bar',
+  'role_switch',
+  'service_selector',
+  'nearby_card',
+  'recommendation_card',
+  'pricing_breakdown',
+  'status_badge',
+  'primary_button',
+  'secondary_button',
+  'recovery_banner',
 ]
 
 export function ok<T>(value: T): Result<T> {
@@ -2781,6 +2824,7 @@ Rules:
 - Role switch entry harus tetap terlihat dari home
 - Jika `discoveryState !== ready`, home tetap menampilkan reason state yang jelas, bukan layar kosong
 - Copy di customer home harus mengikuti entry `customer_home` pada `SCREEN_COPY_MATRIX` agar rekomendasi terasa membantu, bukan mendorong
+- Card, badge, dan CTA di home harus memakai `CORE_COMPONENTS` yang sama dengan layar lain agar visual hierarchy stabil
 
 ### 20.2B Empty dan Failure State Contract
 Rules:
@@ -2832,6 +2876,7 @@ Rules:
 - Toggle online tidak boleh aktif bila `onlineGateReason` ada
 - Jika readiness gagal, home mitra harus mengarahkan user ke screen yang relevan seperti pricing atau profile
 - Copy gate di home mitra harus menghormati driver dan menjelaskan langkah perbaikan tanpa nada menghakimi
+- Status badge, recovery banner, dan button hierarchy harus mengikuti `DESIGN_TOKEN_SPEC` yang sama dengan customer home
 
 ### 20.4 Booking Flow
 **Input:** pickup (GPS/manual) + destination + selected mitra
@@ -3400,6 +3445,12 @@ NetInfo.addEventListener(state => {
 - [ ] Customer home memakai copy yang membantu memilih, bukan menekan untuk booking
 - [ ] Driver home memakai copy gate yang hormat dan memberi langkah perbaikan
 - [ ] Error dan empty states memakai bahasa manusiawi tanpa istilah backend/internal
+
+### 23.13 Design System Boundary
+- [ ] Customer dan mitra memakai token visual dasar yang sama
+- [ ] CTA utama lebih menonjol dari status sekunder tanpa terasa agresif
+- [ ] Border tetap minimal dan shadow tetap tipis di layar utama
+- [ ] Komponen inti seperti card, badge, breakdown, dan recovery banner konsisten lintas screen
 
 ---
 

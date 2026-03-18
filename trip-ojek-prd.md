@@ -1072,6 +1072,9 @@ Aturan fairness lifecycle:
 - Border seminimal mungkin
 - Shadow tipis dan tidak berat
 - Nada interaksi harus humble, hangat, dan menenangkan
+- Surface utama harus terasa ringan: card bersih, jarak lega, dan hierarki jelas
+- Aksi penting seperti `booking`, `accept`, atau `go online` boleh menonjol, tetapi status biasa tidak perlu agresif
+- Visual system harus konsisten lintas role: customer dan mitra terasa satu produk, bukan dua aplikasi berbeda
 
 ---
 

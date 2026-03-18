@@ -1701,6 +1701,28 @@ type RootState = {
 - Copy utama harus hangat, humble, dan sopan
 - Reminder seperti "jangan lupa barang bawaan" dan "pastikan tidak ada yang tertinggal" diperlakukan sebagai bagian experience, bukan teks tambahan acak
 
+### 20.3B Design System Boundary
+- Token visual minimum:
+  - background utama terang dan lembut
+  - surface card sedikit terangkat dengan shadow tipis
+  - border hanya dipakai bila memang membantu grouping
+  - radius medium, tidak terlalu tajam dan tidak terlalu bulat
+  - spacing lega untuk area sentuh mobile
+- Prioritas visual:
+  - CTA utama seperti `Booking`, `Accept`, `Go Online` boleh paling menonjol
+  - status sekunder seperti filter, helper text, atau metadata harus tetap tenang
+  - warna warning/error harus jelas tetapi tidak terasa alarmis
+- Komponen inti yang harus konsisten:
+  - app bar
+  - role switch chip/entry
+  - service selector
+  - nearby/recommendation card
+  - pricing breakdown rows
+  - status badge
+  - primary / secondary button
+  - recovery banner
+- Customer dan mitra harus terasa satu design system yang sama, hanya beda konteks dan prioritas informasi
+
 ### 20.3C Copywriting dan Tone Matrix
 | Screen / Context | Tone Utama | Tujuan Copy | Hindari |
 |---|---|---|---|
