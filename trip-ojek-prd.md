@@ -824,12 +824,18 @@ Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
 **Requirements:**
 - Secara default setiap trip selesai diberi rating 5 bintang
 - Jika customer memberi rating manual, rating manual menggantikan default
+- Setelah trip `Completed`, app menampilkan post-trip feedback sheet yang ringan dan tidak memaksa
+- Rating manual berupa 1-5 bintang, dengan review singkat opsional
+- Jika customer menutup sheet atau melewati flow tanpa input manual, sistem membekukan rating default 5
+- Review teks pada MVP diperlakukan sebagai catatan pengalaman, bukan sinyal publik untuk ranking otomatis
 - App menampilkan micro-copy yang ramah, humble, dan personal di titik interaksi penting
 - App mengingatkan barang bawaan dan keselamatan secara kontekstual
 
 **Acceptance Criteria:**
 - [ ] Trip tanpa input rating manual tetap menghasilkan rating 5
 - [ ] Trip dengan rating manual memakai rating manual
+- [ ] Post-trip feedback sheet dapat dilewati tanpa menghambat penyelesaian trip
+- [ ] Review teks opsional tidak mengubah ranking recommendation di MVP
 - [ ] Copy utama konsisten dengan tone hangat dan sopan
 
 **Prioritas:** P1
@@ -892,6 +898,10 @@ Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
 - Firebase Cloud Messaging dipakai untuk push notification dasar
 - Firebase Realtime Database/Storage dapat dipakai untuk chat sementara dan file chat sementara
 - Data chat bersifat temporary dan tidak menjadi source of truth utama
+- Contact reveal hanya boleh terjadi setelah order `Accepted` dan hanya untuk dua pihak pada order aktif
+- Temporary chat hanya boleh aktif setelah contact reveal berhasil dan selalu terikat ke `orderId`
+- Temporary chat berakhir saat order terminal atau setelah TTL pendek berakhir
+- Jika temporary chat tidak aktif atau gagal, call/WhatsApp tetap menjadi fallback utama
 - Saat order aktif, app dapat masuk ke mode standby/background service terbatas untuk update lat/long periodik dan SOS
 - Push notification hanya dipakai untuk event penting seperti incoming order, response order, atau SOS-related notice
 - Temporary chat wajib punya retention policy yang pendek dan jelas, misalnya auto-expire 24 jam setelah order terminal
@@ -907,7 +917,10 @@ Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
 
 **Acceptance Criteria:**
 - [ ] Push notification bisa dipakai untuk order penting saat app tidak foreground
+- [ ] Contact reveal tidak terjadi sebelum order diterima
+- [ ] Temporary chat hanya tersedia untuk pasangan order aktif
 - [ ] Temporary chat punya TTL/retention policy yang jelas
+- [ ] Call/WhatsApp tetap tersedia saat temporary chat dimatikan
 - [ ] SOS mengirim lokasi dan keterangan bahaya minimum
 - [ ] Background safety mode tidak mengaktifkan discovery background
 - [ ] User diberi penjelasan bahwa chat dan tracking ini bersifat terbatas saat active order

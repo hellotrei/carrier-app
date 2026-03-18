@@ -1060,6 +1060,7 @@ type OrderContactRevealPayload = {
   partnerId: string
   customerPhoneE164: string
   partnerPhoneE164: string
+  availableHandoffActions: Array<'call' | 'whatsapp' | 'temporary_chat'>
   revealedAt: string
   expiresAt: string
 }
@@ -1072,7 +1073,15 @@ type OrderContactRevealPayload = {
 - Order aktif selalu di-persist lokal (tidak hanya di memory)
 - Local storage saja tidak cukup untuk mempertemukan dua user yang sama-sama online; karena itu relay tetap wajib untuk presence dan order signaling
 
-### 15.3A Booking Validation dan Freeze Rules
+### 15.3A Contact Reveal dan Temporary Chat Boundary
+- Contact reveal hanya boleh dilakukan setelah `OrderResponsePayload.response = accept`
+- Reveal hanya berlaku untuk pasangan `customerId` dan `partnerId` pada `orderId` yang sama
+- Nomor telepon penuh tidak boleh dipublish ke discovery, incoming order screen, atau candidate list
+- Temporary chat hanya boleh aktif bila order masih aktif, contact reveal sudah sukses, dan feature flag chat aktif
+- Semua pesan chat temporary harus terikat ke `orderId` agar cleanup dan dispute tracing tetap jelas
+- Jika contact reveal atau temporary chat gagal, flow order inti tetap lanjut; fallback utama tetap call/WhatsApp handoff
+
+### 15.3B Booking Validation dan Freeze Rules
 - Customer tidak boleh submit jika masih punya active order non-terminal
 - Customer tidak boleh memilih dirinya sendiri sebagai mitra
 - Pickup dan destination wajib valid, lengkap, dan tidak boleh identik secara tidak masuk akal
@@ -1080,7 +1089,7 @@ type OrderContactRevealPayload = {
 - `pricePerKmApplied`, `baseTripEstimatedPrice`, `pickupSurchargeAmount`, `paymentMethod`, komponen admin fee, dan `estimatedPrice` yang dikirim ke mitra adalah nilai yang dibekukan saat submit, bukan dihitung ulang diam-diam di sisi mitra
 - Setelah `Requested`, field yang dianggap immutable: `partnerId`, `bookingMode`, `pickup`, `destination`, `bookingIntent`, `riderDeclaredName`, `riderPhoneMasked`, `pricePerKmApplied`, `pickupDistanceFromPartnerKm`, `baseTripEstimatedPrice`, `pickupSurchargeAmount`, `paymentMethod`, `paymentAdminFeeTotal`, `customerAdminFeeShare`, `partnerAdminFeeShare`, `estimatedPrice`
 
-### 15.3B Incoming Order Decision Rules
+### 15.3C Incoming Order Decision Rules
 - Incoming order screen di sisi mitra wajib menampilkan:
   - `customerDisplayName`
   - `serviceType`
@@ -1104,7 +1113,7 @@ type OrderContactRevealPayload = {
 - Jika `bookingMode = manual`, reject/expired mengakhiri attempt dan customer kembali memilih mitra
 - Jika `bookingMode = auto`, reject/expired boleh memicu attempt berikutnya **secara berurutan** dalam `bookingSessionId` yang sama
 
-### 15.3C Incoming Order Screen Contract
+### 15.3D Incoming Order Screen Contract
 - Header: nama customer + `serviceType` badge + countdown
 - Body summary:
   - pickup
@@ -1333,6 +1342,16 @@ function calculateCommission(baseTripEstimatedPrice: number): number {
 - Setiap trip selesai akan menghasilkan rating default `5`
 - Jika customer mengirim rating manual, rating manual menggantikan default
 - Rating default dimaksudkan sebagai baseline apresiasi, bukan mekanisme manipulasi reputasi
+
+### 17.5A Post-Trip Feedback Flow
+- Setelah order `Completed`, customer boleh melihat post-trip feedback sheet yang ringan
+- Sheet minimum menampilkan:
+  - rating 1-5 bintang
+  - review singkat opsional
+  - reminder barang bawaan atau penutup yang hangat
+- Jika customer menutup atau melewati sheet tanpa input manual, rating default `5` dibekukan
+- Review teks pada MVP disimpan sebagai catatan pengalaman dan belum menjadi sinyal publik untuk recommendation otomatis
+- Feedback flow tidak boleh menghambat penulisan transaction log, audit, atau penutupan order
 
 ---
 
@@ -1570,6 +1589,10 @@ type RootState = {
     syncing: boolean
     recoveryMode: boolean
   }
+  communication: {
+    contactRevealDone: boolean
+    temporaryChatEnabled: boolean
+  }
   history: {
     filter: 'all' | 'completed' | 'canceled'
     loading: boolean
@@ -1732,8 +1755,9 @@ interface AuditGateway {
 6. Simpan lokal
 7. Kirim OrderResponsePayload ke relay (accept)
 8. Lakukan contact reveal bertarget ke pasangan order
-9. Tulis audit ORDER_ACCEPTED
-10. Navigasi ke active trip screen
+9. Jika contact reveal sukses, aktifkan call/chat handoff yang relevan
+10. Tulis audit ORDER_ACCEPTED dan CONTACT_REVEALED
+11. Navigasi ke active trip screen
 ```
 
 ### 22.4A Mitra Reject Order
@@ -1917,7 +1941,7 @@ anti_abuse_enabled             ← default true, TIDAK BOLEH false di prod
 ### Fase 2 — Stabilization
 - Anti-spoofing lebih sophisticated (server-side validation)
 - Completion rate tracking per mitra
-- Rating sederhana (1-5 bintang, lokal dulu)
+- Review aggregation yang lebih konsisten lintas device
 - Export/import audit lebih aman
 - Sync recovery lebih robust
 - Firebase FCM untuk push notification

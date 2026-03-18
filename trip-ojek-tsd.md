@@ -510,6 +510,7 @@ export type OrderContactRevealPayload = {
   partnerId: string
   customerPhoneE164: string
   partnerPhoneE164: string
+  availableHandoffActions: Array<'call' | 'whatsapp' | 'temporary_chat'>
   revealedAt: string
   expiresAt: string
 }
@@ -618,6 +619,27 @@ export type AuditExportViewModel = {
   exportInProgress: boolean
   exportedFilePath?: string
   errorMessage?: string
+}
+
+export type TemporaryChatMessage = {
+  messageId: string
+  orderId: string
+  senderUserId: string
+  messageType: 'text' | 'image'
+  text?: string
+  fileUrl?: string
+  createdAt: string
+  expiresAt: string
+}
+
+export type PostTripFeedback = {
+  orderId: string
+  customerId: string
+  partnerId: string
+  rating: number
+  reviewText?: string
+  createdAt: string
+  source: 'default_auto' | 'manual'
 }
 ```
 
@@ -2078,6 +2100,35 @@ export function resolveCompletedTripRating(manualRating?: number): number {
 }
 ```
 
+### 16.4A Post-Trip Feedback Contract
+```ts
+export function buildPostTripFeedback(params: {
+  orderId: string
+  customerId: string
+  partnerId: string
+  manualRating?: number
+  reviewText?: string
+  createdAt: string
+}): PostTripFeedback {
+  const rating = resolveCompletedTripRating(params.manualRating)
+
+  return {
+    orderId: params.orderId,
+    customerId: params.customerId,
+    partnerId: params.partnerId,
+    rating,
+    reviewText: params.reviewText?.trim() || undefined,
+    createdAt: params.createdAt,
+    source: params.manualRating ? 'manual' : 'default_auto',
+  }
+}
+```
+
+Rules:
+- Feedback hanya boleh dibuat setelah order `Completed`
+- Jika customer tidak mengirim rating manual, sistem tetap membekukan rating default `5`
+- `reviewText` bersifat opsional dan tidak dipakai untuk recommendation ranking di MVP
+
 ---
 
 ## 17. Distance Calculation
@@ -2411,6 +2462,8 @@ export type IncomingOrderViewModel = {
 - State persisten di SQLite
 - Restore dari lokal jika app di-kill
 - All handoff buttons harus punya clear error state
+- Contact reveal harus selesai lebih dulu sebelum action `call_partner` atau `chat_partner` dibuka
+- Jika `temporary_chat_enabled = false`, `chat_partner` harus diarahkan ke fallback seperti WhatsApp
 
 ### 20.6A Active Trip Lifecycle Contract
 ```ts
@@ -2475,6 +2528,52 @@ export type CustomerTripAction =
   | 'chat_partner'
   | 'cancel_trip'
 ```
+
+### 20.6A.2A Contact Reveal Contract
+```ts
+async function revealOrderContact(order: Order): Promise<Result<OrderContactRevealPayload>> {
+  if (order.status !== 'Accepted' && order.status !== 'OnTheWay' && order.status !== 'OnTrip') {
+    return err({ code: 'CONTACT_REVEAL_NOT_ALLOWED' })
+  }
+
+  return ok({
+    orderId: order.orderId,
+    customerId: order.customerId,
+    partnerId: order.partnerId,
+    customerPhoneE164: await SecureStore.getItem('customerPhoneE164'),
+    partnerPhoneE164: await SecureStore.getItem('partnerPhoneE164'),
+    availableHandoffActions: FeatureFlags.temporary_chat_enabled
+      ? ['call', 'whatsapp', 'temporary_chat']
+      : ['call', 'whatsapp'],
+    revealedAt: nowIso(),
+    expiresAt: computeContactRevealExpiry(order),
+  })
+}
+```
+
+Rules:
+- Contact reveal tidak boleh terjadi pada `Draft`, `Requested`, `Rejected`, `Expired`, atau `Canceled`
+- Reveal payload hanya dikirim ke pasangan order yang aktif
+- Nomor penuh yang terekspos tidak boleh dipersist ke discovery cache
+
+### 20.6A.2B Temporary Chat Contract
+```ts
+export function canUseTemporaryChat(params: {
+  orderStatus: OrderStatus
+  contactRevealDone: boolean
+  temporaryChatEnabled: boolean
+}): boolean {
+  const activeStatuses: OrderStatus[] = ['Accepted', 'OnTheWay', 'OnTrip']
+  return params.temporaryChatEnabled
+    && params.contactRevealDone
+    && activeStatuses.includes(params.orderStatus)
+}
+```
+
+Rules:
+- Semua message temporary harus punya TTL dan `orderId`
+- Temporary chat bukan source of truth dan tidak boleh dipakai untuk keputusan status order
+- File chat harus bisa dimatikan tanpa merusak flow inti trip
 
 ### 20.6A.3 Cancel Sheet Contract
 ```ts
@@ -2780,6 +2879,8 @@ NetInfo.addEventListener(state => {
 - [ ] Invalid status transition ditolak
 - [ ] Order aktif survive app restart
 - [ ] Order timeout setelah 60 detik → status Expired
+- [ ] Contact reveal tidak terjadi sebelum order diterima
+- [ ] Action call/chat baru aktif setelah contact reveal sukses
 
 ### 23.6 Transaction Log
 - [ ] Setiap order Completed membuat TransactionLog entry
@@ -2801,6 +2902,12 @@ NetInfo.addEventListener(state => {
 - [ ] WhatsApp buka dengan nomor yang benar
 - [ ] Error yang jelas jika app target tidak tersedia
 - [ ] Semua handoff dicatat di audit
+
+### 23.9 Feedback dan Temporary Chat
+- [ ] Trip tanpa rating manual tetap menghasilkan feedback dengan rating `5`
+- [ ] Trip dengan rating manual menyimpan rating manual dan source `manual`
+- [ ] Temporary chat hanya aktif untuk order yang sudah contact reveal dan masih aktif
+- [ ] Temporary chat tidak mengubah source of truth status order
 
 ---
 
