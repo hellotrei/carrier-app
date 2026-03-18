@@ -212,6 +212,30 @@ Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
   Booking dapat dipakai untuk nebeng teman kantor atau perjalanan komunitas dengan harga yang dapat dinegosiasikan dalam batas fairness policy produk.
 - **Multi-vehicle categories**
   Motor, mobil, bajaj, dan angkot didukung sebagai kelas layanan berbeda. Mobil dan bajaj menggunakan model harga per orang/kursi.
+
+### 6.4 Scope Lock Matrix
+| Area | Status | Catatan |
+|---|---|---|
+| Dual-role onboarding, role switch, basic profile | MVP Pilot | wajib ada |
+| Discovery, booking, incoming order, active trip, history | MVP Pilot | core product flow |
+| Driver readiness, trust enforcement, audit, transaction log | MVP Pilot | wajib untuk pilot yang fair |
+| Cash dan manual transfer | MVP Pilot | payment usable tanpa gateway |
+| Auto booking ringan + manual select | MVP Pilot | tanpa broadcast massal |
+| Motor dan mobil | MVP Pilot | scope layanan inti |
+| Firebase FCM notice | Pilot Optional | aktif bila butuh wake-up saat app background |
+| Women preference toggle | Pilot Optional | boleh aktif jika supply dan UX siap |
+| Temporary chat | Pilot Optional | tetap off default sampai retention/cleanup siap |
+| Bajaj | Phase 2 | sesudah core pilot stabil |
+| Background safety tracking + SOS | Phase 2 | butuh validasi baterai dan routing incident |
+| OTP / KYC / operator verification | Phase 2 | bila fraud pilot menuntut |
+| Payment gateway | Phase 2+ | tetap bukan syarat pilot |
+| Angkot fixed route | Phase 2+ | flow berbeda dari personal ride |
+| Operator dashboard, cloud backup, auto-settlement | Phase 3+ | tidak boleh bocor ke implementasi pilot |
+
+Rules:
+- `MVP Pilot` berarti wajib dipertimbangkan sebagai bagian launch pilot
+- `Pilot Optional` berarti boleh diaktifkan hanya jika sudah siap dan harus dijaga lewat feature flag
+- `Phase 2+` berarti tidak boleh mengubah kompleksitas core flow pilot
 - **Waiting fairness policy**
   Ada batas waiting gratis 5 menit setelah driver tiba. Kelipatan 5 menit berikutnya menambah biaya setara tarif per km. Sebaliknya, bila driver tidak bergerak dari titik awal setelah 5 menit accepted, customer mendapat pengurang tarif yang simetris.
 - **Safety and preference features**

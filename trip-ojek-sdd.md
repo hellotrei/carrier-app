@@ -2109,6 +2109,7 @@ anti_abuse_enabled             ← default true, TIDAK BOLEH false di prod
 
 ### Fase 1 — MVP (sekarang)
 - Local-first + relay Supabase + audit lokal + external handoff + transaction log manual
+- Flow inti: onboarding, home, booking, incoming order, active trip, history, profile, pricing
 
 ### Fase 2 — Stabilization
 - Anti-spoofing lebih sophisticated (server-side validation)
@@ -2116,7 +2117,7 @@ anti_abuse_enabled             ← default true, TIDAK BOLEH false di prod
 - Review aggregation yang lebih konsisten lintas device
 - Export/import audit lebih aman
 - Sync recovery lebih robust
-- Firebase FCM untuk push notification
+- Firebase FCM rollout penuh bila notice background benar-benar dibutuhkan
 - Waiting fairness automation
 - Multi-vehicle profile
 - Women preference toggle
@@ -2128,6 +2129,25 @@ anti_abuse_enabled             ← default true, TIDAK BOLEH false di prod
 - Optional cloud backup user-owned
 - Model operator/franchise daerah
 - Custom relay (self-hosted, bukan Supabase)
+
+### 27.1 Scope Lock Teknis
+| Area | Status | Rule Implementasi |
+|---|---|---|
+| Core order lifecycle | MVP Pilot | wajib stabil, tidak boleh tergantung fitur flag opsional |
+| Profile, pricing, driver readiness | MVP Pilot | wajib jalan offline-first |
+| Audit, history, transaction log | MVP Pilot | source of truth lokal |
+| Firebase FCM | Pilot Optional | hanya notice layer, tidak boleh jadi source of truth |
+| Temporary chat | Pilot Optional | default off sampai TTL/cleanup siap |
+| Women preference | Pilot Optional | hanya jika supply dan UX siap |
+| Bajaj | Phase 2 | jangan mempersulit service matrix pilot |
+| Background tracking + SOS | Phase 2 | hanya setelah battery/routing clear |
+| Payment gateway | Phase 2+ | tidak boleh memblok pilot |
+| Angkot fixed route | Phase 2+ | flow terpisah dari personal ride |
+
+Rules:
+- Fitur `Pilot Optional` harus berada di balik feature flag
+- Fitur `Phase 2+` tidak boleh menambah cabang logic wajib pada flow pilot
+- Jika ada konflik prioritas, core order lifecycle selalu menang atas fitur opsional
 - Temporary live chat berbasis Firebase
 - SOS dan active-order background safety mode
 - Driver recommendation berbasis value score yang lebih matang

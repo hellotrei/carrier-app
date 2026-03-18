@@ -54,6 +54,23 @@ TSD ini menjabarkan spesifikasi implementasi teknis untuk **Carrier App Project*
 | ML matching engine | Terlalu dini |
 | Auto payment settlement | Phase 3 |
 
+### 2.1 Scope Separation Contract
+| Area | Status | Rule |
+|---|---|---|
+| Core onboarding/home/booking/order/trip/history | MVP Pilot | wajib ada di jalur implementasi utama |
+| Driver readiness, trust enforcement, audit, transaction log | MVP Pilot | tidak boleh diposisikan opsional |
+| `firebase_push_enabled` | Pilot Optional | notice-only, aman jika `false` |
+| `temporary_chat_enabled` | Pilot Optional | default `false`, tidak boleh memutus trip core |
+| `women_preference_enabled` | Pilot Optional | boleh `false` di pilot awal |
+| Bajaj support | Phase 2 | jangan aktif di MVP pilot |
+| Background safety / SOS | Phase 2 | tidak jadi dependency flow inti |
+| Payment gateway / auto-settlement | Phase 2+ / 3 | tidak boleh mengubah payment MVP |
+
+Rules:
+- `MVP Pilot` harus lolos walau semua feature flag opsional dimatikan
+- `Pilot Optional` harus bisa aktif tanpa mengubah source of truth dan tanpa memecah flow inti
+- `Phase 2+` tidak boleh jadi dependency compile-time atau runtime untuk pilot
+
 ---
 
 ## 3. Stack Teknis
@@ -3522,6 +3539,12 @@ NetInfo.addEventListener(state => {
 - [ ] Customer flow tersambung dari home → booking → waiting → active trip → feedback → history
 - [ ] Mitra flow tersambung dari home → incoming order → active trip → history
 - [ ] Flow support seperti profile/pricing/history tidak memutus jalur kembali ke trip aktif
+
+### 23.15 Scope Lock dan Phase Separation
+- [ ] Core pilot tetap berjalan saat semua feature flag opsional dimatikan
+- [ ] `firebase_push_enabled=false` tidak memutus presence, booking, atau recovery core
+- [ ] `temporary_chat_enabled=false` tidak memutus contact reveal atau handoff utama
+- [ ] Fitur `Phase 2+` tidak menjadi dependency wajib di MVP pilot
 
 ---
 
