@@ -1624,6 +1624,30 @@ type RootState = {
 - Copy utama harus hangat, humble, dan sopan
 - Reminder seperti "jangan lupa barang bawaan" dan "pastikan tidak ada yang tertinggal" diperlakukan sebagai bagian experience, bukan teks tambahan acak
 
+### 20.3A Customer Home Contract
+- Customer home adalah entry point utama setelah onboarding atau role switch ke `customer`
+- Blok minimum yang harus tersedia:
+  - greeting ringkas dan role switch entry
+  - active trip/recovery banner bila ada order non-terminal
+  - service type quick selector untuk `motor` atau `mobil`
+  - women preference indicator bila aktif
+  - top recommendation card bila kandidat tersedia
+  - discovery list nearby mitra
+  - CTA `auto booking` dan akses ke manual select
+- Jika lokasi belum aktif, relay putus, atau discovery kosong, home harus tetap informatif dan tidak boleh tampil blank
+
+### 20.3B Mitra Home Contract
+- Mitra home adalah entry point utama setelah role switch ke `mitra`
+- Blok minimum yang harus tersedia:
+  - greeting ringkas dan role switch entry
+  - active trip/recovery banner bila ada order non-terminal
+  - readiness summary: identity status, driver readiness status, kendaraan aktif, pricing aktif
+  - online/offline toggle
+  - reason gate yang jelas bila toggle online ditolak
+  - nearby demand list sederhana untuk customer aktif di sekitar
+  - shortcut ke pricing settings atau profile bila readiness belum lolos
+- Home mitra harus membuat status `siap online / belum siap online / sedang ada order aktif` terlihat jelas dalam satu layar
+
 ---
 
 ## 21. Kontrak Repository dan Gateway

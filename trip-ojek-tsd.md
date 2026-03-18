@@ -641,6 +641,35 @@ export type PostTripFeedback = {
   createdAt: string
   source: 'default_auto' | 'manual'
 }
+
+export type CustomerHomeViewModel = {
+  currentRole: AppRole
+  displayName: string
+  hasActiveOrder: boolean
+  activeOrderId?: string
+  recoveryMode: boolean
+  selectedServiceType?: VehicleProfile['vehicleType']
+  womenPreferenceEnabled: boolean
+  discoveryCount: number
+  topRecommendationPartnerId?: string
+  topRecommendationReason?: string
+  discoveryState: 'ready' | 'empty' | 'location_required' | 'offline'
+}
+
+export type DriverHomeViewModel = {
+  currentRole: AppRole
+  displayName: string
+  hasActiveOrder: boolean
+  activeOrderId?: string
+  recoveryMode: boolean
+  isOnline: boolean
+  identityStatus?: UserProfile['identityStatus']
+  driverReadinessStatus?: DriverReadinessStatus
+  activeVehicleType?: VehicleProfile['vehicleType']
+  activePricePerKm?: number
+  onlineGateReason?: string
+  nearbyDemandCount: number
+}
 ```
 
 ---
@@ -2368,6 +2397,48 @@ async function bootstrapApp(): Promise<void> {
 - Filter dan sort sesuai spec §12.5
 - Map view opsional (gunakan react-native-maps jika bundle size acceptable)
 
+### 20.2A Customer Home View Contract
+```ts
+function buildCustomerHomeViewModel(params: {
+  profile: UserProfile
+  activeOrder: Order | null
+  recoveryMode: boolean
+  selectedServiceType?: VehicleProfile['vehicleType']
+  womenPreferenceEnabled: boolean
+  discoveryItems: PresenceSnapshot[]
+  locationGranted: boolean
+  relayConnected: boolean
+}): CustomerHomeViewModel {
+  const topRecommendation = params.discoveryItems[0]
+
+  return {
+    currentRole: params.profile.currentRole,
+    displayName: params.profile.displayName,
+    hasActiveOrder: !!params.activeOrder,
+    activeOrderId: params.activeOrder?.orderId,
+    recoveryMode: params.recoveryMode,
+    selectedServiceType: params.selectedServiceType,
+    womenPreferenceEnabled: params.womenPreferenceEnabled,
+    discoveryCount: params.discoveryItems.length,
+    topRecommendationPartnerId: topRecommendation?.userId,
+    topRecommendationReason: topRecommendation ? 'dekat dan eligible untuk booking' : undefined,
+    discoveryState: !params.locationGranted
+      ? 'location_required'
+      : !params.relayConnected
+        ? 'offline'
+        : params.discoveryItems.length === 0
+          ? 'empty'
+          : 'ready',
+  }
+}
+```
+
+Rules:
+- Home customer wajib menampilkan recovery banner jika `hasActiveOrder = true`
+- CTA `auto booking` hanya boleh aktif bila candidate set hasil filter tidak kosong
+- Role switch entry harus tetap terlihat dari home
+- Jika `discoveryState !== ready`, home tetap menampilkan reason state yang jelas, bukan layar kosong
+
 ### 20.3 Home Mitra
 **Input:** UserProfile + PricingProfile
 **Output:** online toggle + list customer aktif di sekitar + incoming order notification
@@ -2376,6 +2447,40 @@ async function bootstrapApp(): Promise<void> {
 - Publish presence saat online
 - Subscribe ke presence:customer channel
 - Subscribe ke incoming order channel
+
+### 20.3A Driver Home View Contract
+```ts
+async function buildDriverHomeViewModel(params: {
+  profile: UserProfile
+  pricing: PricingProfile | null
+  activeOrder: Order | null
+  recoveryMode: boolean
+  isOnline: boolean
+  nearbyDemandCount: number
+}): Promise<DriverHomeViewModel> {
+  const readiness = await validateDriverReadiness(params.profile)
+
+  return {
+    currentRole: params.profile.currentRole,
+    displayName: params.profile.displayName,
+    hasActiveOrder: !!params.activeOrder,
+    activeOrderId: params.activeOrder?.orderId,
+    recoveryMode: params.recoveryMode,
+    isOnline: params.isOnline,
+    identityStatus: params.profile.identityStatus,
+    driverReadinessStatus: params.profile.driverReadinessStatus,
+    activeVehicleType: params.profile.activeVehicleType,
+    activePricePerKm: params.pricing?.partnerPricePerKm,
+    onlineGateReason: readiness.ok ? undefined : readiness.error.code,
+    nearbyDemandCount: params.nearbyDemandCount,
+  }
+}
+```
+
+Rules:
+- Jika `hasActiveOrder = true`, home mitra harus memprioritaskan banner kembali ke trip aktif dibanding discovery biasa
+- Toggle online tidak boleh aktif bila `onlineGateReason` ada
+- Jika readiness gagal, home mitra harus mengarahkan user ke screen yang relevan seperti pricing atau profile
 
 ### 20.4 Booking Flow
 **Input:** pickup (GPS/manual) + destination + selected mitra
@@ -2865,6 +2970,12 @@ NetInfo.addEventListener(state => {
 - [ ] Snapshot expired tidak muncul di list
 - [ ] Empty state informatif saat tidak ada nearby users
 - [ ] Discovery tidak muncul saat lokasi permission ditolak
+
+### 23.3A Home Screens
+- [ ] Customer home menampilkan recovery banner saat ada active order non-terminal
+- [ ] Customer home menampilkan top recommendation dengan alasan singkat saat kandidat tersedia
+- [ ] Driver home menampilkan online gate reason saat readiness belum lolos
+- [ ] Home screens tetap informatif saat lokasi belum aktif atau relay tidak terhubung
 
 ### 23.4 Anti-Abuse
 - [ ] Koordinat di luar range Indonesia ditolak (unit test)

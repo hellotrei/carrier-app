@@ -293,12 +293,15 @@ Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
 - User dapat switch role dari home screen tanpa logout
 - Data role tersimpan lokal (tidak ke server)
 - Onboarding minimal: nama tampilan + nomor telepon (tidak perlu OTP)
+- Home harus selalu menjadi entry point setelah onboarding selesai
+- Jika ada active order saat app dibuka ulang, home wajib menampilkan recovery banner ke trip aktif
 
 **Acceptance Criteria:**
 - [ ] First launch menampilkan onboarding dengan pilihan role
 - [ ] Setelah pilih role, user masuk ke home yang sesuai
 - [ ] Switch role berhasil tanpa restart app dan tanpa logout
 - [ ] Profil tersimpan persisten setelah app diclose dan dibuka ulang
+- [ ] Active order yang belum terminal muncul kembali sebagai banner di home
 
 **Prioritas:** P0
 
@@ -331,12 +334,15 @@ Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
 - Presence auto-expire setelah TTL (120 detik tanpa refresh)
 - Mitra: harus set tarif valid sebelum bisa online
 - Customer: tidak wajib online untuk bisa booking
+- Home mitra harus menjelaskan alasan gate jika toggle online ditolak
+- Status online/offline harus terlihat jelas tanpa user perlu masuk ke layar lain
 
 **Acceptance Criteria:**
 - [ ] Toggle online mempublish presence yang bisa dilihat pihak lain
 - [ ] Toggle offline menghilangkan nama dari discovery pihak lain dalam < 5 detik
 - [ ] Mitra dengan tarif belum diset tidak bisa toggle online (ada error message yang jelas)
 - [ ] Presence stale hilang dari list discovery setelah TTL lewat
+- [ ] Home mitra menampilkan reason gate saat readiness belum lolos
 
 **Prioritas:** P0
 
@@ -351,6 +357,9 @@ Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
 - Setiap item tampilkan: nama, jarak estimasi, tarif per-km, estimasi ke lokasi user
 - Data discovery di-refresh setiap 30 detik atau on-demand pull-to-refresh
 - Empty state informatif jika tidak ada pihak lain yang online
+- Customer home harus menampilkan top recommendation yang explainable jika kandidat tersedia
+- Customer home harus menyediakan CTA cepat untuk `auto booking` dan akses ke kandidat manual
+- Discovery state harus tetap jelas saat lokasi belum aktif, relay putus, atau user sedang offline
 
 **Acceptance Criteria:**
 - [ ] Mitra yang online muncul di discovery customer dalam < 10 detik setelah toggle online
@@ -358,6 +367,7 @@ Fitur-fitur berikut adalah arah resmi produk setelah fondasi MVP stabil:
 - [ ] Pull-to-refresh bekerja dan memperbarui data
 - [ ] Empty state muncul dengan pesan yang membantu (bukan error blank)
 - [ ] Presence yang sudah expired tidak muncul di list
+- [ ] Customer home menampilkan top recommendation beserta alasan singkatnya
 
 **Prioritas:** P0
 
