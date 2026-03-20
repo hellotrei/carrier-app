@@ -6,6 +6,7 @@ import type { OrderRepositoryPort } from './order-repository-port';
 
 type OrderRow = {
   booking_session_id: string;
+  cancel_reason: string | null;
   created_at: string;
   customer_id: string;
   destination_json: string;
@@ -19,7 +20,7 @@ type OrderRow = {
 };
 
 function mapRowToOrder(row: OrderRow): Order {
-  return {
+  const order: Order = {
     orderId: asOrderId(row.order_id),
     bookingSessionId: row.booking_session_id,
     customerId: asUserId(row.customer_id),
@@ -32,6 +33,13 @@ function mapRowToOrder(row: OrderRow): Order {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+
+  if (row.cancel_reason) {
+    order.cancelReason =
+      row.cancel_reason as NonNullable<Order['cancelReason']>;
+  }
+
+  return order;
 }
 
 export function createSqliteOrderRepository(
@@ -43,6 +51,7 @@ export function createSqliteOrderRepository(
         `SELECT
           order_id,
           booking_session_id,
+          cancel_reason,
           customer_id,
           partner_id,
           rider_declared_name,
@@ -70,6 +79,7 @@ export function createSqliteOrderRepository(
         `INSERT INTO order_table (
           order_id,
           booking_session_id,
+          cancel_reason,
           customer_id,
           partner_id,
           rider_declared_name,
@@ -79,8 +89,9 @@ export function createSqliteOrderRepository(
           status,
           created_at,
           updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(order_id) DO UPDATE SET
+          cancel_reason = excluded.cancel_reason,
           rider_declared_name = excluded.rider_declared_name,
           pickup_json = excluded.pickup_json,
           destination_json = excluded.destination_json,
@@ -90,6 +101,7 @@ export function createSqliteOrderRepository(
         [
           order.orderId,
           order.bookingSessionId,
+          order.cancelReason ?? null,
           order.customerId,
           order.partnerId,
           order.riderDeclaredName,

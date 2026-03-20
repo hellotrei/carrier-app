@@ -5,6 +5,7 @@ import { AppButton } from '../../ui/primitives/app-button';
 import { AppScreen } from '../../ui/primitives/app-screen';
 import { AppText } from '../../ui/primitives/app-text';
 import { SectionCard } from '../../ui/patterns/section-card';
+import type { OrderCancelReason } from '../../domain/order/order';
 import { bootstrapDeps } from '../config/bootstrap-deps';
 import { saveProfile } from '../../application/user/save-profile';
 import { updateCurrentRole } from '../../application/user/update-current-role';
@@ -151,12 +152,12 @@ export function RootNavigation(): React.JSX.Element {
     setActiveOrder(result.value.order);
   }
 
-  async function handleCancelOrder() {
+  async function handleCancelOrder(reason: OrderCancelReason) {
     if (!activeOrder) {
       return;
     }
 
-    const result = await cancelOrder(bootstrapDeps, activeOrder);
+    const result = await cancelOrder(bootstrapDeps, activeOrder, reason);
 
     if (!result.ok) {
       return;
@@ -246,8 +247,8 @@ export function RootNavigation(): React.JSX.Element {
           onBack={() => {
             setActiveScreen('home');
           }}
-          onCancel={() => {
-            void handleCancelOrder();
+          onCancel={reason => {
+            void handleCancelOrder(reason);
           }}
           order={activeOrder}
         />

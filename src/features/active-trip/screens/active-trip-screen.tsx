@@ -1,6 +1,10 @@
 import React from 'react';
 
-import type { Order, OrderStatus } from '../../../domain/order/order';
+import type {
+  Order,
+  OrderCancelReason,
+  OrderStatus,
+} from '../../../domain/order/order';
 import { SectionCard } from '../../../ui/patterns/section-card';
 import { AppButton } from '../../../ui/primitives/app-button';
 import { AppText } from '../../../ui/primitives/app-text';
@@ -8,7 +12,7 @@ import { AppText } from '../../../ui/primitives/app-text';
 type ActiveTripScreenProps = {
   onAdvance: (nextStatus: OrderStatus) => void;
   onBack: () => void;
-  onCancel: () => void;
+  onCancel: (reason: OrderCancelReason) => void;
   order: Order;
 };
 
@@ -45,6 +49,9 @@ export function ActiveTripScreen({
     >
       <AppText tone="muted">Order ID: {order.orderId}</AppText>
       <AppText tone="muted">Status: {order.status}</AppText>
+      <AppText tone="muted">
+        Cancel reason: {order.cancelReason ?? 'Not canceled'}
+      </AppText>
       <AppText tone="muted">Rider: {order.riderDeclaredName}</AppText>
       <AppText tone="muted">
         Route: {order.pickup.label ?? 'Pickup'} to {order.destination.label ?? 'Destination'}
@@ -58,7 +65,21 @@ export function ActiveTripScreen({
           onPress={() => onAdvance(nextStatus)}
         />
       ) : null}
-      <AppButton label="Cancel order" kind="secondary" onPress={onCancel} />
+      <AppButton
+        label="Cancel: no show"
+        kind="secondary"
+        onPress={() => onCancel('no_show')}
+      />
+      <AppButton
+        label="Cancel: identity mismatch"
+        kind="secondary"
+        onPress={() => onCancel('identity_mismatch')}
+      />
+      <AppButton
+        label="Cancel: unsafe"
+        kind="secondary"
+        onPress={() => onCancel('unsafe_or_suspicious')}
+      />
       <AppButton label="Back to shell" kind="secondary" onPress={onBack} />
     </SectionCard>
   );

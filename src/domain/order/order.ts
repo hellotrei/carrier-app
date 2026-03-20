@@ -11,6 +11,14 @@ export type OrderStatus =
   | 'Rejected'
   | 'Expired';
 
+export type OrderCancelReason =
+  | 'other'
+  | 'no_show'
+  | 'identity_mismatch'
+  | 'contact_mismatch'
+  | 'unsafe_or_suspicious'
+  | 'pickup_mismatch';
+
 export type LocationPoint = {
   label?: string;
   latitude: number;
@@ -21,6 +29,7 @@ export type LocationPoint = {
 export type Order = {
   orderId: OrderId;
   bookingSessionId: string;
+  cancelReason?: OrderCancelReason;
   customerId: UserId;
   partnerId: UserId;
   riderDeclaredName: string;

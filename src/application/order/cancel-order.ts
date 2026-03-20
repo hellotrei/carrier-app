@@ -3,6 +3,7 @@ import type { Result } from '../../core/result/result';
 import {
   isTerminalOrderStatus,
   type Order,
+  type OrderCancelReason,
 } from '../../domain/order/order';
 import { transitionOrder } from '../../domain/order/transition-order';
 import type { OrderRepositoryPort } from '../../data/repositories/order-repository-port';
@@ -21,9 +22,13 @@ export type CancelOrderSuccess = {
 export async function cancelOrder(
   deps: CancelOrderDeps,
   order: Order,
+  reason: OrderCancelReason,
 ): Promise<Result<CancelOrderSuccess, CancelOrderError>> {
   try {
-    const nextOrder = transitionOrder(order, 'Canceled', nowIso());
+    const nextOrder = {
+      ...transitionOrder(order, 'Canceled', nowIso()),
+      cancelReason: reason,
+    };
 
     await deps.orderRepository.saveOrder(nextOrder);
 
