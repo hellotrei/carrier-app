@@ -70,6 +70,9 @@ export function RecoveryBanner({
     >
       <AppText tone="muted">{getResumeHint(order)}</AppText>
       <AppText tone="muted">{getActiveActorHint(order)}</AppText>
+      {order.requestedAt ? (
+        <AppText tone="muted">Request created: {order.requestedAt}</AppText>
+      ) : null}
       <AppText tone="muted">
         Last status update: {order.statusUpdatedAt}
       </AppText>
