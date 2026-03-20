@@ -44,10 +44,6 @@ function validateInput(input: SaveProfileInput): SaveProfileError | null {
     return { code: 'DISPLAY_NAME_REQUIRED' };
   }
 
-  if (!input.phoneInput.trim()) {
-    return { code: 'PHONE_REQUIRED' };
-  }
-
   if (input.currentRole === 'mitra' && !input.vehicleType) {
     return { code: 'VEHICLE_TYPE_REQUIRED' };
   }
@@ -70,10 +66,21 @@ export async function saveProfile(
 
   const timestamp = nowIso();
   const displayName = input.displayName.trim();
-  const phoneE164 = normalizePhoneE164(input.phoneInput);
+  const existingProfile = await deps.userRepository.getProfile();
+  const storedPhone =
+    await deps.secureStorage.get(SECURE_STORAGE_KEYS.USER_PHONE_E164);
+  const resolvedPhoneInput = input.phoneInput.trim() || storedPhone;
+
+  if (!resolvedPhoneInput) {
+    return {
+      ok: false,
+      error: { code: 'PHONE_REQUIRED' },
+    };
+  }
+
+  const phoneE164 = normalizePhoneE164(resolvedPhoneInput);
   const phoneMasked = maskPhoneNumber(phoneE164);
   const phoneHash = hashString(phoneE164);
-  const existingProfile = await deps.userRepository.getProfile();
   const userId = existingProfile?.userId ?? asUserId(createId('usr'));
   const currentBinding =
     (await deps.secureStorage.get(SECURE_STORAGE_KEYS.DEVICE_BINDING_ID)) ??
@@ -85,9 +92,11 @@ export async function saveProfile(
     phoneHash,
     phoneMasked,
     activeRoles:
-      input.currentRole === 'mitra' ? ['customer', 'mitra'] : ['customer'],
+      input.currentRole === 'mitra'
+        ? ['customer', 'mitra']
+        : existingProfile?.activeRoles ?? ['customer'],
     currentRole: input.currentRole,
-    deviceAuthEnabled: false,
+    deviceAuthEnabled: existingProfile?.deviceAuthEnabled ?? false,
     identityStatus: 'active',
     profileValidatedAt: timestamp,
     createdAt: existingProfile?.createdAt ?? timestamp,

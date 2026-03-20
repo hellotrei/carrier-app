@@ -7,6 +7,7 @@ import { AppText } from '../../ui/primitives/app-text';
 import { SectionCard } from '../../ui/patterns/section-card';
 import { bootstrapDeps } from '../config/bootstrap-deps';
 import { saveProfile } from '../../application/user/save-profile';
+import { updateCurrentRole } from '../../application/user/update-current-role';
 import { HomeCustomerScreen } from '../../features/home-customer/screens/home-customer-screen';
 import { HomeMitraScreen } from '../../features/home-mitra/screens/home-mitra-screen';
 import { BasicProfileScreen } from '../../features/profile/screens/basic-profile-screen';
@@ -22,8 +23,22 @@ export function RootNavigation(): React.JSX.Element {
     state => state.setDeviceBindingPresent,
   );
   const setProfile = useAppStore(state => state.setProfile);
-  const setActiveRole = useAppStore(state => state.setActiveRole);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
+
+  async function handleRoleChange(role: 'customer' | 'mitra') {
+    if (!profile) {
+      useAppStore.getState().setActiveRole(role);
+      return;
+    }
+
+    const result = await updateCurrentRole(bootstrapDeps, role);
+
+    if (!result.ok) {
+      return;
+    }
+
+    setProfile(result.value);
+  }
 
   async function handleProfileSubmit(params: {
     displayName: string;
@@ -85,12 +100,16 @@ export function RootNavigation(): React.JSX.Element {
         <View style={{ flexDirection: 'row', gap: 12 }}>
           <AppButton
             label="Customer"
-            onPress={() => setActiveRole('customer')}
+            onPress={() => {
+              void handleRoleChange('customer');
+            }}
             kind={activeRole === 'customer' ? 'primary' : 'secondary'}
           />
           <AppButton
             label="Mitra"
-            onPress={() => setActiveRole('mitra')}
+            onPress={() => {
+              void handleRoleChange('mitra');
+            }}
             kind={activeRole === 'mitra' ? 'primary' : 'secondary'}
           />
         </View>
@@ -122,13 +141,12 @@ export function RootNavigation(): React.JSX.Element {
         </AppText>
       </SectionCard>
 
-      {!profile ? (
-        <BasicProfileScreen
-          activeRole={activeRole}
-          onSubmit={handleProfileSubmit}
-          submitError={submitError}
-        />
-      ) : null}
+      <BasicProfileScreen
+        activeRole={activeRole}
+        existingProfile={profile}
+        onSubmit={handleProfileSubmit}
+        submitError={submitError}
+      />
 
       {profile
         ? activeRole === 'customer'

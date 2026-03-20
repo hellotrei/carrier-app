@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import type { AppRole } from '../../../core/types/app-role';
-import type { VehicleType } from '../../../domain/user/user-profile';
+import type {
+  UserProfile,
+  VehicleType,
+} from '../../../domain/user/user-profile';
 import { tokens } from '../../../ui/theme/tokens';
 import { SectionCard } from '../../../ui/patterns/section-card';
 import { AppButton } from '../../../ui/primitives/app-button';
@@ -11,6 +14,7 @@ import { AppText } from '../../../ui/primitives/app-text';
 
 type BasicProfileScreenProps = {
   activeRole: AppRole;
+  existingProfile?: UserProfile | null;
   onSubmit: (params: {
     displayName: string;
     hasSpareHelmet?: boolean;
@@ -23,14 +27,23 @@ type BasicProfileScreenProps = {
 
 export function BasicProfileScreen({
   activeRole,
+  existingProfile,
   onSubmit,
   submitError,
 }: BasicProfileScreenProps): React.JSX.Element {
-  const [displayName, setDisplayName] = useState('');
-  const [hasSpareHelmet, setHasSpareHelmet] = useState(false);
+  const [displayName, setDisplayName] = useState(existingProfile?.displayName ?? '');
+  const [hasSpareHelmet, setHasSpareHelmet] = useState(
+    existingProfile?.hasSpareHelmet ?? false,
+  );
   const [phoneInput, setPhoneInput] = useState('');
-  const [plateNumber, setPlateNumber] = useState('');
-  const [vehicleType, setVehicleType] = useState<VehicleType | null>(null);
+  const [plateNumber, setPlateNumber] = useState(
+    existingProfile?.vehicles?.find(vehicle => vehicle.isActiveForBooking)
+      ?.plateNumber ?? '',
+  );
+  const [vehicleType, setVehicleType] = useState<VehicleType | null>(
+    existingProfile?.vehicles?.find(vehicle => vehicle.isActiveForBooking)
+      ?.vehicleType ?? null,
+  );
   const [isSaving, setIsSaving] = useState(false);
 
   async function handleSubmit() {
@@ -69,7 +82,7 @@ export function BasicProfileScreen({
   return (
     <SectionCard
       eyebrow="Profile"
-      title="Create your local identity"
+      title={existingProfile ? 'Edit local identity' : 'Create your local identity'}
       description="Carrier stores the minimum profile locally first. Full phone number stays in secure storage and only masked data reaches operational storage."
     >
       <View style={styles.form}>
@@ -87,7 +100,9 @@ export function BasicProfileScreen({
           keyboardType="phone-pad"
           label="Phone number"
           onChangeText={setPhoneInput}
-          placeholder="08xxxxxxxxxx"
+          placeholder={
+            existingProfile ? 'Leave blank to keep the current number' : '08xxxxxxxxxx'
+          }
           value={phoneInput}
         />
         {activeRole === 'mitra' ? (
@@ -139,7 +154,13 @@ export function BasicProfileScreen({
         ) : null}
         {submitError ? <AppText>{submitError}</AppText> : null}
         <AppButton
-          label={isSaving ? 'Saving...' : 'Save profile'}
+          label={
+            isSaving
+              ? 'Saving...'
+              : existingProfile
+                ? 'Update profile'
+                : 'Save profile'
+          }
           onPress={() => {
             void handleSubmit();
           }}
