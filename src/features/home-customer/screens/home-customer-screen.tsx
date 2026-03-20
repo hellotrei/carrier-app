@@ -44,11 +44,16 @@ export function HomeCustomerScreen({
   }, [initialDraftValues]);
 
   if (activeOrderStatus && activeOrderStatus !== 'Draft') {
+    const description =
+      activeOrderStatus === 'Requested'
+        ? 'Order has already been submitted and is now waiting for mitra handling in the active flow.'
+        : `Order ${activeOrderStatus} is already active. Resume that flow before starting a new booking.`;
+
     return (
       <SectionCard
         eyebrow="Feature"
         title="Customer home scaffold"
-        description={`Order ${activeOrderStatus} is already active. Resume that flow before starting a new booking.`}
+        description={description}
       />
     );
   }
