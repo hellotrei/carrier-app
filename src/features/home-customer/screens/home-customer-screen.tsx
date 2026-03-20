@@ -20,6 +20,7 @@ type HomeCustomerScreenProps = {
     estimatedPrice: string;
     pickupLabel: string;
   }) => Promise<void>;
+  onClearDraft: (() => void) | undefined;
   submitError?: string | null;
 };
 
@@ -28,6 +29,7 @@ export function HomeCustomerScreen({
   initialDraftValues,
   submitError,
   onCreateDraft,
+  onClearDraft,
 }: HomeCustomerScreenProps): React.JSX.Element {
   const [destinationLabel, setDestinationLabel] = useState('');
   const [estimatedPrice, setEstimatedPrice] = useState('');
@@ -85,6 +87,13 @@ export function HomeCustomerScreen({
           });
         }}
       />
+      {activeOrderStatus === 'Draft' && onClearDraft ? (
+        <AppButton
+          label="Clear draft"
+          kind="secondary"
+          onPress={onClearDraft}
+        />
+      ) : null}
     </SectionCard>
   );
 }

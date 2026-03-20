@@ -188,6 +188,22 @@ export function RootNavigation(): React.JSX.Element {
     setActiveOrder(result.value.order);
   }
 
+  async function handleClearDraft() {
+    if (!activeOrder || activeOrder.status !== 'Draft') {
+      return;
+    }
+
+    const result = await cancelOrder(bootstrapDeps, activeOrder, 'other');
+
+    if (!result.ok) {
+      return;
+    }
+
+    setDraftError(null);
+    setActiveOrder(null);
+    setActiveScreen('home');
+  }
+
   return (
     <AppScreen scrollable>
       <SectionCard
@@ -289,6 +305,13 @@ export function RootNavigation(): React.JSX.Element {
                         destinationLabel: activeOrder.destination.label ?? '',
                         estimatedPrice: String(activeOrder.estimatedPrice),
                         pickupLabel: activeOrder.pickup.label ?? '',
+                      }
+                    : undefined
+                }
+                onClearDraft={
+                  activeOrder?.status === 'Draft'
+                    ? () => {
+                        void handleClearDraft();
                       }
                     : undefined
                 }
