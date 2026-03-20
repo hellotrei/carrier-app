@@ -8,5 +8,8 @@ export function createInMemoryOrderRepository(
     async getActiveOrder() {
       return activeOrder;
     },
+    async saveOrder(order) {
+      activeOrder = order;
+    },
   };
 }

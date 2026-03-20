@@ -8,10 +8,12 @@ import { SectionCard } from '../../ui/patterns/section-card';
 import { bootstrapDeps } from '../config/bootstrap-deps';
 import { saveProfile } from '../../application/user/save-profile';
 import { updateCurrentRole } from '../../application/user/update-current-role';
+import { createOrderDraft } from '../../application/order/create-order-draft';
 import { HomeCustomerScreen } from '../../features/home-customer/screens/home-customer-screen';
 import { HomeMitraScreen } from '../../features/home-mitra/screens/home-mitra-screen';
 import { BasicProfileScreen } from '../../features/profile/screens/basic-profile-screen';
 import { useAppStore } from '../../state/store/app-store';
+import { RecoveryBanner } from '../../ui/patterns/recovery-banner';
 
 export function RootNavigation(): React.JSX.Element {
   const activeOrder = useAppStore(state => state.activeOrder);
@@ -22,6 +24,7 @@ export function RootNavigation(): React.JSX.Element {
   const setDeviceBindingPresent = useAppStore(
     state => state.setDeviceBindingPresent,
   );
+  const setActiveOrder = useAppStore(state => state.setActiveOrder);
   const setProfile = useAppStore(state => state.setProfile);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
 
@@ -90,6 +93,35 @@ export function RootNavigation(): React.JSX.Element {
     setDeviceBindingPresent(Boolean(result.value.deviceBindingId));
   }
 
+  async function handleCreateDraft() {
+    if (!profile) {
+      return;
+    }
+
+    const result = await createOrderDraft(bootstrapDeps, {
+      destination: {
+        label: 'Destination sample',
+        latitude: -6.2,
+        longitude: 106.816666,
+        source: 'manual',
+      },
+      estimatedPrice: 18000,
+      pickup: {
+        label: 'Pickup sample',
+        latitude: -6.175392,
+        longitude: 106.827153,
+        source: 'manual',
+      },
+      profile,
+    });
+
+    if (!result.ok) {
+      return;
+    }
+
+    setActiveOrder(result.value);
+  }
+
   return (
     <AppScreen scrollable>
       <SectionCard
@@ -141,6 +173,13 @@ export function RootNavigation(): React.JSX.Element {
         </AppText>
       </SectionCard>
 
+      {activeOrder ? (
+        <RecoveryBanner
+          onResume={() => {}}
+          order={activeOrder}
+        />
+      ) : null}
+
       <BasicProfileScreen
         activeRole={activeRole}
         existingProfile={profile}
@@ -150,7 +189,9 @@ export function RootNavigation(): React.JSX.Element {
 
       {profile
         ? activeRole === 'customer'
-          ? <HomeCustomerScreen />
+          ? <HomeCustomerScreen onCreateDraft={() => {
+              void handleCreateDraft();
+            }} />
           : <HomeMitraScreen />
         : null}
     </AppScreen>

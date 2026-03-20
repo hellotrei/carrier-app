@@ -65,5 +65,42 @@ export function createSqliteOrderRepository(
 
       return isTerminalOrderStatus(order.status) ? null : order;
     },
+    async saveOrder(order) {
+      await database.execute(
+        `INSERT INTO order_table (
+          order_id,
+          booking_session_id,
+          customer_id,
+          partner_id,
+          rider_declared_name,
+          pickup_json,
+          destination_json,
+          estimated_price,
+          status,
+          created_at,
+          updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(order_id) DO UPDATE SET
+          rider_declared_name = excluded.rider_declared_name,
+          pickup_json = excluded.pickup_json,
+          destination_json = excluded.destination_json,
+          estimated_price = excluded.estimated_price,
+          status = excluded.status,
+          updated_at = excluded.updated_at`,
+        [
+          order.orderId,
+          order.bookingSessionId,
+          order.customerId,
+          order.partnerId,
+          order.riderDeclaredName,
+          JSON.stringify(order.pickup),
+          JSON.stringify(order.destination),
+          order.estimatedPrice,
+          order.status,
+          order.createdAt,
+          order.updatedAt,
+        ],
+      );
+    },
   };
 }
