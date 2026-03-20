@@ -70,6 +70,9 @@ export function RecoveryBanner({
     >
       <AppText tone="muted">{getResumeHint(order)}</AppText>
       <AppText tone="muted">{getActiveActorHint(order)}</AppText>
+      <AppText tone="muted">
+        Last status update: {order.statusUpdatedAt}
+      </AppText>
       <AppButton label={getResumeLabel(order)} onPress={onResume} />
     </SectionCard>
   );
