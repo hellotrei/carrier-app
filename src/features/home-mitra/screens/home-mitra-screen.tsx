@@ -1,6 +1,10 @@
 import React from 'react';
 
 import type { Order } from '../../../domain/order/order';
+import {
+  getRecoveryActiveActorHint,
+  getRecoveryResumeHint,
+} from '../../order/order-status-copy';
 import type { UserProfile } from '../../../domain/user/user-profile';
 import { isDriverReady } from '../../../domain/user/validate-driver-readiness';
 import { AppButton } from '../../../ui/primitives/app-button';
@@ -56,9 +60,12 @@ export function HomeMitraScreen({
         <SectionCard
           eyebrow="Inbox"
           title="Incoming customer request"
-          description="A locally recovered request is waiting for mitra review before it moves into the active trip flow."
+          description={getRecoveryResumeHint(requestedOrder.status)}
         >
           <AppText tone="muted">Order ID: {requestedOrder.orderId}</AppText>
+          <AppText tone="muted">
+            {getRecoveryActiveActorHint(requestedOrder.status)}
+          </AppText>
           <AppText tone="muted">Requested at: {requestedOrder.requestedAt ?? requestedOrder.updatedAt}</AppText>
           <AppText tone="muted">
             Route: {requestedOrder.pickup.label ?? 'Pickup'} to {requestedOrder.destination.label ?? 'Destination'}
