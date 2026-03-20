@@ -212,7 +212,7 @@ export function ActiveTripScreen({
         Estimated price: Rp {order.estimatedPrice.toLocaleString('id-ID')}
       </AppText>
       <AppText tone="muted">
-        Status updated: {order.statusUpdatedAt}
+        Last status update: {order.statusUpdatedAt}
       </AppText>
       {order.requestedAt ? (
         <AppText tone="muted">Requested at: {order.requestedAt}</AppText>

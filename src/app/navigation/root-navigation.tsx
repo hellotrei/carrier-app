@@ -322,8 +322,8 @@ export function RootNavigation(): React.JSX.Element {
                 lastUpdatedHint={
                   activeOrder
                     ? activeOrder.status === 'Draft'
-                      ? `Restored from local draft updated at ${activeOrder.updatedAt}.`
-                      : `Last status update recorded at ${activeOrder.statusUpdatedAt}.`
+                      ? `Draft last updated: ${activeOrder.updatedAt}.`
+                      : `Last status update: ${activeOrder.statusUpdatedAt}.`
                     : undefined
                 }
                 onClearDraft={
