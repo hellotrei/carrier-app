@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import type { AppRole } from '../../../core/types/app-role';
 import type {
   Order,
   OrderCancelReason,
@@ -12,45 +13,83 @@ import { AppText } from '../../../ui/primitives/app-text';
 import { tokens } from '../../../ui/theme/tokens';
 
 type ActiveTripScreenProps = {
+  activeRole: AppRole;
   onAdvance: (nextStatus: OrderStatus) => void;
   onBack: () => void;
   onCancel: (reason: OrderCancelReason) => void;
   order: Order;
 };
 
-function getNextStatus(status: OrderStatus): OrderStatus | null {
+function getPrimaryAction(
+  activeRole: AppRole,
+  status: OrderStatus,
+): { label: string; nextStatus: OrderStatus } | null {
+  if (activeRole === 'customer') {
+    if (status === 'Draft') {
+      return {
+        label: 'Submit draft',
+        nextStatus: 'Requested',
+      };
+    }
+
+    return null;
+  }
+
   switch (status) {
-    case 'Draft':
-      return 'Requested';
     case 'Requested':
-      return 'Accepted';
+      return {
+        label: 'Accept request',
+        nextStatus: 'Accepted',
+      };
     case 'Accepted':
-      return 'OnTheWay';
+      return {
+        label: 'Head to pickup',
+        nextStatus: 'OnTheWay',
+      };
     case 'OnTheWay':
-      return 'OnTrip';
+      return {
+        label: 'Start trip',
+        nextStatus: 'OnTrip',
+      };
     case 'OnTrip':
-      return 'Completed';
+      return {
+        label: 'Complete trip',
+        nextStatus: 'Completed',
+      };
     default:
       return null;
   }
 }
 
-function getAdvanceLabel(status: OrderStatus, nextStatus: OrderStatus): string {
-  if (status === 'Draft' && nextStatus === 'Requested') {
-    return 'Submit draft';
+function getRoleSummary(activeRole: AppRole, status: OrderStatus): string {
+  if (activeRole === 'customer') {
+    if (status === 'Draft') {
+      return 'Customer can still review and submit this draft.';
+    }
+
+    return `Customer view is read-only while the order is ${status}. Switch to mitra to continue the operational flow.`;
   }
 
-  return `Advance to ${nextStatus}`;
+  if (status === 'Requested') {
+    return 'Mitra can now accept the recovered request.';
+  }
+
+  if (status === 'Draft') {
+    return 'Mitra cannot act until the customer submits the booking draft.';
+  }
+
+  return `Mitra controls the operational transition while the order is ${status}.`;
 }
 
 export function ActiveTripScreen({
+  activeRole,
   onAdvance,
   onBack,
   onCancel,
   order,
 }: ActiveTripScreenProps): React.JSX.Element {
-  const nextStatus = getNextStatus(order.status);
   const isDraft = order.status === 'Draft';
+  const primaryAction = getPrimaryAction(activeRole, order.status);
 
   return (
     <SectionCard
@@ -76,6 +115,10 @@ export function ActiveTripScreen({
       {order.requestedAt ? (
         <AppText tone="muted">Requested at: {order.requestedAt}</AppText>
       ) : null}
+      <AppText tone="muted">
+        Active actor: {activeRole === 'customer' ? 'Customer' : 'Mitra'}
+      </AppText>
+      <AppText tone="muted">{getRoleSummary(activeRole, order.status)}</AppText>
       {isDraft ? (
         <View style={styles.reviewCard}>
           <AppText variant="eyebrow">Review</AppText>
@@ -89,27 +132,37 @@ export function ActiveTripScreen({
           </AppText>
         </View>
       ) : null}
-      {nextStatus ? (
+      {primaryAction ? (
         <AppButton
-          label={getAdvanceLabel(order.status, nextStatus)}
-          onPress={() => onAdvance(nextStatus)}
+          label={primaryAction.label}
+          onPress={() => onAdvance(primaryAction.nextStatus)}
         />
       ) : null}
-      <AppButton
-        label="Cancel: no show"
-        kind="secondary"
-        onPress={() => onCancel('no_show')}
-      />
-      <AppButton
-        label="Cancel: identity mismatch"
-        kind="secondary"
-        onPress={() => onCancel('identity_mismatch')}
-      />
-      <AppButton
-        label="Cancel: unsafe"
-        kind="secondary"
-        onPress={() => onCancel('unsafe_or_suspicious')}
-      />
+      {activeRole === 'customer' ? (
+        <AppButton
+          label="Cancel: pickup mismatch"
+          kind="secondary"
+          onPress={() => onCancel('pickup_mismatch')}
+        />
+      ) : (
+        <>
+          <AppButton
+            label="Cancel: no show"
+            kind="secondary"
+            onPress={() => onCancel('no_show')}
+          />
+          <AppButton
+            label="Cancel: identity mismatch"
+            kind="secondary"
+            onPress={() => onCancel('identity_mismatch')}
+          />
+          <AppButton
+            label="Cancel: unsafe"
+            kind="secondary"
+            onPress={() => onCancel('unsafe_or_suspicious')}
+          />
+        </>
+      )}
       <AppButton label="Back to shell" kind="secondary" onPress={onBack} />
     </SectionCard>
   );

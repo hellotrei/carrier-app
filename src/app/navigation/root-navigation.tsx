@@ -267,6 +267,7 @@ export function RootNavigation(): React.JSX.Element {
 
       {profile && activeScreen === 'active_trip' && activeOrder ? (
         <ActiveTripScreen
+          activeRole={activeRole}
           onAdvance={nextStatus => {
             void handleAdvanceOrder(nextStatus);
           }}
