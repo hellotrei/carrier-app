@@ -33,6 +33,7 @@ export function transitionOrder(
   return {
     ...order,
     status: nextStatus,
+    statusUpdatedAt: updatedAt,
     updatedAt,
   };
 }

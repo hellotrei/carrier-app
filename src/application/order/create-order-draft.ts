@@ -67,6 +67,7 @@ export async function createOrderDraft(
     estimatedPrice: input.estimatedPrice,
     status: 'Draft',
     createdAt: timestamp,
+    statusUpdatedAt: timestamp,
     updatedAt: timestamp,
   };
 

@@ -36,8 +36,10 @@ export type Order = {
   pickup: LocationPoint;
   destination: LocationPoint;
   estimatedPrice: number;
+  requestedAt?: string;
   status: OrderStatus;
   createdAt: string;
+  statusUpdatedAt: string;
   updatedAt: string;
 };
 

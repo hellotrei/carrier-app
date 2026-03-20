@@ -23,7 +23,11 @@ export async function submitOrderDraft(
     };
   }
 
-  const requestedOrder = transitionOrder(order, 'Requested', nowIso());
+  const requestedAt = nowIso();
+  const requestedOrder = {
+    ...transitionOrder(order, 'Requested', requestedAt),
+    requestedAt,
+  };
 
   await deps.orderRepository.saveOrder(requestedOrder);
 

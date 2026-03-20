@@ -14,8 +14,10 @@ type OrderRow = {
   order_id: string;
   partner_id: string;
   pickup_json: string;
+  requested_at: string | null;
   rider_declared_name: string;
   status: Order['status'];
+  status_updated_at: string | null;
   updated_at: string;
 };
 
@@ -31,8 +33,13 @@ function mapRowToOrder(row: OrderRow): Order {
     estimatedPrice: row.estimated_price,
     status: row.status,
     createdAt: row.created_at,
+    statusUpdatedAt: row.status_updated_at ?? row.updated_at,
     updatedAt: row.updated_at,
   };
+
+  if (row.requested_at) {
+    order.requestedAt = row.requested_at;
+  }
 
   if (row.cancel_reason) {
     order.cancelReason =
@@ -58,8 +65,10 @@ export function createSqliteOrderRepository(
           pickup_json,
           destination_json,
           estimated_price,
+          requested_at,
           status,
           created_at,
+          status_updated_at,
           updated_at
         FROM order_table
         ORDER BY updated_at DESC
@@ -86,17 +95,21 @@ export function createSqliteOrderRepository(
           pickup_json,
           destination_json,
           estimated_price,
+          requested_at,
           status,
           created_at,
+          status_updated_at,
           updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(order_id) DO UPDATE SET
           cancel_reason = excluded.cancel_reason,
           rider_declared_name = excluded.rider_declared_name,
           pickup_json = excluded.pickup_json,
           destination_json = excluded.destination_json,
           estimated_price = excluded.estimated_price,
+          requested_at = excluded.requested_at,
           status = excluded.status,
+          status_updated_at = excluded.status_updated_at,
           updated_at = excluded.updated_at`,
         [
           order.orderId,
@@ -108,8 +121,10 @@ export function createSqliteOrderRepository(
           JSON.stringify(order.pickup),
           JSON.stringify(order.destination),
           order.estimatedPrice,
+          order.requestedAt ?? null,
           order.status,
           order.createdAt,
+          order.statusUpdatedAt,
           order.updatedAt,
         ],
       );

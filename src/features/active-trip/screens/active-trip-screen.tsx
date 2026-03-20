@@ -70,6 +70,12 @@ export function ActiveTripScreen({
       <AppText tone="muted">
         Estimated price: Rp {order.estimatedPrice.toLocaleString('id-ID')}
       </AppText>
+      <AppText tone="muted">
+        Status updated: {order.statusUpdatedAt}
+      </AppText>
+      {order.requestedAt ? (
+        <AppText tone="muted">Requested at: {order.requestedAt}</AppText>
+      ) : null}
       {isDraft ? (
         <View style={styles.reviewCard}>
           <AppText variant="eyebrow">Review</AppText>

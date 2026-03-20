@@ -46,4 +46,11 @@ export const sqlMigrations = [
       `ALTER TABLE user_profile ADD COLUMN has_spare_helmet INTEGER NOT NULL DEFAULT 0;`,
     ],
   },
+  {
+    version: 3,
+    statements: [
+      `ALTER TABLE order_table ADD COLUMN requested_at TEXT;`,
+      `ALTER TABLE order_table ADD COLUMN status_updated_at TEXT;`,
+    ],
+  },
 ] as const;
