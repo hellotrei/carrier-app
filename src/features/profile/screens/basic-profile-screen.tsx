@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import type { AppRole } from '../../../core/types/app-role';
@@ -83,14 +83,33 @@ export function BasicProfileScreen({
       ?.vehicleType ?? null,
   );
   const [isSaving, setIsSaving] = useState(false);
+  const [saveFeedback, setSaveFeedback] = useState<string | null>(null);
   const readinessHints = getReadinessHints({
     hasSpareHelmet,
     plateNumber,
     vehicleType,
   });
 
+  useEffect(() => {
+    if (activeRole !== 'mitra' || !existingProfile) {
+      setSaveFeedback(null);
+      return;
+    }
+
+    setSaveFeedback(
+      `Last saved readiness: ${getReadinessLabel(
+        existingProfile.driverReadinessStatus,
+      )}.`,
+    );
+  }, [
+    activeRole,
+    existingProfile?.driverReadinessStatus,
+    existingProfile?.updatedAt,
+  ]);
+
   async function handleSubmit() {
     setIsSaving(true);
+    setSaveFeedback(null);
 
     try {
       const payload: {
@@ -167,6 +186,7 @@ export function BasicProfileScreen({
                 Current setup meets the minimum readiness inputs for mitra flow.
               </AppText>
             )}
+            {saveFeedback ? <AppText>{saveFeedback}</AppText> : null}
             <AppText tone="muted">Active vehicle</AppText>
             <View style={styles.optionRow}>
               {(['motor', 'mobil', 'bajaj', 'angkot'] as VehicleType[]).map(
