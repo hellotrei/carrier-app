@@ -120,7 +120,7 @@ export function ActiveTripScreen({
         </View>
       ) : (
         <View style={styles.reviewCard}>
-          <AppText variant="eyebrow">Handoff Summary</AppText>
+          <AppText variant="eyebrow">Handoff Notes</AppText>
           <AppText tone="muted">
             {getActiveTripHandoffNote(activeRole, order.status)}
           </AppText>
