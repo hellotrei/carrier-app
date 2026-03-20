@@ -93,12 +93,12 @@ export function ActiveTripScreen({
         Cancel reason: {order.cancelReason ?? 'Not canceled'}
       </AppText>
       <AppText tone="muted">Rider: {order.riderDeclaredName}</AppText>
-      <AppText tone="muted">
-        Route: {order.pickup.label ?? 'Pickup'} to {order.destination.label ?? 'Destination'}
-      </AppText>
-      <AppText tone="muted">
-        Estimated price: Rp {order.estimatedPrice.toLocaleString('id-ID')}
-      </AppText>
+      <OrderSummaryBlock
+        context={isDraft ? 'draft_review' : 'handoff'}
+        destinationLabel={order.destination.label ?? ''}
+        estimatedPrice={order.estimatedPrice}
+        pickupLabel={order.pickup.label ?? ''}
+      />
       <AppText tone="muted">
         Last status update: {order.statusUpdatedAt}
       </AppText>
