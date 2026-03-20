@@ -8,7 +8,9 @@ import { SectionCard } from '../../ui/patterns/section-card';
 import { bootstrapDeps } from '../config/bootstrap-deps';
 import { saveProfile } from '../../application/user/save-profile';
 import { updateCurrentRole } from '../../application/user/update-current-role';
+import { advanceOrderStatus } from '../../application/order/advance-order-status';
 import { createOrderDraft } from '../../application/order/create-order-draft';
+import { ActiveTripScreen } from '../../features/active-trip/screens/active-trip-screen';
 import { HomeCustomerScreen } from '../../features/home-customer/screens/home-customer-screen';
 import { HomeMitraScreen } from '../../features/home-mitra/screens/home-mitra-screen';
 import { BasicProfileScreen } from '../../features/profile/screens/basic-profile-screen';
@@ -26,6 +28,9 @@ export function RootNavigation(): React.JSX.Element {
   );
   const setActiveOrder = useAppStore(state => state.setActiveOrder);
   const setProfile = useAppStore(state => state.setProfile);
+  const [activeScreen, setActiveScreen] = React.useState<'home' | 'active_trip'>(
+    'home',
+  );
   const [submitError, setSubmitError] = React.useState<string | null>(null);
 
   async function handleRoleChange(role: 'customer' | 'mitra') {
@@ -120,6 +125,29 @@ export function RootNavigation(): React.JSX.Element {
     }
 
     setActiveOrder(result.value);
+    setActiveScreen('active_trip');
+  }
+
+  async function handleAdvanceOrder(nextStatus: Parameters<
+    typeof advanceOrderStatus
+  >[2]) {
+    if (!activeOrder) {
+      return;
+    }
+
+    const result = await advanceOrderStatus(bootstrapDeps, activeOrder, nextStatus);
+
+    if (!result.ok) {
+      return;
+    }
+
+    if (result.value.isTerminal) {
+      setActiveOrder(null);
+      setActiveScreen('home');
+      return;
+    }
+
+    setActiveOrder(result.value.order);
   }
 
   return (
@@ -175,7 +203,9 @@ export function RootNavigation(): React.JSX.Element {
 
       {activeOrder ? (
         <RecoveryBanner
-          onResume={() => {}}
+          onResume={() => {
+            setActiveScreen('active_trip');
+          }}
           order={activeOrder}
         />
       ) : null}
@@ -187,11 +217,27 @@ export function RootNavigation(): React.JSX.Element {
         submitError={submitError}
       />
 
-      {profile
+      {profile && activeScreen === 'active_trip' && activeOrder ? (
+        <ActiveTripScreen
+          onAdvance={nextStatus => {
+            void handleAdvanceOrder(nextStatus);
+          }}
+          onBack={() => {
+            setActiveScreen('home');
+          }}
+          order={activeOrder}
+        />
+      ) : null}
+
+      {profile && activeScreen === 'home'
         ? activeRole === 'customer'
-          ? <HomeCustomerScreen onCreateDraft={() => {
-              void handleCreateDraft();
-            }} />
+          ? (
+              <HomeCustomerScreen
+                onCreateDraft={() => {
+                  void handleCreateDraft();
+                }}
+              />
+            )
           : <HomeMitraScreen />
         : null}
     </AppScreen>
