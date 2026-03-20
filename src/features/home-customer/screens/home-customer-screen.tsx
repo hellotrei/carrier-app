@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 import type { OrderStatus } from '../../../domain/order/order';
+import { getCustomerHomeStatusDescription } from '../../order/order-status-copy';
 import { AppButton } from '../../../ui/primitives/app-button';
 import { AppInput } from '../../../ui/primitives/app-input';
 import { AppText } from '../../../ui/primitives/app-text';
@@ -50,34 +51,11 @@ export function HomeCustomerScreen({
   }, [initialDraftValues]);
 
   if (activeOrderStatus && activeOrderStatus !== 'Draft') {
-    let description =
-      `Order ${activeOrderStatus} is already active. Resume that flow before starting a new booking.`;
-
-    if (activeOrderStatus === 'Requested') {
-      description =
-        'Order has already been submitted and is now waiting for mitra handling in the active flow.';
-    }
-
-    if (activeOrderStatus === 'Accepted') {
-      description =
-        'Mitra has accepted this order. Follow the active flow for the next pickup and trip updates.';
-    }
-
-    if (activeOrderStatus === 'OnTheWay') {
-      description =
-        'Mitra is already heading to pickup. Resume the active flow to track the next step.';
-    }
-
-    if (activeOrderStatus === 'OnTrip') {
-      description =
-        'Trip is already in progress. Resume the active flow for the latest trip state.';
-    }
-
     return (
       <SectionCard
         eyebrow="Feature"
         title="Customer home scaffold"
-        description={description}
+        description={getCustomerHomeStatusDescription(activeOrderStatus)}
       >
         {lastUpdatedHint ? <AppText tone="muted">{lastUpdatedHint}</AppText> : null}
         {activeOrderSummary ? (
