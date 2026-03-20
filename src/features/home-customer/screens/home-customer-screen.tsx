@@ -15,6 +15,7 @@ type HomeCustomerScreenProps = {
     estimatedPrice: string;
     pickupLabel: string;
   } | undefined;
+  lastUpdatedHint: string | undefined;
   onCreateDraft: (params: {
     destinationLabel: string;
     estimatedPrice: string;
@@ -27,6 +28,7 @@ type HomeCustomerScreenProps = {
 export function HomeCustomerScreen({
   activeOrderStatus,
   initialDraftValues,
+  lastUpdatedHint,
   submitError,
   onCreateDraft,
   onClearDraft,
@@ -57,6 +59,9 @@ export function HomeCustomerScreen({
       title="Customer home scaffold"
       description="This slice is ready for discovery, booking draft, and empty-state work without leaking storage or relay concerns into the screen."
     >
+      {activeOrderStatus === 'Draft' && lastUpdatedHint ? (
+        <AppText tone="muted">{lastUpdatedHint}</AppText>
+      ) : null}
       <AppInput
         label="Pickup"
         onChangeText={setPickupLabel}

@@ -310,6 +310,11 @@ export function RootNavigation(): React.JSX.Element {
                       }
                     : undefined
                 }
+                lastUpdatedHint={
+                  activeOrder?.status === 'Draft'
+                    ? `Restored from local draft updated at ${activeOrder.updatedAt}.`
+                    : undefined
+                }
                 onClearDraft={
                   activeOrder?.status === 'Draft'
                     ? () => {
