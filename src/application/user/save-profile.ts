@@ -5,7 +5,12 @@ import { hashString } from '../../core/utils/hash-string';
 import { nowIso } from '../../core/utils/now';
 import { normalizePhoneE164, maskPhoneNumber } from '../../core/validation/profile';
 import type { Result } from '../../core/result/result';
-import type { UserProfile } from '../../domain/user/user-profile';
+import type {
+  UserProfile,
+  VehicleProfile,
+  VehicleType,
+} from '../../domain/user/user-profile';
+import { resolveDriverReadinessStatus } from '../../domain/user/validate-driver-readiness';
 import type { UserRepositoryPort } from '../../data/repositories/user-repository-port';
 import { SECURE_STORAGE_KEYS } from '../../data/storage/secure-storage-keys';
 import type { SecureStoragePort } from '../../data/storage/secure-storage-port';
@@ -13,12 +18,16 @@ import type { SecureStoragePort } from '../../data/storage/secure-storage-port';
 export type SaveProfileInput = {
   currentRole: AppRole;
   displayName: string;
+  hasSpareHelmet?: boolean;
+  plateNumber?: string;
   phoneInput: string;
+  vehicleType?: VehicleType;
 };
 
 export type SaveProfileError =
   | { code: 'DISPLAY_NAME_REQUIRED' }
-  | { code: 'PHONE_REQUIRED' };
+  | { code: 'PHONE_REQUIRED' }
+  | { code: 'VEHICLE_TYPE_REQUIRED' };
 
 export type SaveProfileDeps = {
   secureStorage: SecureStoragePort;
@@ -37,6 +46,10 @@ function validateInput(input: SaveProfileInput): SaveProfileError | null {
 
   if (!input.phoneInput.trim()) {
     return { code: 'PHONE_REQUIRED' };
+  }
+
+  if (input.currentRole === 'mitra' && !input.vehicleType) {
+    return { code: 'VEHICLE_TYPE_REQUIRED' };
   }
 
   return null;
@@ -71,7 +84,8 @@ export async function saveProfile(
     displayName,
     phoneHash,
     phoneMasked,
-    activeRoles: [input.currentRole],
+    activeRoles:
+      input.currentRole === 'mitra' ? ['customer', 'mitra'] : ['customer'],
     currentRole: input.currentRole,
     deviceAuthEnabled: false,
     identityStatus: 'active',
@@ -79,6 +93,35 @@ export async function saveProfile(
     createdAt: existingProfile?.createdAt ?? timestamp,
     updatedAt: timestamp,
   };
+
+  if (input.currentRole === 'mitra' && input.vehicleType) {
+    const vehicle: VehicleProfile = {
+      vehicleId: createId('veh'),
+      vehicleType: input.vehicleType,
+      pricingMode: 'per_vehicle' as const,
+      verificationStatus: 'minimum_valid' as const,
+      isActiveForBooking: true,
+    };
+
+    if (input.plateNumber?.trim()) {
+      vehicle.plateNumber = input.plateNumber.trim();
+    }
+
+    profile.vehicles = [vehicle];
+    profile.hasSpareHelmet = Boolean(input.hasSpareHelmet);
+    const readinessInput: {
+      hasSpareHelmet?: boolean;
+      vehicles: VehicleProfile[];
+    } = {
+      vehicles: profile.vehicles,
+    };
+
+    if (input.hasSpareHelmet !== undefined) {
+      readinessInput.hasSpareHelmet = input.hasSpareHelmet;
+    }
+
+    profile.driverReadinessStatus = resolveDriverReadinessStatus(readinessInput);
+  }
 
   await Promise.all([
     deps.userRepository.saveProfile(profile),

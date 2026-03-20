@@ -1,6 +1,6 @@
 import { asUserId } from '../../core/types/ids';
 import type { AppRole } from '../../core/types/app-role';
-import type { UserProfile } from '../../domain/user/user-profile';
+import type { UserProfile, VehicleProfile } from '../../domain/user/user-profile';
 import type { SqlStatementExecutor } from '../db/sqlite/database-port';
 import type { UserRepositoryPort } from './user-repository-port';
 
@@ -10,12 +10,15 @@ type UserProfileRow = {
   current_role: AppRole;
   device_auth_enabled: number;
   display_name: string;
+  driver_readiness_status: UserProfile['driverReadinessStatus'] | null;
+  has_spare_helmet: number;
   identity_status: UserProfile['identityStatus'];
   phone_hash: string | null;
   phone_masked: string | null;
   profile_validated_at: string | null;
   updated_at: string;
   user_id: string;
+  vehicles_json: string | null;
 };
 
 function mapRowToProfile(row: UserProfileRow): UserProfile {
@@ -40,6 +43,18 @@ function mapRowToProfile(row: UserProfileRow): UserProfile {
 
   if (row.profile_validated_at) {
     profile.profileValidatedAt = row.profile_validated_at;
+  }
+
+  if (row.driver_readiness_status) {
+    profile.driverReadinessStatus = row.driver_readiness_status;
+  }
+
+  if (row.has_spare_helmet) {
+    profile.hasSpareHelmet = Boolean(row.has_spare_helmet);
+  }
+
+  if (row.vehicles_json) {
+    profile.vehicles = JSON.parse(row.vehicles_json) as VehicleProfile[];
   }
 
   return profile;
@@ -80,10 +95,13 @@ export function createSqliteUserRepository(
           active_roles,
           device_auth_enabled,
           identity_status,
+          driver_readiness_status,
+          vehicles_json,
+          has_spare_helmet,
           profile_validated_at,
           created_at,
           updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(user_id) DO UPDATE SET
           display_name = excluded.display_name,
           phone_masked = excluded.phone_masked,
@@ -92,6 +110,9 @@ export function createSqliteUserRepository(
           active_roles = excluded.active_roles,
           device_auth_enabled = excluded.device_auth_enabled,
           identity_status = excluded.identity_status,
+          driver_readiness_status = excluded.driver_readiness_status,
+          vehicles_json = excluded.vehicles_json,
+          has_spare_helmet = excluded.has_spare_helmet,
           profile_validated_at = excluded.profile_validated_at,
           updated_at = excluded.updated_at`,
         [
@@ -103,6 +124,9 @@ export function createSqliteUserRepository(
           JSON.stringify(profile.activeRoles),
           profile.deviceAuthEnabled ? 1 : 0,
           profile.identityStatus,
+          profile.driverReadinessStatus ?? null,
+          profile.vehicles ? JSON.stringify(profile.vehicles) : null,
+          profile.hasSpareHelmet ? 1 : 0,
           profile.profileValidatedAt ?? null,
           profile.createdAt,
           profile.updatedAt,

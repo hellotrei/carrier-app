@@ -27,18 +27,43 @@ export function RootNavigation(): React.JSX.Element {
 
   async function handleProfileSubmit(params: {
     displayName: string;
+    hasSpareHelmet?: boolean;
     phoneInput: string;
+    plateNumber?: string;
+    vehicleType?: 'motor' | 'mobil' | 'bajaj' | 'angkot';
   }) {
-    const result = await saveProfile(bootstrapDeps, {
+    const payload: {
+      currentRole: typeof activeRole;
+      displayName: string;
+      hasSpareHelmet?: boolean;
+      phoneInput: string;
+      plateNumber?: string;
+      vehicleType?: 'motor' | 'mobil' | 'bajaj' | 'angkot';
+    } = {
       currentRole: activeRole,
       displayName: params.displayName,
       phoneInput: params.phoneInput,
-    });
+    };
+
+    if (params.hasSpareHelmet !== undefined) {
+      payload.hasSpareHelmet = params.hasSpareHelmet;
+    }
+
+    if (params.plateNumber) {
+      payload.plateNumber = params.plateNumber;
+    }
+
+    if (params.vehicleType) {
+      payload.vehicleType = params.vehicleType;
+    }
+
+    const result = await saveProfile(bootstrapDeps, payload);
 
     if (!result.ok) {
       const errorMap: Record<typeof result.error.code, string> = {
         DISPLAY_NAME_REQUIRED: 'Display name is required.',
         PHONE_REQUIRED: 'Phone number is required.',
+        VEHICLE_TYPE_REQUIRED: 'Vehicle type is required for mitra.',
       };
 
       setSubmitError(errorMap[result.error.code]);
@@ -87,6 +112,10 @@ export function RootNavigation(): React.JSX.Element {
         </AppText>
         <AppText tone="muted">
           Profile: {profile ? profile.displayName : 'Not created yet'}
+        </AppText>
+        <AppText tone="muted">
+          Driver readiness:{' '}
+          {profile?.driverReadinessStatus ?? 'Not evaluated yet'}
         </AppText>
         <AppText tone="muted">
           Active order: {activeOrder ? activeOrder.status : 'None'}

@@ -11,6 +11,9 @@ export const sqlMigrations = [
         active_roles TEXT NOT NULL DEFAULT '[]',
         device_auth_enabled INTEGER NOT NULL DEFAULT 0,
         identity_status TEXT NOT NULL DEFAULT 'draft',
+        driver_readiness_status TEXT,
+        vehicles_json TEXT,
+        has_spare_helmet INTEGER NOT NULL DEFAULT 0,
         profile_validated_at TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
@@ -33,6 +36,14 @@ export const sqlMigrations = [
         value TEXT NOT NULL,
         updated_at TEXT NOT NULL
       );`,
+    ],
+  },
+  {
+    version: 2,
+    statements: [
+      `ALTER TABLE user_profile ADD COLUMN driver_readiness_status TEXT;`,
+      `ALTER TABLE user_profile ADD COLUMN vehicles_json TEXT;`,
+      `ALTER TABLE user_profile ADD COLUMN has_spare_helmet INTEGER NOT NULL DEFAULT 0;`,
     ],
   },
 ] as const;
