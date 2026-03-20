@@ -100,6 +100,9 @@ Temp Chat/Files:    Firebase Realtime Database / Firebase Storage (opsional, non
 
 ### 3.3 Integration Libraries
 ```
+Runtime baseline:   React Native 0.84 + React 19.2 + Node.js 22.11+ + Hermes V1
+Architecture:       New Architecture aktif dari awal
+TypeScript config:  @react-native/typescript-config + react-native-strict-api
 Location:           @react-native-community/geolocation
                     atau expo-location
 Biometrics:         react-native-biometrics
@@ -1311,6 +1314,7 @@ const SECURE_STORAGE_KEYS = {
 ### 10.5 Identity Storage Rules
 - Nomor telepon penuh (`phoneE164`) hanya boleh disimpan di Secure Storage
 - SQLite hanya menyimpan `phone_masked`, `phone_hash`, dan `identity_status`
+- Tabel SQLite yang menyimpan histori trip, pickup/destination, dan tarif wajib berjalan dengan enkripsi at rest
 - `deviceBindingId` dibuat saat first launch dan wajib ada sebelum user boleh online
 - `identity_status = active` hanya boleh diberikan setelah display name dan phone number lolos normalisasi dan validasi
 - `identity_status = blocked` mencegah publish presence dan submit order baru sampai data diperbaiki
@@ -2589,8 +2593,8 @@ function buildAppleMapsUrl(params: {
     : undefined
 
   return origin
-    ? `http://maps.apple.com/?saddr=${origin}&daddr=${dest}&dirflg=d`
-    : `http://maps.apple.com/?daddr=${dest}&dirflg=d`
+    ? `https://maps.apple.com/?saddr=${origin}&daddr=${dest}&dirflg=d`
+    : `https://maps.apple.com/?daddr=${dest}&dirflg=d`
 }
 ```
 
@@ -3533,6 +3537,8 @@ NetInfo.addEventListener(state => {
 - [ ] CTA utama lebih menonjol dari status sekunder tanpa terasa agresif
 - [ ] Border tetap minimal dan shadow tetap tipis di layar utama
 - [ ] Komponen inti seperti card, badge, breakdown, dan recovery banner konsisten lintas screen
+- [ ] Tiny components ditempatkan di `ui/primitives` dan tidak tahu business state
+- [ ] Reusable composites ditempatkan di `ui/patterns`; screen feature hanya melakukan komposisi
 
 ### 23.14 MVP Wireflow
 - [ ] Entry flow membawa user ke home sesuai role setelah onboarding selesai
@@ -3644,6 +3650,9 @@ Feature flag intent:
 - Prod config tidak boleh enable verbose logging
 - `anti_abuse_enabled` tidak boleh `false` di prod environment
 - Supabase URL dan anon key di-load dari environment variable, tidak hardcode
+- Release iOS wajib menjaga ATS aktif; jangan aktifkan arbitrary loads untuk production build
+- Release Android wajib mematikan cleartext traffic dan mendefinisikan allowlist endpoint di Network Security Config
+- Kode aplikasi tidak boleh import dari `react-native/Libraries/*`; hanya API publik React Native yang boleh dipakai
 
 ---
 
@@ -3788,6 +3797,7 @@ Rules:
 
 Carrier diimplementasikan sebagai **single cross-platform React Native app dengan TypeScript**, dengan:
 
+- **React Native 0.84 + React 19.2 + Hermes V1 + New Architecture**
 - **SQLite** (op-sqlite) sebagai local persistence utama
 - **Supabase Realtime** sebagai thin relay untuk presence dan order signaling
 - **Firebase FCM** sebagai push layer dan Firebase temp store untuk komunikasi sementara yang non-kritikal

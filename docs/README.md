@@ -16,10 +16,19 @@ Folder ini menampung seluruh dokumen perencanaan dan spesifikasi proyek agar roo
 4. `carrier-tsd.md`
    Kontrak teknis, type, state, dan aturan implementasi detail.
 
-5. `carrier-concept-diagram.md`
+5. `carrier-architecture-decision-pack.md`
+   Baseline keputusan arsitektur implementasi React Native, boundary kode, dan security posture.
+
+6. `carrier-folder-blueprint.md`
+   Struktur folder final dan boundary ownership untuk scaffold React Native.
+
+7. `carrier-dependency-policy.md`
+   Allowlist, conditional list, dan denylist dependency untuk menjaga efisiensi dan keamanan repo.
+
+8. `carrier-concept-diagram.md`
    Diagram konsep ringkas untuk mental model lokal vs relay vs audit.
 
-6. `carrier-research-report.md`
+9. `carrier-research-report.md`
    Catatan riset dan referensi tambahan.
 
 ## Issue specs per sprint

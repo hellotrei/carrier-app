@@ -64,9 +64,11 @@ SDD ini menurunkan PRD ke level implementasi: arsitektur sistem, komponen, desai
 ## 4. Keputusan Arsitektur Utama
 
 ### 4.1 Mobile Stack
-- **React Native + TypeScript**
-- Alasan: delivery cepat, satu codebase Android/iOS, integrasi native bridge untuk lokasi/biometrics/deep link, ekosistem library solid
+- **React Native 0.84 + React 19.2 + TypeScript**
+- Baseline toolchain: Node.js 22.11+ LTS, Hermes V1 default, New Architecture aktif sejak awal
+- Alasan: delivery cepat, satu codebase Android/iOS, integrasi native bridge untuk lokasi/biometrics/deep link, ekosistem library solid, dan sejalan dengan baseline React Native modern
 - Alternatif Flutter juga valid, tapi RN lebih cepat jika tim sudah kuat di JS/TS
+- Semua library native yang dipilih wajib kompatibel dengan New Architecture; hindari dependensi yang masih bergantung pada bridge legacy jika ada opsi yang lebih aman
 
 ### 4.2 Local Persistence
 - **SQLite** via react-native-quick-sqlite atau op-sqlite
@@ -256,6 +258,8 @@ Rules:
 - **Repository pattern** — data layer abstracted, mudah diganti
 - **Use case orchestration** — logika bisnis ada di application layer, bukan di screen
 - **Explicit state machine** — transisi order dikontrol dan dapat diaudit
+- **Tiny component boundary** — primitive UI kecil harus reusable lintas feature, sedangkan komponen flow tetap tinggal di feature masing-masing
+- **Strict TypeScript boundary** — kontrak type publik jelas, tidak bergantung pada deep import internal React Native
 
 ---
 
@@ -267,6 +271,10 @@ src/
     navigation/          # stack, tabs, modal nav
     providers/           # context providers, DI
     bootstrap/           # initialization sequence
+  ui/
+    primitives/          # tiny reusable UI: Text, Button, Input, Stack, Surface
+    patterns/            # reusable composites: Card, Badge, Breakdown, RecoveryBanner
+    theme/               # design tokens, color, spacing, radius, typography
   core/
     types/               # shared TS types
     constants/           # app-wide constants
@@ -345,6 +353,19 @@ src/
     selectors/
     effects/              # side effects / thunks
 ```
+
+Boundary rules:
+- `ui/primitives` hanya boleh berisi komponen kecil tanpa business knowledge
+- `ui/patterns` boleh menggabungkan beberapa primitive, tetapi tidak boleh mengakses storage, store, atau gateway
+- `features/*` boleh punya komponen lokal untuk flow khusus, tetapi harus reuse `ui/primitives` dan `ui/patterns` lebih dulu sebelum membuat varian baru
+- `screen/container` bertugas menghubungkan state dan use case; komponen presentasional tetap dumb dan typed
+
+TypeScript rules:
+- Gunakan `@react-native/typescript-config` sebagai baseline `tsconfig`
+- Aktifkan `customConditions: ["react-native-strict-api"]` untuk membiasakan pemakaian API React Native yang stabil
+- Larang import dari path internal seperti `react-native/Libraries/*`
+- Domain identifiers seperti `UserId`, `OrderId`, dan `DeviceBindingId` diperlakukan sebagai branded type, bukan `string` mentah di seluruh codebase
+- Order state, discovery state, dan recovery state wajib memakai discriminated union yang eksplisit
 
 ---
 
@@ -1423,7 +1444,7 @@ function calculateCommission(baseTripEstimatedPrice: number): number {
 |----------|------|-------------|
 | Sangat sensitif | Nomor telepon penuh, device binding key | Secure Storage (Keychain/Keystore) |
 | Sensitif terbatas | Phone masked, phone hash, identity status | SQLite |
-| Sensitif | Order history, pickup/destination, tarif | SQLite (encrypted at rest jika memungkinkan) |
+| Sensitif | Order history, pickup/destination, tarif | SQLite terenkripsi at rest |
 | Internal | Audit payload | File binary + checksum |
 | Rendah | Role aktif, UI preference | SQLite atau AsyncStorage |
 
@@ -1433,6 +1454,9 @@ function calculateCommission(baseTripEstimatedPrice: number): number {
 - Checksum CRC32 pada setiap audit event file
 - Log aplikasi tidak boleh menulis nomor telepon atau koordinat mentah secara penuh
 - Build production wajib code obfuscation (Hermes / ProGuard)
+- Release iOS wajib mengaktifkan App Transport Security tanpa arbitrary loads
+- Release Android wajib memakai Network Security Config dengan cleartext traffic nonaktif
+- External handoff hanya boleh membuka URL dengan scheme/domain yang di-allowlist (`https`, `tel`, `whatsapp`)
 
 ### 18.3 Validasi Data dan Treatment Fraud
 - Input profil harus dinormalisasi sebelum disimpan: trim whitespace, batasi panjang display name, normalisasi nomor ke `+62...`
