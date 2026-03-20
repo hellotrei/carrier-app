@@ -149,6 +149,7 @@ export function RootNavigation(): React.JSX.Element {
         return;
       }
 
+      setDraftError(null);
       setActiveOrder(submitResult.value);
       return;
     }
@@ -159,6 +160,7 @@ export function RootNavigation(): React.JSX.Element {
       return;
     }
 
+    setDraftError(null);
     if (result.value.isTerminal) {
       setActiveOrder(null);
       setActiveScreen('home');
