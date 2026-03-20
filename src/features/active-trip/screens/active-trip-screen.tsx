@@ -1,4 +1,5 @@
 import React from 'react';
+import { StyleSheet, View } from 'react-native';
 
 import type {
   Order,
@@ -8,6 +9,7 @@ import type {
 import { SectionCard } from '../../../ui/patterns/section-card';
 import { AppButton } from '../../../ui/primitives/app-button';
 import { AppText } from '../../../ui/primitives/app-text';
+import { tokens } from '../../../ui/theme/tokens';
 
 type ActiveTripScreenProps = {
   onAdvance: (nextStatus: OrderStatus) => void;
@@ -48,6 +50,7 @@ export function ActiveTripScreen({
   order,
 }: ActiveTripScreenProps): React.JSX.Element {
   const nextStatus = getNextStatus(order.status);
+  const isDraft = order.status === 'Draft';
 
   return (
     <SectionCard
@@ -67,6 +70,19 @@ export function ActiveTripScreen({
       <AppText tone="muted">
         Estimated price: Rp {order.estimatedPrice.toLocaleString('id-ID')}
       </AppText>
+      {isDraft ? (
+        <View style={styles.reviewCard}>
+          <AppText variant="eyebrow">Review</AppText>
+          <AppText>Pickup: {order.pickup.label ?? 'Pickup'}</AppText>
+          <AppText>Destination: {order.destination.label ?? 'Destination'}</AppText>
+          <AppText>
+            Fare lock preview: Rp {order.estimatedPrice.toLocaleString('id-ID')}
+          </AppText>
+          <AppText tone="muted">
+            Submitting this draft moves it to Requested and locks the current booking summary for recovery.
+          </AppText>
+        </View>
+      ) : null}
       {nextStatus ? (
         <AppButton
           label={getAdvanceLabel(order.status, nextStatus)}
@@ -92,3 +108,14 @@ export function ActiveTripScreen({
     </SectionCard>
   );
 }
+
+const styles = StyleSheet.create({
+  reviewCard: {
+    borderWidth: 1,
+    borderColor: tokens.color.border,
+    backgroundColor: tokens.color.surfaceStrong,
+    borderRadius: tokens.radius.sm,
+    padding: tokens.spacing.sm,
+    gap: tokens.spacing.xs,
+  },
+});
