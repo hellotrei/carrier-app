@@ -1,20 +1,26 @@
 import React from 'react';
 
 import type { Order } from '../../../domain/order/order';
+import type { UserProfile } from '../../../domain/user/user-profile';
+import { isDriverReady } from '../../../domain/user/validate-driver-readiness';
 import { AppButton } from '../../../ui/primitives/app-button';
 import { AppText } from '../../../ui/primitives/app-text';
 import { SectionCard } from '../../../ui/patterns/section-card';
 
 type HomeMitraScreenProps = {
   onOpenRequest: (() => void) | undefined;
+  profile: UserProfile | undefined;
   requestedOrder: Order | undefined;
 };
 
 export function HomeMitraScreen({
   onOpenRequest,
+  profile,
   requestedOrder,
 }: HomeMitraScreenProps): React.JSX.Element {
   if (requestedOrder) {
+    const mitraReady = profile ? isDriverReady(profile) : false;
+
     return (
       <SectionCard
         eyebrow="Inbox"
@@ -29,7 +35,15 @@ export function HomeMitraScreen({
         <AppText tone="muted">
           Fare preview: Rp {requestedOrder.estimatedPrice.toLocaleString('id-ID')}
         </AppText>
-        {onOpenRequest ? (
+        <AppText tone="muted">
+          Driver readiness: {profile?.driverReadinessStatus ?? 'draft'}
+        </AppText>
+        {!mitraReady ? (
+          <AppText>
+            Complete mitra readiness first. Active vehicle and minimum driver setup must be valid before opening this request.
+          </AppText>
+        ) : null}
+        {onOpenRequest && mitraReady ? (
           <AppButton label="Open request" onPress={onOpenRequest} />
         ) : null}
       </SectionCard>

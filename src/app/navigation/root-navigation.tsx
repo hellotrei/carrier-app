@@ -306,6 +306,7 @@ export function RootNavigation(): React.JSX.Element {
                       }
                     : undefined
                 }
+                profile={profile}
                 requestedOrder={
                   activeOrder?.status === 'Requested' ? activeOrder : undefined
                 }
