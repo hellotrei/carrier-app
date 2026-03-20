@@ -87,6 +87,7 @@ export function RootNavigation(): React.JSX.Element {
     }
 
     setSubmitError(null);
+    setActiveRole(result.value.profile.currentRole);
     setProfile(result.value.profile);
     setDeviceBindingPresent(Boolean(result.value.deviceBindingId));
   }
