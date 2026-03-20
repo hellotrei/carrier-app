@@ -131,7 +131,19 @@ export function ActiveTripScreen({
             Submitting this draft moves it to Requested and locks the current booking summary for recovery.
           </AppText>
         </View>
-      ) : null}
+      ) : (
+        <View style={styles.reviewCard}>
+          <AppText variant="eyebrow">Handoff Summary</AppText>
+          <AppText>Pickup: {order.pickup.label ?? 'Pickup'}</AppText>
+          <AppText>Destination: {order.destination.label ?? 'Destination'}</AppText>
+          <AppText>
+            Estimated price: Rp {order.estimatedPrice.toLocaleString('id-ID')}
+          </AppText>
+          <AppText tone="muted">
+            This booking summary is locked from the saved order and remains the recovery reference while the active flow continues.
+          </AppText>
+        </View>
+      )}
       {primaryAction ? (
         <AppButton
           label={primaryAction.label}
