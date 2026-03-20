@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import type { OrderStatus } from '../../../domain/order/order';
 import { AppButton } from '../../../ui/primitives/app-button';
@@ -10,6 +10,11 @@ type HomeCustomerScreenProps = {
   activeOrderStatus:
     | Extract<OrderStatus, 'Draft' | 'Requested' | 'Accepted' | 'OnTheWay' | 'OnTrip'>
     | undefined;
+  initialDraftValues: {
+    destinationLabel: string;
+    estimatedPrice: string;
+    pickupLabel: string;
+  } | undefined;
   onCreateDraft: (params: {
     destinationLabel: string;
     estimatedPrice: string;
@@ -20,12 +25,19 @@ type HomeCustomerScreenProps = {
 
 export function HomeCustomerScreen({
   activeOrderStatus,
+  initialDraftValues,
   submitError,
   onCreateDraft,
 }: HomeCustomerScreenProps): React.JSX.Element {
   const [destinationLabel, setDestinationLabel] = useState('');
   const [estimatedPrice, setEstimatedPrice] = useState('');
   const [pickupLabel, setPickupLabel] = useState('');
+
+  useEffect(() => {
+    setDestinationLabel(initialDraftValues?.destinationLabel ?? '');
+    setEstimatedPrice(initialDraftValues?.estimatedPrice ?? '');
+    setPickupLabel(initialDraftValues?.pickupLabel ?? '');
+  }, [initialDraftValues]);
 
   if (activeOrderStatus && activeOrderStatus !== 'Draft') {
     return (

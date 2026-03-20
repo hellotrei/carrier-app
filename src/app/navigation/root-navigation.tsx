@@ -283,6 +283,15 @@ export function RootNavigation(): React.JSX.Element {
                     ? activeOrder.status
                     : undefined
                 }
+                initialDraftValues={
+                  activeOrder?.status === 'Draft'
+                    ? {
+                        destinationLabel: activeOrder.destination.label ?? '',
+                        estimatedPrice: String(activeOrder.estimatedPrice),
+                        pickupLabel: activeOrder.pickup.label ?? '',
+                      }
+                    : undefined
+                }
                 onCreateDraft={handleCreateDraft}
                 submitError={draftError}
               />
