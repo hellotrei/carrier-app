@@ -111,6 +111,42 @@ function getHandoffNote(activeRole: AppRole, status: OrderStatus): string {
   return 'This saved booking summary remains the local recovery reference while the active flow continues.';
 }
 
+function getCustomerCancelLabel(status: OrderStatus): string {
+  if (status === 'Draft') {
+    return 'Cancel draft: pickup mismatch';
+  }
+
+  return 'Report issue: pickup mismatch';
+}
+
+function getPartnerCancelLabels(status: OrderStatus): {
+  identityMismatch: string;
+  noShow: string;
+  unsafe: string;
+} {
+  if (status === 'Requested') {
+    return {
+      identityMismatch: 'Decline request: identity mismatch',
+      noShow: 'Decline request: no show',
+      unsafe: 'Decline request: unsafe',
+    };
+  }
+
+  if (status === 'Accepted' || status === 'OnTheWay') {
+    return {
+      identityMismatch: 'Cancel pickup: identity mismatch',
+      noShow: 'Cancel pickup: no show',
+      unsafe: 'Cancel pickup: unsafe',
+    };
+  }
+
+  return {
+    identityMismatch: 'Stop trip: identity mismatch',
+    noShow: 'Stop trip: no show',
+    unsafe: 'Stop trip: unsafe',
+  };
+}
+
 export function ActiveTripScreen({
   activeRole,
   onAdvance,
@@ -120,6 +156,7 @@ export function ActiveTripScreen({
 }: ActiveTripScreenProps): React.JSX.Element {
   const isDraft = order.status === 'Draft';
   const primaryAction = getPrimaryAction(activeRole, order.status);
+  const partnerCancelLabels = getPartnerCancelLabels(order.status);
 
   return (
     <SectionCard
@@ -182,24 +219,24 @@ export function ActiveTripScreen({
       ) : null}
       {activeRole === 'customer' ? (
         <AppButton
-          label="Cancel: pickup mismatch"
+          label={getCustomerCancelLabel(order.status)}
           kind="secondary"
           onPress={() => onCancel('pickup_mismatch')}
         />
       ) : (
         <>
           <AppButton
-            label="Cancel: no show"
+            label={partnerCancelLabels.noShow}
             kind="secondary"
             onPress={() => onCancel('no_show')}
           />
           <AppButton
-            label="Cancel: identity mismatch"
+            label={partnerCancelLabels.identityMismatch}
             kind="secondary"
             onPress={() => onCancel('identity_mismatch')}
           />
           <AppButton
-            label="Cancel: unsafe"
+            label={partnerCancelLabels.unsafe}
             kind="secondary"
             onPress={() => onCancel('unsafe_or_suspicious')}
           />
