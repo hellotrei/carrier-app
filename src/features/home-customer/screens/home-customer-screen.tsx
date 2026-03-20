@@ -10,6 +10,11 @@ type HomeCustomerScreenProps = {
   activeOrderStatus:
     | Extract<OrderStatus, 'Draft' | 'Requested' | 'Accepted' | 'OnTheWay' | 'OnTrip'>
     | undefined;
+  activeOrderSummary: {
+    destinationLabel: string;
+    estimatedPrice: string;
+    pickupLabel: string;
+  } | undefined;
   initialDraftValues: {
     destinationLabel: string;
     estimatedPrice: string;
@@ -27,6 +32,7 @@ type HomeCustomerScreenProps = {
 
 export function HomeCustomerScreen({
   activeOrderStatus,
+  activeOrderSummary,
   initialDraftValues,
   lastUpdatedHint,
   submitError,
@@ -72,7 +78,21 @@ export function HomeCustomerScreen({
         eyebrow="Feature"
         title="Customer home scaffold"
         description={description}
-      />
+      >
+        {activeOrderSummary ? (
+          <>
+            <AppText tone="muted">
+              Pickup: {activeOrderSummary.pickupLabel || 'Pickup'}
+            </AppText>
+            <AppText tone="muted">
+              Destination: {activeOrderSummary.destinationLabel || 'Destination'}
+            </AppText>
+            <AppText tone="muted">
+              Estimated price: Rp {Number(activeOrderSummary.estimatedPrice).toLocaleString('id-ID')}
+            </AppText>
+          </>
+        ) : null}
+      </SectionCard>
     );
   }
 

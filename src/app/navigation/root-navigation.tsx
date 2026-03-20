@@ -301,6 +301,15 @@ export function RootNavigation(): React.JSX.Element {
                     ? activeOrder.status
                     : undefined
                 }
+                activeOrderSummary={
+                  activeOrder
+                    ? {
+                        destinationLabel: activeOrder.destination.label ?? '',
+                        estimatedPrice: String(activeOrder.estimatedPrice),
+                        pickupLabel: activeOrder.pickup.label ?? '',
+                      }
+                    : undefined
+                }
                 initialDraftValues={
                   activeOrder?.status === 'Draft'
                     ? {
