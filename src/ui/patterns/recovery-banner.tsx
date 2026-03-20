@@ -26,6 +26,22 @@ function getResumeHint(order: Order): string {
   return 'Resume returns you to the active trip flow with the latest saved recovery state.';
 }
 
+function getResumeLabel(order: Order): string {
+  if (order.status === 'Draft') {
+    return 'Resume draft';
+  }
+
+  if (order.status === 'Requested') {
+    return 'Resume handoff';
+  }
+
+  if (order.status === 'Accepted' || order.status === 'OnTheWay') {
+    return 'Resume pickup flow';
+  }
+
+  return 'Resume trip';
+}
+
 export function RecoveryBanner({
   onResume,
   order,
@@ -37,7 +53,7 @@ export function RecoveryBanner({
       description={`Order ${order.status} is stored locally and should be resumed before starting a new flow.`}
     >
       <AppText tone="muted">{getResumeHint(order)}</AppText>
-      <AppButton label="Resume order" onPress={onResume} />
+      <AppButton label={getResumeLabel(order)} onPress={onResume} />
     </SectionCard>
   );
 }
