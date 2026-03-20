@@ -1,11 +1,13 @@
-import { createInMemoryDatabase } from '../../data/db/sqlite/in-memory-database';
-import { createInMemoryOrderRepository } from '../../data/repositories/in-memory-order-repository';
-import { createInMemoryUserRepository } from '../../data/repositories/in-memory-user-repository';
-import { createInMemorySecureStorage } from '../../data/storage/in-memory-secure-storage';
+import { createCarrierDatabase } from '../../data/db/sqlite/carrier-database';
+import { createSqliteOrderRepository } from '../../data/repositories/sqlite-order-repository';
+import { createSqliteUserRepository } from '../../data/repositories/sqlite-user-repository';
+import { createKeychainSecureStorage } from '../../data/storage/keychain-secure-storage';
+
+const database = createCarrierDatabase();
 
 export const bootstrapDeps = {
-  database: createInMemoryDatabase(),
-  orderRepository: createInMemoryOrderRepository(),
-  secureStorage: createInMemorySecureStorage(),
-  userRepository: createInMemoryUserRepository(),
+  database,
+  orderRepository: createSqliteOrderRepository(database),
+  secureStorage: createKeychainSecureStorage(),
+  userRepository: createSqliteUserRepository(database),
 };
