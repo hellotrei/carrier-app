@@ -113,7 +113,7 @@ export function ActiveTripScreen({
       </AppText>
       {isDraft ? (
         <View style={styles.reviewCard}>
-          <AppText variant="eyebrow">Review</AppText>
+          <AppText variant="eyebrow">Draft Notes</AppText>
           <AppText tone="muted">
             Submitting this draft moves it to Requested and locks the current booking summary for recovery.
           </AppText>
