@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import type { AppRole } from '../../../core/types/app-role';
 import type {
+  DriverReadinessStatus,
   UserProfile,
   VehicleType,
 } from '../../../domain/user/user-profile';
@@ -25,6 +26,43 @@ type BasicProfileScreenProps = {
   submitError?: string | null;
 };
 
+function getReadinessLabel(status: DriverReadinessStatus | undefined): string {
+  switch (status) {
+    case 'minimum_valid':
+      return 'Ready for incoming requests';
+    case 'declared':
+      return 'Almost ready';
+    case 'blocked':
+      return 'Blocked';
+    case 'flagged':
+      return 'Needs review';
+    default:
+      return 'Setup incomplete';
+  }
+}
+
+function getReadinessHints(params: {
+  hasSpareHelmet: boolean;
+  plateNumber: string;
+  vehicleType: VehicleType | null;
+}): string[] {
+  const hints: string[] = [];
+
+  if (!params.vehicleType) {
+    hints.push('Choose an active vehicle type.');
+  }
+
+  if (!params.plateNumber.trim()) {
+    hints.push('Fill in the active vehicle plate number.');
+  }
+
+  if (params.vehicleType === 'motor' && !params.hasSpareHelmet) {
+    hints.push('Mark spare helmet as ready for motor bookings.');
+  }
+
+  return hints;
+}
+
 export function BasicProfileScreen({
   activeRole,
   existingProfile,
@@ -45,6 +83,11 @@ export function BasicProfileScreen({
       ?.vehicleType ?? null,
   );
   const [isSaving, setIsSaving] = useState(false);
+  const readinessHints = getReadinessHints({
+    hasSpareHelmet,
+    plateNumber,
+    vehicleType,
+  });
 
   async function handleSubmit() {
     setIsSaving(true);
@@ -107,6 +150,23 @@ export function BasicProfileScreen({
         />
         {activeRole === 'mitra' ? (
           <>
+            <AppText tone="muted">
+              Driver readiness:{' '}
+              {getReadinessLabel(existingProfile?.driverReadinessStatus)}
+            </AppText>
+            {readinessHints.length ? (
+              <View style={styles.hintList}>
+                {readinessHints.map(item => (
+                  <AppText key={item} tone="muted">
+                    - {item}
+                  </AppText>
+                ))}
+              </View>
+            ) : (
+              <AppText tone="muted">
+                Current setup meets the minimum readiness inputs for mitra flow.
+              </AppText>
+            )}
             <AppText tone="muted">Active vehicle</AppText>
             <View style={styles.optionRow}>
               {(['motor', 'mobil', 'bajaj', 'angkot'] as VehicleType[]).map(
@@ -173,6 +233,9 @@ export function BasicProfileScreen({
 const styles = StyleSheet.create({
   form: {
     gap: 12,
+  },
+  hintList: {
+    gap: 4,
   },
   optionRow: {
     flexDirection: 'row',
