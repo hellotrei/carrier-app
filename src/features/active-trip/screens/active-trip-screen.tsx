@@ -166,6 +166,22 @@ function getSecondaryActionTitle(
   return 'Trip Actions';
 }
 
+function getBackHint(activeRole: AppRole, status: OrderStatus): string {
+  if (status === 'Draft') {
+    return 'Back to shell returns you to the draft form with the current local booking values.';
+  }
+
+  if (activeRole === 'customer') {
+    return 'Back to shell returns you to the customer home summary for this active order.';
+  }
+
+  if (status === 'Requested') {
+    return 'Back to shell returns you to the mitra inbox with this request still waiting for review.';
+  }
+
+  return 'Back to shell returns you to the home view while keeping this active order ready to resume.';
+}
+
 export function ActiveTripScreen({
   activeRole,
   onAdvance,
@@ -266,6 +282,7 @@ export function ActiveTripScreen({
           </>
         )}
       </View>
+      <AppText tone="muted">{getBackHint(activeRole, order.status)}</AppText>
       <AppButton label="Back to shell" kind="secondary" onPress={onBack} />
     </SectionCard>
   );
