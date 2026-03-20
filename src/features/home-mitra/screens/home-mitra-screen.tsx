@@ -69,10 +69,10 @@ export function HomeMitraScreen({
           </AppText>
           <AppText tone="muted">Requested at: {requestedOrder.requestedAt ?? requestedOrder.updatedAt}</AppText>
           <OrderSummaryBlock
+            context="request"
             destinationLabel={requestedOrder.destination.label ?? ''}
             estimatedPrice={requestedOrder.estimatedPrice}
             pickupLabel={requestedOrder.pickup.label ?? ''}
-            priceLabel="Fare preview"
           />
           <AppText tone="muted">
             Driver readiness: {profile?.driverReadinessStatus ?? 'draft'}

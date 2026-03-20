@@ -115,10 +115,10 @@ export function ActiveTripScreen({
         <View style={styles.reviewCard}>
           <AppText variant="eyebrow">Review</AppText>
           <OrderSummaryBlock
+            context="draft_review"
             destinationLabel={order.destination.label ?? ''}
             estimatedPrice={order.estimatedPrice}
             pickupLabel={order.pickup.label ?? ''}
-            priceLabel="Fare lock preview"
           />
           <AppText tone="muted">
             Submitting this draft moves it to Requested and locks the current booking summary for recovery.
@@ -128,6 +128,7 @@ export function ActiveTripScreen({
         <View style={styles.reviewCard}>
           <AppText variant="eyebrow">Handoff Summary</AppText>
           <OrderSummaryBlock
+            context="handoff"
             destinationLabel={order.destination.label ?? ''}
             estimatedPrice={order.estimatedPrice}
             pickupLabel={order.pickup.label ?? ''}
