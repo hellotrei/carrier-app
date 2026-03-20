@@ -33,6 +33,7 @@ export function RootNavigation(): React.JSX.Element {
   const [activeScreen, setActiveScreen] = React.useState<'home' | 'active_trip'>(
     'home',
   );
+  const [draftError, setDraftError] = React.useState<string | null>(null);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
 
   async function handleRoleChange(role: 'customer' | 'mitra') {
@@ -100,21 +101,25 @@ export function RootNavigation(): React.JSX.Element {
     setDeviceBindingPresent(Boolean(result.value.deviceBindingId));
   }
 
-  async function handleCreateDraft() {
+  async function handleCreateDraft(params: {
+    destinationLabel: string;
+    estimatedPrice: string;
+    pickupLabel: string;
+  }) {
     if (!profile) {
       return;
     }
 
     const result = await createOrderDraft(bootstrapDeps, {
       destination: {
-        label: 'Destination sample',
+        label: params.destinationLabel,
         latitude: -6.2,
         longitude: 106.816666,
         source: 'manual',
       },
-      estimatedPrice: 18000,
+      estimatedPrice: Number(params.estimatedPrice),
       pickup: {
-        label: 'Pickup sample',
+        label: params.pickupLabel,
         latitude: -6.175392,
         longitude: 106.827153,
         source: 'manual',
@@ -123,9 +128,18 @@ export function RootNavigation(): React.JSX.Element {
     });
 
     if (!result.ok) {
+      const errorMap: Record<typeof result.error.code, string> = {
+        INVALID_DESTINATION: 'Destination is required.',
+        INVALID_ESTIMATED_PRICE: 'Estimated price must be greater than zero.',
+        INVALID_PICKUP: 'Pickup is required.',
+        PROFILE_NOT_FOUND: 'Profile is required before creating a draft.',
+      };
+
+      setDraftError(errorMap[result.error.code]);
       return;
     }
 
+    setDraftError(null);
     setActiveOrder(result.value);
     setActiveScreen('active_trip');
   }
@@ -258,9 +272,8 @@ export function RootNavigation(): React.JSX.Element {
         ? activeRole === 'customer'
           ? (
               <HomeCustomerScreen
-                onCreateDraft={() => {
-                  void handleCreateDraft();
-                }}
+                onCreateDraft={handleCreateDraft}
+                submitError={draftError}
               />
             )
           : <HomeMitraScreen />

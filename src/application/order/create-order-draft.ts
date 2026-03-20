@@ -13,7 +13,11 @@ export type CreateOrderDraftInput = {
   profile: UserProfile;
 };
 
-export type CreateOrderDraftError = { code: 'PROFILE_NOT_FOUND' };
+export type CreateOrderDraftError =
+  | { code: 'PROFILE_NOT_FOUND' }
+  | { code: 'INVALID_PICKUP' }
+  | { code: 'INVALID_DESTINATION' }
+  | { code: 'INVALID_ESTIMATED_PRICE' };
 
 export type CreateOrderDraftDeps = {
   orderRepository: OrderRepositoryPort;
@@ -27,6 +31,27 @@ export async function createOrderDraft(
     return {
       ok: false,
       error: { code: 'PROFILE_NOT_FOUND' },
+    };
+  }
+
+  if (!input.pickup.label?.trim()) {
+    return {
+      ok: false,
+      error: { code: 'INVALID_PICKUP' },
+    };
+  }
+
+  if (!input.destination.label?.trim()) {
+    return {
+      ok: false,
+      error: { code: 'INVALID_DESTINATION' },
+    };
+  }
+
+  if (input.estimatedPrice <= 0) {
+    return {
+      ok: false,
+      error: { code: 'INVALID_ESTIMATED_PRICE' },
     };
   }
 
