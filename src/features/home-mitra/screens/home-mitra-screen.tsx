@@ -9,6 +9,7 @@ import { SectionCard } from '../../../ui/patterns/section-card';
 
 type HomeMitraScreenProps = {
   onOpenRequest: (() => void) | undefined;
+  onReviewProfile: () => void;
   profile: UserProfile | undefined;
   requestedOrder: Order | undefined;
 };
@@ -42,6 +43,7 @@ function getReadinessGuidance(profile: UserProfile | undefined): string[] {
 
 export function HomeMitraScreen({
   onOpenRequest,
+  onReviewProfile,
   profile,
   requestedOrder,
 }: HomeMitraScreenProps): React.JSX.Element {
@@ -80,13 +82,18 @@ export function HomeMitraScreen({
           <SectionCard
             eyebrow="Guidance"
             title="Finish mitra readiness"
-            description="This request stays locked until the minimum mitra setup is complete."
+            description="This request stays locked until the minimum mitra setup is complete. Update the mitra profile section in this screen first."
           >
             {readinessGuidance.map(item => (
               <AppText key={item} tone="muted">
                 - {item}
               </AppText>
             ))}
+            <AppButton
+              label="Review mitra profile"
+              kind="secondary"
+              onPress={onReviewProfile}
+            />
           </SectionCard>
         ) : null}
       </>

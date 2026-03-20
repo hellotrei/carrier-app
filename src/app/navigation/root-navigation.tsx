@@ -306,6 +306,9 @@ export function RootNavigation(): React.JSX.Element {
                       }
                     : undefined
                 }
+                onReviewProfile={() => {
+                  setActiveScreen('home');
+                }}
                 profile={profile}
                 requestedOrder={
                   activeOrder?.status === 'Requested' ? activeOrder : undefined
