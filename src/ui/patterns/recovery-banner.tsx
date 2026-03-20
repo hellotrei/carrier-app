@@ -42,6 +42,22 @@ function getResumeLabel(order: Order): string {
   return 'Resume trip';
 }
 
+function getActiveActorHint(order: Order): string {
+  if (order.status === 'Draft') {
+    return 'Primary actor on resume: Customer';
+  }
+
+  if (order.status === 'Requested') {
+    return 'Primary actor on resume: Mitra review';
+  }
+
+  if (order.status === 'Accepted' || order.status === 'OnTheWay') {
+    return 'Primary actor on resume: Mitra pickup flow';
+  }
+
+  return 'Primary actor on resume: Active trip flow';
+}
+
 export function RecoveryBanner({
   onResume,
   order,
@@ -53,6 +69,7 @@ export function RecoveryBanner({
       description={`Order ${order.status} is stored locally and should be resumed before starting a new flow.`}
     >
       <AppText tone="muted">{getResumeHint(order)}</AppText>
+      <AppText tone="muted">{getActiveActorHint(order)}</AppText>
       <AppButton label={getResumeLabel(order)} onPress={onResume} />
     </SectionCard>
   );
