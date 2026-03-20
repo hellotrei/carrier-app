@@ -67,6 +67,19 @@ function getActiveVehicle(profile: UserProfile | null | undefined) {
   return profile?.vehicles?.find(vehicle => vehicle.isActiveForBooking);
 }
 
+function getProfileSyncKey(profile: UserProfile | null | undefined): string {
+  const activeVehicle = getActiveVehicle(profile);
+
+  return JSON.stringify({
+    displayName: profile?.displayName ?? '',
+    driverReadinessStatus: profile?.driverReadinessStatus ?? null,
+    hasSpareHelmet: profile?.hasSpareHelmet ?? false,
+    plateNumber: activeVehicle?.plateNumber ?? '',
+    profileValidatedAt: profile?.profileValidatedAt ?? null,
+    vehicleType: activeVehicle?.vehicleType ?? null,
+  });
+}
+
 export function BasicProfileScreen({
   activeRole,
   existingProfile,
@@ -86,6 +99,7 @@ export function BasicProfileScreen({
   );
   const [isSaving, setIsSaving] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState<string | null>(null);
+  const profileSyncKey = getProfileSyncKey(existingProfile);
   const readinessHints = getReadinessHints({
     hasSpareHelmet,
     plateNumber,
@@ -100,7 +114,7 @@ export function BasicProfileScreen({
     setPhoneInput('');
     setPlateNumber(activeVehicle?.plateNumber ?? '');
     setVehicleType(activeVehicle?.vehicleType ?? null);
-  }, [existingProfile?.updatedAt]);
+  }, [profileSyncKey, existingProfile]);
 
   useEffect(() => {
     if (activeRole !== 'mitra' || !existingProfile) {
