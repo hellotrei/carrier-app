@@ -33,6 +33,14 @@ function getNextStatus(status: OrderStatus): OrderStatus | null {
   }
 }
 
+function getAdvanceLabel(status: OrderStatus, nextStatus: OrderStatus): string {
+  if (status === 'Draft' && nextStatus === 'Requested') {
+    return 'Submit draft';
+  }
+
+  return `Advance to ${nextStatus}`;
+}
+
 export function ActiveTripScreen({
   onAdvance,
   onBack,
@@ -61,7 +69,7 @@ export function ActiveTripScreen({
       </AppText>
       {nextStatus ? (
         <AppButton
-          label={`Advance to ${nextStatus}`}
+          label={getAdvanceLabel(order.status, nextStatus)}
           onPress={() => onAdvance(nextStatus)}
         />
       ) : null}

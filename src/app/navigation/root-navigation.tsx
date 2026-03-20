@@ -12,6 +12,7 @@ import { updateCurrentRole } from '../../application/user/update-current-role';
 import { advanceOrderStatus } from '../../application/order/advance-order-status';
 import { cancelOrder } from '../../application/order/cancel-order';
 import { createOrderDraft } from '../../application/order/create-order-draft';
+import { submitOrderDraft } from '../../application/order/submit-order-draft';
 import { ActiveTripScreen } from '../../features/active-trip/screens/active-trip-screen';
 import { HomeCustomerScreen } from '../../features/home-customer/screens/home-customer-screen';
 import { HomeMitraScreen } from '../../features/home-mitra/screens/home-mitra-screen';
@@ -106,7 +107,7 @@ export function RootNavigation(): React.JSX.Element {
     estimatedPrice: string;
     pickupLabel: string;
   }) {
-    if (!profile) {
+    if (!profile || (activeOrder && activeOrder.status !== 'Draft')) {
       return;
     }
 
@@ -148,6 +149,17 @@ export function RootNavigation(): React.JSX.Element {
     typeof advanceOrderStatus
   >[2]) {
     if (!activeOrder) {
+      return;
+    }
+
+    if (activeOrder.status === 'Draft' && nextStatus === 'Requested') {
+      const submitResult = await submitOrderDraft(bootstrapDeps, activeOrder);
+
+      if (!submitResult.ok) {
+        return;
+      }
+
+      setActiveOrder(submitResult.value);
       return;
     }
 
@@ -272,6 +284,14 @@ export function RootNavigation(): React.JSX.Element {
         ? activeRole === 'customer'
           ? (
               <HomeCustomerScreen
+                activeOrderStatus={
+                  activeOrder && activeOrder.status !== 'Canceled' &&
+                  activeOrder.status !== 'Completed' &&
+                  activeOrder.status !== 'Rejected' &&
+                  activeOrder.status !== 'Expired'
+                    ? activeOrder.status
+                    : undefined
+                }
                 onCreateDraft={handleCreateDraft}
                 submitError={draftError}
               />

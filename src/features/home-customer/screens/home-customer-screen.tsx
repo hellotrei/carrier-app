@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
 
+import type { OrderStatus } from '../../../domain/order/order';
 import { AppButton } from '../../../ui/primitives/app-button';
 import { AppInput } from '../../../ui/primitives/app-input';
 import { AppText } from '../../../ui/primitives/app-text';
 import { SectionCard } from '../../../ui/patterns/section-card';
 
 type HomeCustomerScreenProps = {
+  activeOrderStatus:
+    | Extract<OrderStatus, 'Draft' | 'Requested' | 'Accepted' | 'OnTheWay' | 'OnTrip'>
+    | undefined;
   onCreateDraft: (params: {
     destinationLabel: string;
     estimatedPrice: string;
@@ -15,12 +19,23 @@ type HomeCustomerScreenProps = {
 };
 
 export function HomeCustomerScreen({
+  activeOrderStatus,
   submitError,
   onCreateDraft,
 }: HomeCustomerScreenProps): React.JSX.Element {
   const [destinationLabel, setDestinationLabel] = useState('');
   const [estimatedPrice, setEstimatedPrice] = useState('');
   const [pickupLabel, setPickupLabel] = useState('');
+
+  if (activeOrderStatus && activeOrderStatus !== 'Draft') {
+    return (
+      <SectionCard
+        eyebrow="Feature"
+        title="Customer home scaffold"
+        description={`Order ${activeOrderStatus} is already active. Resume that flow before starting a new booking.`}
+      />
+    );
+  }
 
   return (
     <SectionCard
@@ -49,7 +64,7 @@ export function HomeCustomerScreen({
       />
       {submitError ? <AppText>{submitError}</AppText> : null}
       <AppButton
-        label="Save draft"
+        label={activeOrderStatus === 'Draft' ? 'Update draft' : 'Save draft'}
         onPress={() => {
           void onCreateDraft({
             destinationLabel,
