@@ -147,6 +147,25 @@ function getPartnerCancelLabels(status: OrderStatus): {
   };
 }
 
+function getSecondaryActionTitle(
+  activeRole: AppRole,
+  status: OrderStatus,
+): string {
+  if (activeRole === 'customer') {
+    return status === 'Draft' ? 'Draft Actions' : 'Customer Issue Actions';
+  }
+
+  if (status === 'Requested') {
+    return 'Request Review Actions';
+  }
+
+  if (status === 'Accepted' || status === 'OnTheWay') {
+    return 'Pickup Actions';
+  }
+
+  return 'Trip Actions';
+}
+
 export function ActiveTripScreen({
   activeRole,
   onAdvance,
@@ -217,31 +236,36 @@ export function ActiveTripScreen({
           onPress={() => onAdvance(primaryAction.nextStatus)}
         />
       ) : null}
-      {activeRole === 'customer' ? (
-        <AppButton
-          label={getCustomerCancelLabel(order.status)}
-          kind="secondary"
-          onPress={() => onCancel('pickup_mismatch')}
-        />
-      ) : (
-        <>
+      <View style={styles.secondaryActions}>
+        <AppText variant="eyebrow">
+          {getSecondaryActionTitle(activeRole, order.status)}
+        </AppText>
+        {activeRole === 'customer' ? (
           <AppButton
-            label={partnerCancelLabels.noShow}
+            label={getCustomerCancelLabel(order.status)}
             kind="secondary"
-            onPress={() => onCancel('no_show')}
+            onPress={() => onCancel('pickup_mismatch')}
           />
-          <AppButton
-            label={partnerCancelLabels.identityMismatch}
-            kind="secondary"
-            onPress={() => onCancel('identity_mismatch')}
-          />
-          <AppButton
-            label={partnerCancelLabels.unsafe}
-            kind="secondary"
-            onPress={() => onCancel('unsafe_or_suspicious')}
-          />
-        </>
-      )}
+        ) : (
+          <>
+            <AppButton
+              label={partnerCancelLabels.noShow}
+              kind="secondary"
+              onPress={() => onCancel('no_show')}
+            />
+            <AppButton
+              label={partnerCancelLabels.identityMismatch}
+              kind="secondary"
+              onPress={() => onCancel('identity_mismatch')}
+            />
+            <AppButton
+              label={partnerCancelLabels.unsafe}
+              kind="secondary"
+              onPress={() => onCancel('unsafe_or_suspicious')}
+            />
+          </>
+        )}
+      </View>
       <AppButton label="Back to shell" kind="secondary" onPress={onBack} />
     </SectionCard>
   );
@@ -254,6 +278,9 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.color.surfaceStrong,
     borderRadius: tokens.radius.sm,
     padding: tokens.spacing.sm,
+    gap: tokens.spacing.xs,
+  },
+  secondaryActions: {
     gap: tokens.spacing.xs,
   },
 });
