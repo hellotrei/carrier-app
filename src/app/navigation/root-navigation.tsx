@@ -297,7 +297,20 @@ export function RootNavigation(): React.JSX.Element {
                 submitError={draftError}
               />
             )
-          : <HomeMitraScreen />
+          : (
+              <HomeMitraScreen
+                onOpenRequest={
+                  activeOrder?.status === 'Requested'
+                    ? () => {
+                        setActiveScreen('active_trip');
+                      }
+                    : undefined
+                }
+                requestedOrder={
+                  activeOrder?.status === 'Requested' ? activeOrder : undefined
+                }
+              />
+            )
         : null}
     </AppScreen>
   );
