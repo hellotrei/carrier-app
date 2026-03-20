@@ -79,6 +79,7 @@ export function HomeCustomerScreen({
         title="Customer home scaffold"
         description={description}
       >
+        {lastUpdatedHint ? <AppText tone="muted">{lastUpdatedHint}</AppText> : null}
         {activeOrderSummary ? (
           <>
             <AppText tone="muted">
