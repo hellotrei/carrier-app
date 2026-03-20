@@ -9,6 +9,7 @@ import { bootstrapDeps } from '../config/bootstrap-deps';
 import { saveProfile } from '../../application/user/save-profile';
 import { updateCurrentRole } from '../../application/user/update-current-role';
 import { advanceOrderStatus } from '../../application/order/advance-order-status';
+import { cancelOrder } from '../../application/order/cancel-order';
 import { createOrderDraft } from '../../application/order/create-order-draft';
 import { ActiveTripScreen } from '../../features/active-trip/screens/active-trip-screen';
 import { HomeCustomerScreen } from '../../features/home-customer/screens/home-customer-screen';
@@ -150,6 +151,26 @@ export function RootNavigation(): React.JSX.Element {
     setActiveOrder(result.value.order);
   }
 
+  async function handleCancelOrder() {
+    if (!activeOrder) {
+      return;
+    }
+
+    const result = await cancelOrder(bootstrapDeps, activeOrder);
+
+    if (!result.ok) {
+      return;
+    }
+
+    if (result.value.isTerminal) {
+      setActiveOrder(null);
+      setActiveScreen('home');
+      return;
+    }
+
+    setActiveOrder(result.value.order);
+  }
+
   return (
     <AppScreen scrollable>
       <SectionCard
@@ -224,6 +245,9 @@ export function RootNavigation(): React.JSX.Element {
           }}
           onBack={() => {
             setActiveScreen('home');
+          }}
+          onCancel={() => {
+            void handleCancelOrder();
           }}
           order={activeOrder}
         />

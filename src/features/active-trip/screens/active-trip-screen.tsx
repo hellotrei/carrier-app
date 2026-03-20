@@ -8,6 +8,7 @@ import { AppText } from '../../../ui/primitives/app-text';
 type ActiveTripScreenProps = {
   onAdvance: (nextStatus: OrderStatus) => void;
   onBack: () => void;
+  onCancel: () => void;
   order: Order;
 };
 
@@ -31,6 +32,7 @@ function getNextStatus(status: OrderStatus): OrderStatus | null {
 export function ActiveTripScreen({
   onAdvance,
   onBack,
+  onCancel,
   order,
 }: ActiveTripScreenProps): React.JSX.Element {
   const nextStatus = getNextStatus(order.status);
@@ -56,6 +58,7 @@ export function ActiveTripScreen({
           onPress={() => onAdvance(nextStatus)}
         />
       ) : null}
+      <AppButton label="Cancel order" kind="secondary" onPress={onCancel} />
       <AppButton label="Back to shell" kind="secondary" onPress={onBack} />
     </SectionCard>
   );
