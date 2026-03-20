@@ -15,6 +15,7 @@ import {
   getPartnerCancelLabels,
   getSecondaryActionTitle,
 } from '../../order/order-status-copy';
+import { OrderSummaryBlock } from '../../../ui/patterns/order-summary-block';
 import { SectionCard } from '../../../ui/patterns/section-card';
 import { AppButton } from '../../../ui/primitives/app-button';
 import { AppText } from '../../../ui/primitives/app-text';
@@ -113,11 +114,12 @@ export function ActiveTripScreen({
       {isDraft ? (
         <View style={styles.reviewCard}>
           <AppText variant="eyebrow">Review</AppText>
-          <AppText>Pickup: {order.pickup.label ?? 'Pickup'}</AppText>
-          <AppText>Destination: {order.destination.label ?? 'Destination'}</AppText>
-          <AppText>
-            Fare lock preview: Rp {order.estimatedPrice.toLocaleString('id-ID')}
-          </AppText>
+          <OrderSummaryBlock
+            destinationLabel={order.destination.label ?? ''}
+            estimatedPrice={order.estimatedPrice}
+            pickupLabel={order.pickup.label ?? ''}
+            priceLabel="Fare lock preview"
+          />
           <AppText tone="muted">
             Submitting this draft moves it to Requested and locks the current booking summary for recovery.
           </AppText>
@@ -125,11 +127,11 @@ export function ActiveTripScreen({
       ) : (
         <View style={styles.reviewCard}>
           <AppText variant="eyebrow">Handoff Summary</AppText>
-          <AppText>Pickup: {order.pickup.label ?? 'Pickup'}</AppText>
-          <AppText>Destination: {order.destination.label ?? 'Destination'}</AppText>
-          <AppText>
-            Estimated price: Rp {order.estimatedPrice.toLocaleString('id-ID')}
-          </AppText>
+          <OrderSummaryBlock
+            destinationLabel={order.destination.label ?? ''}
+            estimatedPrice={order.estimatedPrice}
+            pickupLabel={order.pickup.label ?? ''}
+          />
           <AppText tone="muted">
             {getActiveTripHandoffNote(activeRole, order.status)}
           </AppText>

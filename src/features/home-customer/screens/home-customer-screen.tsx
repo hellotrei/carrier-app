@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 
 import type { OrderStatus } from '../../../domain/order/order';
 import { getCustomerHomeStatusDescription } from '../../order/order-status-copy';
+import { OrderSummaryBlock } from '../../../ui/patterns/order-summary-block';
 import { AppButton } from '../../../ui/primitives/app-button';
 import { AppInput } from '../../../ui/primitives/app-input';
 import { AppText } from '../../../ui/primitives/app-text';
@@ -59,17 +60,11 @@ export function HomeCustomerScreen({
       >
         {lastUpdatedHint ? <AppText tone="muted">{lastUpdatedHint}</AppText> : null}
         {activeOrderSummary ? (
-          <>
-            <AppText tone="muted">
-              Pickup: {activeOrderSummary.pickupLabel || 'Pickup'}
-            </AppText>
-            <AppText tone="muted">
-              Destination: {activeOrderSummary.destinationLabel || 'Destination'}
-            </AppText>
-            <AppText tone="muted">
-              Estimated price: Rp {Number(activeOrderSummary.estimatedPrice).toLocaleString('id-ID')}
-            </AppText>
-          </>
+          <OrderSummaryBlock
+            destinationLabel={activeOrderSummary.destinationLabel}
+            estimatedPrice={Number(activeOrderSummary.estimatedPrice)}
+            pickupLabel={activeOrderSummary.pickupLabel}
+          />
         ) : null}
       </SectionCard>
     );

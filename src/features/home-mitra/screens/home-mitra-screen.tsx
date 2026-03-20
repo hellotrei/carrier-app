@@ -7,6 +7,7 @@ import {
 } from '../../order/order-status-copy';
 import type { UserProfile } from '../../../domain/user/user-profile';
 import { isDriverReady } from '../../../domain/user/validate-driver-readiness';
+import { OrderSummaryBlock } from '../../../ui/patterns/order-summary-block';
 import { AppButton } from '../../../ui/primitives/app-button';
 import { AppText } from '../../../ui/primitives/app-text';
 import { SectionCard } from '../../../ui/patterns/section-card';
@@ -67,12 +68,12 @@ export function HomeMitraScreen({
             {getRecoveryActiveActorHint(requestedOrder.status)}
           </AppText>
           <AppText tone="muted">Requested at: {requestedOrder.requestedAt ?? requestedOrder.updatedAt}</AppText>
-          <AppText tone="muted">
-            Route: {requestedOrder.pickup.label ?? 'Pickup'} to {requestedOrder.destination.label ?? 'Destination'}
-          </AppText>
-          <AppText tone="muted">
-            Fare preview: Rp {requestedOrder.estimatedPrice.toLocaleString('id-ID')}
-          </AppText>
+          <OrderSummaryBlock
+            destinationLabel={requestedOrder.destination.label ?? ''}
+            estimatedPrice={requestedOrder.estimatedPrice}
+            pickupLabel={requestedOrder.pickup.label ?? ''}
+            priceLabel="Fare preview"
+          />
           <AppText tone="muted">
             Driver readiness: {profile?.driverReadinessStatus ?? 'draft'}
           </AppText>
