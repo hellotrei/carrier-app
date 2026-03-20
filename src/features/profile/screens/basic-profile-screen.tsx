@@ -63,6 +63,10 @@ function getReadinessHints(params: {
   return hints;
 }
 
+function getActiveVehicle(profile: UserProfile | null | undefined) {
+  return profile?.vehicles?.find(vehicle => vehicle.isActiveForBooking);
+}
+
 export function BasicProfileScreen({
   activeRole,
   existingProfile,
@@ -75,12 +79,10 @@ export function BasicProfileScreen({
   );
   const [phoneInput, setPhoneInput] = useState('');
   const [plateNumber, setPlateNumber] = useState(
-    existingProfile?.vehicles?.find(vehicle => vehicle.isActiveForBooking)
-      ?.plateNumber ?? '',
+    getActiveVehicle(existingProfile)?.plateNumber ?? '',
   );
   const [vehicleType, setVehicleType] = useState<VehicleType | null>(
-    existingProfile?.vehicles?.find(vehicle => vehicle.isActiveForBooking)
-      ?.vehicleType ?? null,
+    getActiveVehicle(existingProfile)?.vehicleType ?? null,
   );
   const [isSaving, setIsSaving] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState<string | null>(null);
@@ -89,6 +91,16 @@ export function BasicProfileScreen({
     plateNumber,
     vehicleType,
   });
+
+  useEffect(() => {
+    const activeVehicle = getActiveVehicle(existingProfile);
+
+    setDisplayName(existingProfile?.displayName ?? '');
+    setHasSpareHelmet(existingProfile?.hasSpareHelmet ?? false);
+    setPhoneInput('');
+    setPlateNumber(activeVehicle?.plateNumber ?? '');
+    setVehicleType(activeVehicle?.vehicleType ?? null);
+  }, [existingProfile?.updatedAt]);
 
   useEffect(() => {
     if (activeRole !== 'mitra' || !existingProfile) {
