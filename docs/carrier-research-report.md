@@ -1,8 +1,8 @@
 # Research Report — Ruang Masalah Platform Ojek Online di Indonesia
-## Analisis & CEO Review: Implikasi untuk TRIP
+## Analisis & CEO Review: Implikasi untuk Carrier
 
 **Versi:** 1.0 (CEO-reviewed)
-**Status:** Final — dasar keputusan strategi produk dan bisnis TRIP
+**Status:** Final — dasar keputusan strategi produk dan bisnis Carrier
 
 ---
 
@@ -10,11 +10,11 @@
 
 > Setelah membaca laporan riset awal ini secara menyeluruh, saya ingin mempertegas beberapa hal kepada seluruh tim sebelum masuk ke detail. Laporan ini **sudah solid secara akademis**, tetapi ada beberapa blind spot bisnis yang perlu diselesaikan sebelum dokumen ini layak dijadikan fondasi keputusan produk.
 >
-> Pertama: riset ini terlalu banyak mendeskripsikan masalah platform besar (Gojek/Grab) dan kurang menjawab pertanyaan: **"apakah TRIP benar-benar memiliki ruang yang layak untuk ditempati di antara kekosongan yang ada?"**
+> Pertama: riset ini terlalu banyak mendeskripsikan masalah platform besar (Gojek/Grab) dan kurang menjawab pertanyaan: **"apakah Carrier benar-benar memiliki ruang yang layak untuk ditempati di antara kekosongan yang ada?"**
 >
 > Kedua: ada kecenderungan dokumen ini memperlakukan pendekatan "local-first, no-heavy-backend" sebagai solusi universal. Padahal di lapangan, **pendekatan itu sendiri membawa kelas masalah baru** yang harus kita akui dan antisipasi sejak awal — bukan setelah MVP diluncurkan.
 >
-> Ketiga: dokumen ini hampir tidak membahas **monetisasi** dan **unit economics** untuk TRIP sendiri — padahal itulah inti dari apakah bisnis ini bisa hidup jangka panjang.
+> Ketiga: dokumen ini hampir tidak membahas **monetisasi** dan **unit economics** untuk Carrier sendiri — padahal itulah inti dari apakah bisnis ini bisa hidup jangka panjang.
 >
 > Review ini melengkapi laporan riset asli dengan perspektif bisnis dan keputusan strategis yang hilang.
 
@@ -44,7 +44,7 @@ Regulator Indonesia membatasi biaya platform untuk ojek online:
 
 Kerangka ini juga mengharuskan pelaporan berkala, dashboard regulasi, dan laporan keuangan yang diaudit untuk platform yang beroperasi di skala tertentu.
 
-**Implikasi untuk TRIP:** Model monetisasi TRIP harus dirancang dari awal untuk **fit dalam kerangka 15%+5% ini**, bukan sebagai afterthought compliance. Setiap keputusan pricing harus mengantisipasi batas regulasi ini.
+**Implikasi untuk Carrier:** Model monetisasi Carrier harus dirancang dari awal untuk **fit dalam kerangka 15%+5% ini**, bukan sebagai afterthought compliance. Setiap keputusan pricing harus mengantisipasi batas regulasi ini.
 
 ### 1.2 Rezim Perlindungan Data (UU PDP No. 27/2022)
 
@@ -54,7 +54,7 @@ Platform ride-hailing memproses data pribadi sensitif: jejak lokasi, artefak ide
 - kewajiban DPO saat pemantauan sistematis berskala besar,
 - kesiapan respons insiden.
 
-**Implikasi untuk TRIP:** Pendekatan local-first **mengurangi** beban kepatuhan PDP karena histori lokasi tidak disimpan terpusat — ini adalah **keunggulan struktural** yang harus dikomunikasikan eksplisit kepada pengguna dan regulator. Namun saat TRIP tumbuh dan mulai mengumpulkan data agregat, kewajiban governance tetap akan muncul.
+**Implikasi untuk Carrier:** Pendekatan local-first **mengurangi** beban kepatuhan PDP karena histori lokasi tidak disimpan terpusat — ini adalah **keunggulan struktural** yang harus dikomunikasikan eksplisit kepada pengguna dan regulator. Namun saat Carrier tumbuh dan mulai mengumpulkan data agregat, kewajiban governance tetap akan muncul.
 
 ---
 
@@ -76,7 +76,7 @@ Platform ride-hailing memproses data pribadi sensitif: jejak lokasi, artefak ide
 - Support overhead: dispute order, complaint driver, masalah koordinasi — semua ini memerlukan jalur eskalasi yang jelas
 - Retention: jika experience tidak konsisten, churn sangat cepat terjadi di kedua sisi
 
-**Kesimpulan CEO:** Model low-backend TRIP **menyelesaikan masalah biaya infrastruktur teknis**, tetapi **tidak otomatis menyelesaikan masalah biaya operasional bisnis** seperti support, trust, dan retention. Anggaran untuk ketiga hal ini harus ada sejak awal.
+**Kesimpulan CEO:** Model low-backend Carrier **menyelesaikan masalah biaya infrastruktur teknis**, tetapi **tidak otomatis menyelesaikan masalah biaya operasional bisnis** seperti support, trust, dan retention. Anggaran untuk ketiga hal ini harus ada sejak awal.
 
 ### 2.2 Masalah dari Sisi Mitra (Driver)
 
@@ -97,7 +97,7 @@ Platform ride-hailing memproses data pribadi sensitif: jejak lokasi, artefak ide
 - Proses sederhana tanpa dashboard rumit
 - Penghasilan yang dapat diprediksi
 
-**Implikasi untuk TRIP:** Positioning TRIP kepada mitra harus bukan "platform baru dengan potongan lebih kecil" saja — karena itu mudah ditiru. Positioningnya harus **"kontrol lebih besar, transparansi lebih tinggi, dan beban lebih ringan"**. Ini adalah proposisi nilai yang lebih defensible.
+**Implikasi untuk Carrier:** Positioning Carrier kepada mitra harus bukan "platform baru dengan potongan lebih kecil" saja — karena itu mudah ditiru. Positioningnya harus **"kontrol lebih besar, transparansi lebih tinggi, dan beban lebih ringan"**. Ini adalah proposisi nilai yang lebih defensible.
 
 ### 2.3 Masalah dari Sisi Customer (Penumpang)
 
@@ -111,22 +111,22 @@ Platform ride-hailing memproses data pribadi sensitif: jejak lokasi, artefak ide
 
 **Yang sering diabaikan:** Tidak semua customer ingin negosiasi harga. Riset lapangan Jakarta menunjukkan bahwa **banyak pengguna justru memilih ojek online karena menghindari tawar-menawar** dengan ojek pangkalan. Fitur negosiasi harus didesain sebagai **opsional dan struktural** — bukan free-form bargaining.
 
-**Implikasi untuk TRIP:** Customer TRIP bukan hanya mereka yang tidak puas dengan Gojek/Grab. Target yang lebih realistis adalah **segmen pengguna di area dengan supply rendah platform besar** atau **pengguna yang ingin transparansi lebih tinggi** tanpa friction tambahan.
+**Implikasi untuk Carrier:** Customer Carrier bukan hanya mereka yang tidak puas dengan Gojek/Grab. Target yang lebih realistis adalah **segmen pengguna di area dengan supply rendah platform besar** atau **pengguna yang ingin transparansi lebih tinggi** tanpa friction tambahan.
 
 ---
 
-## 3. Analisis Peluang Pasar TRIP
+## 3. Analisis Peluang Pasar Carrier
 
-### 3.1 Gap yang Bisa Diisi TRIP
+### 3.1 Gap yang Bisa Diisi Carrier
 
 Berdasarkan riset, ada beberapa gap nyata yang belum terisi dengan baik:
 
-| Gap | Ukuran Peluang | Relevansi untuk TRIP |
+| Gap | Ukuran Peluang | Relevansi untuk Carrier |
 |-----|----------------|----------------------|
 | Kota tier 2-3 dengan supply platform besar rendah | Tinggi | Platform besar fokus pada kota besar — ada ruang di kota menengah |
-| Mitra yang lelah dengan sistem algoritmik tertutup | Sedang | Proposisi transparansi TRIP relevan |
+| Mitra yang lelah dengan sistem algoritmik tertutup | Sedang | Proposisi transparansi Carrier relevan |
 | Customer yang butuh koordinasi langsung dengan driver | Sedang | External handoff ke WhatsApp/dialer adalah diferensiasi |
-| Operator lokal yang ingin white-label platform ringan | Potensial jangka menengah | TRIP bisa jadi infrastruktur untuk operator daerah |
+| Operator lokal yang ingin white-label platform ringan | Potensial jangka menengah | Carrier bisa jadi infrastruktur untuk operator daerah |
 
 ### 3.2 Ancaman yang Harus Diakui
 
@@ -134,13 +134,13 @@ Berdasarkan riset, ada beberapa gap nyata yang belum terisi dengan baik:
 |---------|----------------|----------|
 | Network effect Gojek/Grab terlalu kuat | Tinggi | Fokus pada segmen/area yang mereka kurang layani |
 | Cold start supply-demand di area baru | Tinggi | Strategi akuisisi mitra harus mendahului akuisisi customer |
-| Pengguna tidak mau pindah ekosistem (payment, rewards) | Sedang | TRIP tidak perlu payment internal di MVP — justru ini keunggulan |
+| Pengguna tidak mau pindah ekosistem (payment, rewards) | Sedang | Carrier tidak perlu payment internal di MVP — justru ini keunggulan |
 | Fraud dan abuse tanpa backend anti-fraud | Sedang | Antisipasi sejak desain, bukan afterthought |
 | Regulasi untuk platform baru yang belum clear | Rendah-Sedang | Mulai kecil, bangun relasi dengan regulator daerah |
 
 ### 3.3 Positioning yang Realistis
 
-TRIP **tidak sedang bersaing dengan Gojek/Grab** secara langsung. TRIP sedang menciptakan kategori baru:
+Carrier **tidak sedang bersaing dengan Gojek/Grab** secara langsung. Carrier sedang menciptakan kategori baru:
 
 > **"Ride coordination platform untuk area dan komunitas yang underserved oleh platform besar"**
 
@@ -158,9 +158,9 @@ Ini bukan kelemahan — ini adalah strategi go-to-market yang defensible untuk f
 
 **Driver no-show:** Menerima order tapi tidak datang untuk mempertahankan posisi di sistem.
 
-### 4.2 Implikasi untuk TRIP (Local-First Architecture)
+### 4.2 Implikasi untuk Carrier (Local-First Architecture)
 
-Model local-first TRIP secara struktur **lebih rentan** terhadap spoofing dibandingkan platform dengan server-side validation. Ini bukan alasan untuk tidak melanjutkan, tetapi harus menjadi **prioritas desain dari awal**, bukan sprint ke-4.
+Model local-first Carrier secara struktur **lebih rentan** terhadap spoofing dibandingkan platform dengan server-side validation. Ini bukan alasan untuk tidak melanjutkan, tetapi harus menjadi **prioritas desain dari awal**, bukan sprint ke-4.
 
 **Kontrol minimum yang wajib ada sejak MVP:**
 
@@ -186,7 +186,7 @@ Setiap keputusan desain membawa trade-off yang harus diakui secara eksplisit:
 
 **Kontra negosiasi:** Menambah friction. Meningkatkan waktu booking. Bisa mengulang masalah ojek pangkalan (tawar-menawar yang tidak nyaman).
 
-**Keputusan yang disarankan:** Model TRIP bukanlah negosiasi real-time. Model yang lebih tepat adalah **"offer vs. base price matching"** — customer menetapkan batas atas tarif, mitra menetapkan tarif minimum, sistem mencocokkan. Ini transparan, cepat, dan tidak memerlukan bargaining chat.
+**Keputusan yang disarankan:** Model Carrier bukanlah negosiasi real-time. Model yang lebih tepat adalah **"offer vs. base price matching"** — customer menetapkan batas atas tarif, mitra menetapkan tarif minimum, sistem mencocokkan. Ini transparan, cepat, dan tidak memerlukan bargaining chat.
 
 ### 5.2 Local-First vs. Reliability
 
@@ -204,7 +204,7 @@ Ketika tarif per-km tampil eksplisit, pengguna punya referensi untuk membandingk
 
 ---
 
-## 6. Implikasi Bisnis untuk TRIP: Ringkasan Eksekutif
+## 6. Implikasi Bisnis untuk Carrier: Ringkasan Eksekutif
 
 ### Yang Sudah Tepat
 
@@ -215,7 +215,7 @@ Ketika tarif per-km tampil eksplisit, pengguna punya referensi untuk membandingk
 
 ### Yang Harus Ditambahkan
 
-1. **Strategi monetisasi yang eksplisit** — TRIP harus memiliki model pendapatan yang jelas sejak MVP, bahkan jika sederhana. Tanpa ini, tidak ada path ke sustainability.
+1. **Strategi monetisasi yang eksplisit** — Carrier harus memiliki model pendapatan yang jelas sejak MVP, bahkan jika sederhana. Tanpa ini, tidak ada path ke sustainability.
 
 2. **Strategi go-to-market yang geographic** — Tentukan 1-2 kota/area pilot sejak awal. Fokus akuisisi mitra sebelum customer. Jangan mencoba cover seluruh Indonesia.
 
@@ -223,7 +223,7 @@ Ketika tarif per-km tampil eksplisit, pengguna punya referensi untuk membandingk
 
 4. **Jalur dispute yang jelas** — Customer dan mitra harus tahu harus kemana kalau ada masalah. Bahkan jika ini hanya WhatsApp channel atau form sederhana.
 
-5. **Path ke compliance regulasi** — TRIP harus bisa menjawab pertanyaan regulator jika diminta, bahkan di fase awal. Dokumentasi internal harus mengantisipasi ini.
+5. **Path ke compliance regulasi** — Carrier harus bisa menjawab pertanyaan regulator jika diminta, bahkan di fase awal. Dokumentasi internal harus mengantisipasi ini.
 
 ---
 
@@ -231,20 +231,20 @@ Ketika tarif per-km tampil eksplisit, pengguna punya referensi untuk membandingk
 
 Ruang masalah yang diidentifikasi dalam riset ini **real dan signifikan**. Platform ride-hailing tradisional memang membawa overhead besar yang membuat operator kecil sulit bersaing.
 
-TRIP memiliki **proposisi yang valid**: lebih ringan, lebih transparan, lebih fair untuk mitra dan customer, dengan biaya operasional yang jauh lebih rendah di fase awal.
+Carrier memiliki **proposisi yang valid**: lebih ringan, lebih transparan, lebih fair untuk mitra dan customer, dengan biaya operasional yang jauh lebih rendah di fase awal.
 
-**Namun keberhasilan TRIP tidak otomatis dari pendekatan teknologinya saja.** Keberhasilan ditentukan oleh:
+**Namun keberhasilan Carrier tidak otomatis dari pendekatan teknologinya saja.** Keberhasilan ditentukan oleh:
 
 1. **Eksekusi go-to-market yang sangat focused** — pilih satu area, bangun supply dulu, baru buka untuk customer.
 
-2. **Trust yang dibangun sejak hari pertama** — bahkan tanpa backend berat, TRIP harus menjadi platform yang bisa dipercaya oleh kedua sisi.
+2. **Trust yang dibangun sejak hari pertama** — bahkan tanpa backend berat, Carrier harus menjadi platform yang bisa dipercaya oleh kedua sisi.
 
 3. **Model bisnis yang sustainable** — revenue dari komisi (dalam batas regulasi) harus cukup untuk menutup biaya operasional minimal: relay server, support, dan maintenance.
 
 4. **Iterasi cepat berdasarkan feedback lapangan** — laporan riset ini adalah hipotesis. Validasi nyata hanya terjadi setelah produk ada di tangan pengguna sungguhan.
 
-> **Bottom line CEO:** TRIP punya logika bisnis yang kuat. Eksekusikan dengan focused, mulai kecil tapi benar, dan pastikan monetisasi bukan afterthought.
+> **Bottom line CEO:** Carrier punya logika bisnis yang kuat. Eksekusikan dengan focused, mulai kecil tapi benar, dan pastikan monetisasi bukan afterthought.
 
 ---
 
-*Dokumen ini merupakan versi revisi dari research report awal TRIP, diperkaya dengan analisis bisnis dan implikasi strategis untuk eksekusi produk. Versi: 1.0 | CEO-reviewed.*
+*Dokumen ini merupakan versi revisi dari research report awal Carrier, diperkaya dengan analisis bisnis dan implikasi strategis untuk eksekusi produk. Versi: 1.0 | CEO-reviewed.*

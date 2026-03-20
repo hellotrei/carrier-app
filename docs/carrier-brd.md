@@ -1,10 +1,10 @@
-# BRD — Carrier App Project
+# BRD — Carrier
 
 **Versi:** 1.0 (CEO-reviewed)
 **Owner:** CEO / CTO / Product Direction
-**Project:** Carrier App Project
+**Project:** Carrier
 **Motto:** Just Fair
-**Previous Working Name:** TRIP
+**Repository Name:** carrier-app
 **Document Type:** Business Requirements Document (BRD)
 **Status:** Approved for product and engineering execution
 
@@ -20,9 +20,9 @@
 
 ## 1. Executive Summary
 
-Carrier App Project adalah platform koordinasi transportasi berbasis mobile yang mempertemukan **customer** (penumpang) dan **mitra** (pengemudi) dalam **satu aplikasi** dengan pendekatan **local-first, transparan, dan biaya operasional minimal**.
+Carrier adalah platform koordinasi transportasi berbasis mobile yang mempertemukan **customer** (penumpang) dan **mitra** (pengemudi) dalam **satu aplikasi** dengan pendekatan **local-first, transparan, dan biaya operasional minimal**.
 
-Carrier App Project bukan replika mini Gojek/Grab. Produk ini adalah **kategori baru**: ride coordination platform yang dirancang untuk area dan komunitas yang kurang terlayani oleh platform besar, dengan proposisi nilai yang berbeda:
+Carrier bukan replika mini Gojek/Grab. Produk ini adalah **kategori baru**: ride coordination platform yang dirancang untuk area dan komunitas yang kurang terlayani oleh platform besar, dengan proposisi nilai yang berbeda:
 
 - **Untuk mitra:** kontrol lebih besar atas tarif, transparansi penuh atas order, beban operasional ringan
 - **Untuk customer:** transparansi harga sejak awal, koordinasi langsung, proses booking sederhana
@@ -31,7 +31,7 @@ Carrier App Project bukan replika mini Gojek/Grab. Produk ini adalah **kategori 
 
 **Motto produk:** `Just Fair` — adil untuk driver, customer, dan pengembang.
 
-**Fase awal Carrier App Project berfokus pada validasi produk-market fit** di 1-2 area pilot yang terseleksi, sebelum ekspansi lebih luas.
+**Fase awal Carrier berfokus pada validasi produk-market fit** di 1-2 area pilot yang terseleksi, sebelum ekspansi lebih luas.
 
 ---
 
@@ -47,11 +47,11 @@ Platform ride-hailing tradisional membawa overhead besar yang secara struktural 
 
 ### 2.2 Ruang yang Ditinggalkan Platform Besar
 
-Platform besar (Gojek, Grab) beroperasi secara ekonomis hanya di kota besar dengan density tinggi. Di kota tier 2-3 dan area suburban, mereka hadir tetapi supply-demand sering tidak seimbang. Di sinilah TRIP punya ruang nyata.
+Platform besar (Gojek, Grab) beroperasi secara ekonomis hanya di kota besar dengan density tinggi. Di kota tier 2-3 dan area suburban, mereka hadir tetapi supply-demand sering tidak seimbang. Di sinilah Carrier punya ruang nyata.
 
-### 2.3 Proposisi Nilai TRIP
+### 2.3 Proposisi Nilai Carrier
 
-| Dimensi | Platform Besar | TRIP |
+| Dimensi | Platform Besar | Carrier |
 |---------|---------------|------|
 | Kontrol tarif mitra | Algoritmik, tidak transparan | Mitra set sendiri, visible |
 | Kontrol tarif customer | Fixed / surge pricing | Customer set offer per-km |
@@ -88,9 +88,9 @@ Platform besar (Gojek, Grab) beroperasi secara ekonomis hanya di kota besar deng
 
 > **"Jadikan koordinasi transportasi sesederhana ngobrol dengan tetangga yang tahu jalan."**
 
-Carrier App Project membangun ekosistem transportasi berbasis kepercayaan dan transparansi, di mana driver dan customer bertemu secara langsung dengan aturan yang jelas, tanpa overhead platform yang berlebihan.
+Carrier membangun ekosistem transportasi berbasis kepercayaan dan transparansi, di mana driver dan customer bertemu secara langsung dengan aturan yang jelas, tanpa overhead platform yang berlebihan.
 
-**Visi jangka panjang (3 tahun):** Carrier App Project menjadi infrastruktur ride coordination untuk 50+ kota tier 2-3 di Indonesia, dioperasikan oleh operator lokal dengan model white-label atau franchise ringan, dengan total mitra aktif yang memberi pendapatan sustainable bagi ekosistem.
+**Visi jangka panjang (3 tahun):** Carrier menjadi infrastruktur ride coordination untuk 50+ kota tier 2-3 di Indonesia, dioperasikan oleh operator lokal dengan model white-label atau franchise ringan, dengan total mitra aktif yang memberi pendapatan sustainable bagi ekosistem.
 
 ---
 
@@ -119,11 +119,11 @@ Carrier App Project membangun ekosistem transportasi berbasis kepercayaan dan tr
 
 ## 6. Model Bisnis dan Monetisasi
 
-> **Ini adalah bagian yang paling krusial dan yang paling sering hilang di dokumen teknis. TRIP harus punya model pendapatan sejak hari pertama — meski kecil.**
+> **Ini adalah bagian yang paling krusial dan yang paling sering hilang di dokumen teknis. Carrier harus punya model pendapatan sejak hari pertama — meski kecil.**
 
 ### 6.1 Model Pendapatan Utama: Komisi per Perjalanan
 
-TRIP mengambil **komisi dari setiap perjalanan yang selesai**, dalam batas regulasi Indonesia (KP 1001/2022):
+Carrier mengambil **komisi dari setiap perjalanan yang selesai**, dalam batas regulasi Indonesia (KP 1001/2022):
 
 - **Biaya layanan platform:** 10-12% dari nilai perjalanan (di bawah batas 15%)
 - **Biaya dukungan mitra (opsional):** 2-3% untuk program asuransi dan dukungan operasional
@@ -152,7 +152,7 @@ Rule bisnis pembayaran:
 Asumsi:
 - 100 mitra aktif, rata-rata 5 trip/hari per mitra
 - Rata-rata nilai trip: Rp 15.000
-- Komisi TRIP: 10%
+- Komisi Carrier: 10%
 
 Kalkulasi:
 - 100 × 5 × Rp 1.500 = **Rp 750.000/hari**
@@ -162,7 +162,7 @@ Dengan biaya operasional relay + server minimal, ini sudah **cash flow positif**
 
 ### 6.4 Path Monetisasi Jangka Menengah
 
-- **Operator/franchise fee:** biaya lisensi untuk operator daerah yang ingin menjalankan TRIP di area mereka
+- **Operator/franchise fee:** biaya lisensi untuk operator daerah yang ingin menjalankan Carrier di area mereka
 - **Premium placement:** mitra bisa membayar untuk visibilitas lebih tinggi di discovery (opsional, harus transparan)
 - **Data insights (aggregate, anonymous):** laporan demand per area untuk pemerintah daerah atau penelitian
 
@@ -221,7 +221,7 @@ Akuisisi 50-100 mitra di 1 area pilot melalui:
    Tarif per-km dan estimasi total harga selalu tampil sebelum order. Tidak ada surprise charge.
 
 4. **Mitra Is a Partner, Not an Asset**
-   TRIP tidak memperlakukan mitra sebagai aset yang bisa dialokasikan sesuka algoritma. Mitra memiliki kontrol nyata.
+   Carrier tidak memperlakukan mitra sebagai aset yang bisa dialokasikan sesuka algoritma. Mitra memiliki kontrol nyata.
 
 5. **Lightweight by Design**
    Setiap fitur dievaluasi dari dampak biaya operasional. Kalau ada cara lebih ringan, pilih itu.
@@ -271,7 +271,7 @@ Akuisisi 50-100 mitra di 1 area pilot melalui:
 
 ### 9.3 Strategic Expansion Direction
 
-Fase setelah MVP akan mematangkan Carrier App Project ke arah berikut:
+Fase setelah MVP akan mematangkan Carrier ke arah berikut:
 
 - **Freelance driver economy**
   Pengguna biasa bisa beralih menjadi driver ketika memang siap membawa penumpang, misalnya saat pulang kerja untuk menutup biaya bensin.
@@ -327,11 +327,11 @@ Pengguna di Jakarta/Surabaya pusat kota yang sudah punya banyak pilihan — mere
 Pengemudi ojek yang sudah aktif (ojek pangkalan, atau mitra platform lain paruh waktu) yang frustrasi dengan sistem algoritmik dan ingin penghasilan tambahan yang lebih terkontrol.
 
 **Bukan target MVP:**
-Driver full-time yang 100% bergantung pada platform — mereka butuh supply order konsisten yang belum bisa dijanjikan TRIP di fase awal.
+Driver full-time yang 100% bergantung pada platform — mereka butuh supply order konsisten yang belum bisa dijanjikan Carrier di fase awal.
 
 ### 10.3 Operator Daerah (Target Jangka Menengah)
 
-Individu atau badan usaha lokal yang ingin mengoperasikan TRIP di area mereka sebagai franchise atau white-label.
+Individu atau badan usaha lokal yang ingin mengoperasikan Carrier di area mereka sebagai franchise atau white-label.
 
 ---
 
@@ -339,7 +339,7 @@ Individu atau badan usaha lokal yang ingin mengoperasikan TRIP di area mereka se
 
 ### 11.1 Positioning
 
-TRIP pada fase awal adalah:
+Carrier pada fase awal adalah:
 
 > **Ride Coordination Platform — local-first, transparent, community-driven**
 
@@ -351,7 +351,7 @@ Bukan juga:
 
 ### 11.2 Perbedaan Kunci dengan Ojek Online Tradisional
 
-| Aspek | Ojek Online Tradisional | TRIP |
+| Aspek | Ojek Online Tradisional | Carrier |
 |-------|------------------------|------|
 | Dispatch | Algoritma terpusat | Direct match by proximity |
 | Tarif | Platform-defined | Mitra + customer define |
@@ -371,7 +371,7 @@ Bukan juga:
 - **UU PDP No. 27/2022:** Perlindungan data pribadi
 - **Regulasi transportasi lokal:** Izin operasional per daerah
 
-### 12.2 Pendekatan Compliance TRIP
+### 12.2 Pendekatan Compliance Carrier
 
 **Fase MVP (lokal, skala kecil):**
 - Beroperasi dalam kerangka agen/perantara informal di area pilot
@@ -379,13 +379,13 @@ Bukan juga:
 - Tidak perlu lisensi platform formal jika masih dalam skala pilot terbatas
 
 **Fase Scale:**
-- Daftarkan TRIP sebagai platform ojek online resmi sesuai prosedur Kemenhub
+- Daftarkan Carrier sebagai platform ojek online resmi sesuai prosedur Kemenhub
 - Implementasikan reporting dashboard sesuai KP 1001/2022
 - Tunjuk DPO jika platform mulai melakukan pemantauan sistematis berskala besar
 
 ### 12.3 Keunggulan Compliance dari Arsitektur Local-First
 
-TRIP secara struktural lebih mudah comply dengan UU PDP karena:
+Carrier secara struktural lebih mudah comply dengan UU PDP karena:
 - Tidak menyimpan histori lokasi penuh di server
 - Data pribadi berada di kontrol pengguna sendiri
 - Minimal data processing di sisi platform
@@ -418,7 +418,7 @@ Ini harus dikomunikasikan sebagai **nilai lebih** kepada pengguna dan regulator.
 
 | ID | Rule |
 |----|------|
-| BR-001 | Komisi TRIP maksimal 12% dari nilai perjalanan yang selesai |
+| BR-001 | Komisi Carrier maksimal 12% dari nilai perjalanan yang selesai |
 | BR-002 | Mitra dapat menetapkan tarif per-km sendiri |
 | BR-003 | Customer dapat menetapkan tarif offer per-km |
 | BR-004 | Estimasi harga harus tampil sebelum order dikirim |
@@ -486,7 +486,7 @@ Ini harus dikomunikasikan sebagai **nilai lebih** kepada pengguna dan regulator.
 | Discovery tidak konsisten | Tinggi | Relay tipis reliable + empty state yang informatif |
 | Fleksibilitas tarif → friction bargaining | Sedang | Model offer-vs-base, bukan free negotiation |
 | Audit hilang jika device rusak | Sedang | Export manual, backup opsional di fase 2 |
-| Ekspektasi setara Gojek/Grab | Sedang | Komunikasi positioning TRIP yang jelas sejak onboarding |
+| Ekspektasi setara Gojek/Grab | Sedang | Komunikasi positioning Carrier yang jelas sejak onboarding |
 
 ---
 
@@ -548,7 +548,7 @@ Evaluasi:
 
 ## 19. Final Decision
 
-Carrier App Project akan dibangun sebagai **ride coordination platform** — bukan platform ride-hailing tradisional. Dengan pendekatan **single app, dual role, local-first, transparent pricing**, dan **lightweight infrastructure**, produk ini punya peluang nyata untuk menciptakan ekosistem transportasi yang lebih fair, lebih murah dioperasikan, dan lebih dapat dipercaya oleh kedua sisi pasar.
+Carrier akan dibangun sebagai **ride coordination platform** — bukan platform ride-hailing tradisional. Dengan pendekatan **single app, dual role, local-first, transparent pricing**, dan **lightweight infrastructure**, produk ini punya peluang nyata untuk menciptakan ekosistem transportasi yang lebih fair, lebih murah dioperasikan, dan lebih dapat dipercaya oleh kedua sisi pasar.
 
 **Kunci keberhasilan bukan pada teknologinya, tetapi pada eksekusi go-to-market dan pembangunan trust di area pilot.**
 

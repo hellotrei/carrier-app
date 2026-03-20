@@ -1,4 +1,4 @@
-# Carrier App Project
+# Carrier
 
 ## Sprint 2 Issue Specs
 

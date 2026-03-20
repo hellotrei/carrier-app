@@ -1,14 +1,14 @@
 # SDD — Software Design Document
-## Carrier App Project
+## Carrier
 
 **Versi:** 1.0 (CEO-reviewed)
 **Owner:** CTO / Engineering Direction
-**Project:** Carrier App Project
+**Project:** Carrier
 **Motto:** Just Fair
-**Previous Working Name:** TRIP
+**Repository Name:** carrier-app
 **Document Type:** Software Design Document (SDD)
 **Status:** Approved for engineering execution
-**Source Reference:** PRD — Carrier App Project v1.0
+**Source Reference:** PRD — Carrier v1.0
 
 ---
 
@@ -22,7 +22,7 @@
 
 ## 1. Ringkasan
 
-Dokumen ini menjabarkan desain perangkat lunak untuk **Carrier App Project** — aplikasi mobile cross-platform, **satu aplikasi untuk dua peran** (customer dan mitra), dengan pendekatan **local-first, low-backend, tanpa third-party berbayar di fase awal**.
+Dokumen ini menjabarkan desain perangkat lunak untuk **Carrier** — aplikasi mobile cross-platform, **satu aplikasi untuk dua peran** (customer dan mitra), dengan pendekatan **local-first, low-backend, tanpa third-party berbayar di fase awal**.
 
 SDD ini menurunkan PRD ke level implementasi: arsitektur sistem, komponen, desain storage lokal, desain audit, desain relay, contract module, state machine, strategi keamanan, dan batasan arsitektur MVP.
 
@@ -141,7 +141,7 @@ Rules:
 ### 4.4 Audit Format
 - **MessagePack** untuk serialisasi compact
 - File binary per event + manifest SQLite lokal
-- Export bundle `.tripaudit` (ZIP berisi manifest + event files)
+- Export bundle `.carrieraudit` (ZIP berisi manifest + event files)
 
 ### 4.5 Sikap Teknis yang Tegas
 - Tidak ada zero-server absolut — relay tipis wajib ada untuk discovery dan signaling
@@ -167,7 +167,7 @@ Rules:
 
 ### 5.2 Batas Tanggung Jawab Sistem
 
-**TRIP bertanggung jawab untuk:**
+**Carrier bertanggung jawab untuk:**
 - Manajemen role dan profil
 - Permission lokasi
 - Presence discovery
@@ -178,7 +178,7 @@ Rules:
 - Anti-abuse dasar
 - Handoff ke app eksternal
 
-**TRIP tidak bertanggung jawab untuk:**
+**Carrier tidak bertanggung jawab untuk:**
 - Routing dan navigasi
 - Pembayaran dan settlement
 - In-app VoIP/call
@@ -192,7 +192,7 @@ Rules:
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                  TRIP Mobile App                    │
+│                  Carrier Mobile App                    │
 │─────────────────────────────────────────────────────│
 │  Presentation Layer                                 │
 │  ├── Screens / UI Components                        │
@@ -785,7 +785,7 @@ CREATE TABLE app_settings (
 
 ### 13.1 Struktur Folder
 ```
-/TRIP_DATA/
+/CARRIER_DATA/
   AUDIT/
     manifest.db          ← SQLite index (audit_manifest table)
     events/
@@ -793,7 +793,7 @@ CREATE TABLE app_settings (
         evt_<uuid>.msgpack
         evt_<uuid>.msgpack
     exports/
-      audit-export-2026-03-18.tripaudit
+      audit-export-2026-03-18.carrieraudit
 ```
 
 ### 13.2 Event Types yang Wajib Diaudit
@@ -2235,7 +2235,7 @@ Rules:
 
 ## 29. Ringkasan Keputusan Teknis
 
-Carrier App Project dibangun sebagai **single cross-platform mobile app** dengan:
+Carrier dibangun sebagai **single cross-platform mobile app** dengan:
 
 - **React Native + TypeScript** sebagai stack utama
 - **SQLite** sebagai local persistence utama

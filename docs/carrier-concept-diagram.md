@@ -1,6 +1,6 @@
 # Diagram Konsep Sederhana — Local Data vs Relay vs Binary Audit
 
-Dokumen ini menjelaskan model mental paling sederhana untuk TRIP.
+Dokumen ini menjelaskan model mental paling sederhana untuk Carrier.
 
 ## 1. Prinsip Utama
 
@@ -92,7 +92,7 @@ Alurnya:
 3. Payload di-encode ke MessagePack.
 4. App menulis file binary audit ke storage lokal.
 5. Manifest event di-index di SQLite.
-6. Jika dibutuhkan, event-event ini bisa diexport menjadi bundle `.tripaudit`.
+6. Jika dibutuhkan, event-event ini bisa diexport menjadi bundle `.carrieraudit`.
 
 ## 6. Yang Perlu Diluruskan
 
@@ -102,7 +102,7 @@ Alurnya:
 - binary audit dipakai sebagai kanal komunikasi antar user
 - seluruh sistem berjalan multi-user hanya dengan local storage tanpa relay
 
-### Yang benar untuk TRIP
+### Yang benar untuk Carrier
 
 - binary aplikasi hanya berisi kode app
 - data runtime ditulis ke SQLite, file system, dan secure storage

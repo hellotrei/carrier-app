@@ -1,4 +1,4 @@
-# Carrier App Project
+# Carrier
 
 ## Sprint 4 Issue Specs
 
@@ -81,7 +81,7 @@ Membuat audit dan rekap transaksi benar-benar bisa dipakai untuk tracing dan ope
 ### Deliverable Minimum
 - event penting benar-benar ditulis ke audit
 - audit manifest bisa melacak file event
-- export `.tripaudit` bisa dibuat
+- export `.carrieraudit` bisa dibuat
 - export CSV transaction log bisa dibuat
 - export punya progress, success state, dan failure state minimum
 

@@ -1,33 +1,33 @@
-# Carrier App Project Docs
+# Carrier Docs
 
 Folder ini menampung seluruh dokumen perencanaan dan spesifikasi proyek agar root repository tetap bersih untuk source code React Native.
 
 ## Urutan baca yang disarankan
 
-1. `trip-ojek-brd.md`
+1. `carrier-brd.md`
    Konteks bisnis dan arah besar produk.
 
-2. `trip-ojek-prd.md`
+2. `carrier-prd.md`
    Scope produk, fitur, MVP lock, dan keputusan product-level.
 
-3. `trip-ojek-sdd.md`
+3. `carrier-sdd.md`
    Desain sistem dan arsitektur implementasi.
 
-4. `trip-ojek-tsd.md`
+4. `carrier-tsd.md`
    Kontrak teknis, type, state, dan aturan implementasi detail.
 
-5. `trip-ojek-concept-diagram.md`
+5. `carrier-concept-diagram.md`
    Diagram konsep ringkas untuk mental model lokal vs relay vs audit.
 
-6. `trip-ojek-research-report.md`
+6. `carrier-research-report.md`
    Catatan riset dan referensi tambahan.
 
 ## Issue specs per sprint
 
-- `trip-ojek-sprint-1-issue-specs.md`
-- `trip-ojek-sprint-2-issue-specs.md`
-- `trip-ojek-sprint-3-issue-specs.md`
-- `trip-ojek-sprint-4-issue-specs.md`
+- `carrier-sprint-1-issue-specs.md`
+- `carrier-sprint-2-issue-specs.md`
+- `carrier-sprint-3-issue-specs.md`
+- `carrier-sprint-4-issue-specs.md`
 
 File issue spec dipakai next agent atau engineer untuk eksekusi per sprint tanpa harus menerjemahkan ulang backlog.
 

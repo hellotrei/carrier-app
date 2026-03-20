@@ -1,4 +1,4 @@
-# CARRIER APP PROJECT
+# Carrier
 
 > **Just Fair**
 >
@@ -9,7 +9,7 @@
 ![Architecture](https://img.shields.io/badge/architecture-local--first%20%2B%20thin%20relay-5c4ee5)
 ![Contributors](https://img.shields.io/badge/contributors-wanted-f08c00)
 
-Carrier App Project adalah gagasan ride-hailing local-first yang mencoba mengambil jalan berbeda dari model platform konvensional: lebih ringan, lebih transparan, lebih ramah untuk mitra, dan lebih realistis untuk dibangun oleh tim kecil.
+Carrier adalah gagasan ride-hailing local-first yang mencoba mengambil jalan berbeda dari model platform konvensional: lebih ringan, lebih transparan, lebih ramah untuk mitra, dan lebih realistis untuk dibangun oleh tim kecil.
 
 Repo ini saat ini berada di fase **planning + architecture hardening**. Source code React Native akan ditempatkan di root repo ini, sementara seluruh dokumen spesifikasi sudah dipusatkan di [`docs/`](./docs).
 
@@ -61,7 +61,7 @@ Carrier mencoba membuka ruang baru:
 
 ## About
 
-Carrier App Project dirancang sebagai aplikasi transportasi dan nebeng modern yang:
+Carrier dirancang sebagai aplikasi transportasi dan nebeng modern yang:
 - mendukung perjalanan harian, freelance ride, dan skenario komunitas
 - menjaga data utama tetap berada di device user
 - memakai relay tipis hanya untuk discovery dan signaling
@@ -309,17 +309,17 @@ Yang membuat prospek ini menarik bukan cuma “bisa jadi aplikasi transportasi�
 ├── README.md
 ├── docs/
 │   ├── README.md
-│   ├── trip-ojek-brd.md
-│   ├── trip-ojek-prd.md
-│   ├── trip-ojek-sdd.md
-│   ├── trip-ojek-tsd.md
-│   ├── trip-ojek-concept-diagram.md
-│   ├── trip-ojek-research-report.md
-│   ├── trip-ojek-sprint-1-issue-specs.md
-│   ├── trip-ojek-sprint-2-issue-specs.md
-│   ├── trip-ojek-sprint-3-issue-specs.md
-│   └── trip-ojek-sprint-4-issue-specs.md
-└── trip_full_user_flow_diagram.svg
+│   ├── carrier-brd.md
+│   ├── carrier-prd.md
+│   ├── carrier-sdd.md
+│   ├── carrier-tsd.md
+│   ├── carrier-concept-diagram.md
+│   ├── carrier-research-report.md
+│   ├── carrier-sprint-1-issue-specs.md
+│   ├── carrier-sprint-2-issue-specs.md
+│   ├── carrier-sprint-3-issue-specs.md
+│   └── carrier-sprint-4-issue-specs.md
+└── carrier_full_user_flow_diagram.svg
 ```
 
 ---
@@ -329,13 +329,13 @@ Yang membuat prospek ini menarik bukan cuma “bisa jadi aplikasi transportasi�
 Kalau Anda baru masuk ke repo ini:
 
 1. Baca [`docs/README.md`](./docs/README.md)
-2. Lanjut ke [`docs/trip-ojek-prd.md`](./docs/trip-ojek-prd.md)
-3. Setelah itu baca [`docs/trip-ojek-sdd.md`](./docs/trip-ojek-sdd.md) dan [`docs/trip-ojek-tsd.md`](./docs/trip-ojek-tsd.md)
+2. Lanjut ke [`docs/carrier-prd.md`](./docs/carrier-prd.md)
+3. Setelah itu baca [`docs/carrier-sdd.md`](./docs/carrier-sdd.md) dan [`docs/carrier-tsd.md`](./docs/carrier-tsd.md)
 4. Untuk eksekusi, masuk ke file issue spec sprint:
-   - [`docs/trip-ojek-sprint-1-issue-specs.md`](./docs/trip-ojek-sprint-1-issue-specs.md)
-   - [`docs/trip-ojek-sprint-2-issue-specs.md`](./docs/trip-ojek-sprint-2-issue-specs.md)
-   - [`docs/trip-ojek-sprint-3-issue-specs.md`](./docs/trip-ojek-sprint-3-issue-specs.md)
-   - [`docs/trip-ojek-sprint-4-issue-specs.md`](./docs/trip-ojek-sprint-4-issue-specs.md)
+   - [`docs/carrier-sprint-1-issue-specs.md`](./docs/carrier-sprint-1-issue-specs.md)
+   - [`docs/carrier-sprint-2-issue-specs.md`](./docs/carrier-sprint-2-issue-specs.md)
+   - [`docs/carrier-sprint-3-issue-specs.md`](./docs/carrier-sprint-3-issue-specs.md)
+   - [`docs/carrier-sprint-4-issue-specs.md`](./docs/carrier-sprint-4-issue-specs.md)
 
 ---
 
@@ -345,7 +345,7 @@ Kalau Anda baru masuk ke repo ini:
 >
 > But good planning is what makes a small team able to build the product without wasting months.
 
-Carrier App Project sekarang sudah punya:
+Carrier sekarang sudah punya:
 - BRD, PRD, SDD, dan TSD
 - MVP scope lock
 - architecture direction

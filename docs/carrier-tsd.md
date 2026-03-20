@@ -1,14 +1,14 @@
 # TSD — Technical Specification Document
-## Carrier App Project
+## Carrier
 
 **Versi:** 1.0 (CEO-reviewed)
 **Owner:** CTO / Engineering Direction
-**Project:** Carrier App Project
+**Project:** Carrier
 **Motto:** Just Fair
-**Previous Working Name:** TRIP
+**Repository Name:** carrier-app
 **Document Type:** Technical Specification Document (TSD)
 **Status:** Approved for engineering execution
-**Source Reference:** SDD — Carrier App Project v1.0
+**Source Reference:** SDD — Carrier v1.0
 
 ---
 
@@ -22,7 +22,7 @@
 
 ## 1. Ringkasan
 
-TSD ini menjabarkan spesifikasi implementasi teknis untuk **Carrier App Project** — single app dual role, local-first, thin relay. Dokumen ini menurunkan SDD ke level yang langsung bisa dieksekusi oleh engineer: module contracts, payload schemas, SQLite schema lengkap, audit binary format, lifecycle specs, error model, dan testing requirements.
+TSD ini menjabarkan spesifikasi implementasi teknis untuk **Carrier** — single app dual role, local-first, thin relay. Dokumen ini menurunkan SDD ke level yang langsung bisa dieksekusi oleh engineer: module contracts, payload schemas, SQLite schema lengkap, audit binary format, lifecycle specs, error model, dan testing requirements.
 
 **Prinsip utama yang tidak boleh dilanggar:**
 1. Source of truth data user ada di local storage device
@@ -1501,7 +1501,7 @@ Enforcement mapping:
     YYYY-MM/
       evt_<eventId>.bin
   exports/
-    audit-export-<YYYYMMDD-HHmmss>.tripaudit   (ZIP bundle)
+    audit-export-<YYYYMMDD-HHmmss>.carrieraudit   (ZIP bundle)
 ```
 
 ### 11.2 Binary Record Format
@@ -1584,7 +1584,7 @@ async function appendAuditEvent(event: AuditEvent): Promise<void> {
 
 ### 11.5 Export Bundle
 ```
-.tripaudit file adalah ZIP yang berisi:
+.carrieraudit file adalah ZIP yang berisi:
   manifest.json         — export dari audit_manifest untuk range yang dipilih
   events/               — semua .bin file yang di-include
   export_meta.json      — {exportedAt, deviceId, tripVersion, eventCount}
@@ -3227,7 +3227,7 @@ Rules:
 
 ### 20.7 Audit Export
 **Input:** date range + device auth
-**Output:** `.tripaudit` ZIP file via share sheet
+**Output:** `.carrieraudit` ZIP file via share sheet
 
 **Technical requirements:**
 - Require device auth (biometric/PIN) sebelum export
@@ -3786,7 +3786,7 @@ Rules:
 
 ## 27. Keputusan Teknis Final
 
-Carrier App Project diimplementasikan sebagai **single cross-platform React Native app dengan TypeScript**, dengan:
+Carrier diimplementasikan sebagai **single cross-platform React Native app dengan TypeScript**, dengan:
 
 - **SQLite** (op-sqlite) sebagai local persistence utama
 - **Supabase Realtime** sebagai thin relay untuk presence dan order signaling

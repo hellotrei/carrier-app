@@ -1,12 +1,12 @@
-# PRD — Carrier App Project
+# PRD — Carrier
 
 **Versi:** 1.0 (CEO-reviewed)
 **Owner:** CEO / Product Direction
-**Project:** Carrier App Project
+**Project:** Carrier
 **Motto:** Just Fair
-**Previous Working Name:** TRIP
+**Repository Name:** carrier-app
 **Document Type:** Product Requirements Document (PRD)
-**Source Reference:** BRD — Carrier App Project v1.0
+**Source Reference:** BRD — Carrier v1.0
 **Status:** Approved for design and engineering execution
 
 ---
@@ -21,9 +21,9 @@
 
 ## 1. Ringkasan Produk
 
-Carrier App Project adalah aplikasi mobile cross-platform — **satu aplikasi untuk dua peran**: **customer** (penumpang) dan **mitra/driver** (pengemudi). Produk ini dirancang dengan pendekatan **local-first**, **low-backend**, dan **biaya operasional minimal**.
+Carrier adalah aplikasi mobile cross-platform — **satu aplikasi untuk dua peran**: **customer** (penumpang) dan **mitra/driver** (pengemudi). Produk ini dirancang dengan pendekatan **local-first**, **low-backend**, dan **biaya operasional minimal**.
 
-**Nilai inti yang Carrier App Project janjikan:**
+**Nilai inti yang Carrier janjikan:**
 
 - **Customer:** Temukan mitra di sekitar dengan cepat. Harga jelas sebelum pesan. Koordinasi mudah via WhatsApp/telepon langsung.
 - **Mitra:** Atur tarif sendiri. Pilih order yang cocok. Tidak ada sistem penalti algoritmik yang tidak transparan.
@@ -42,7 +42,7 @@ Platform ride-hailing tradisional tidak layak ditiru dari awal karena membawa ov
 - Compliance reporting
 - Third-party API berbayar
 
-Carrier App Project mengambil pendekatan yang lebih realistis: **ride coordination**, bukan **ride-hailing**. Perbedaannya fundamental:
+Carrier mengambil pendekatan yang lebih realistis: **ride coordination**, bukan **ride-hailing**. Perbedaannya fundamental:
 - Ride-hailing: platform yang mengalokasikan driver secara otomatis
 - Ride coordination: platform yang mempertemukan supply dan demand, lalu memberikan kontrol kepada kedua pihak
 
@@ -101,7 +101,7 @@ Tinggal di kota kabupaten. Punya smartphone Android, pakai WhatsApp setiap hari.
 **Perilaku saat ini:**
 Kalau butuh ojek, cari lewat grup WhatsApp komunitas atau ke pangkalan ojek terdekat. Sering tidak pasti harga dan harus tawar-menawar.
 
-**Yang diinginkan dari TRIP:**
+**Yang diinginkan dari Carrier:**
 - Lihat siapa ojek yang tersedia sekarang di dekatnya
 - Tahu harga sebelum pesan — tidak perlu tawar-menawar
 - Bisa langsung WhatsApp driver kalau butuh konfirmasi
@@ -120,7 +120,7 @@ Pengemudi ojek yang sudah daftar di Gojek tapi jarang online karena area dia kur
 **Perilaku saat ini:**
 Mangkal di depan minimarket, dapat order dari kenalan, atau sesekali online di Gojek kalau lagi perlu.
 
-**Yang diinginkan dari TRIP:**
+**Yang diinginkan dari Carrier:**
 - Bisa lihat ada customer yang cari ojek di dekatnya
 - Tarif yang dia set sendiri, bukan dikontrol platform
 - Tidak ada ancaman penalti atau suspen tiba-tiba
@@ -131,7 +131,7 @@ Mangkal di depan minimarket, dapat order dari kenalan, atau sesekali online di G
 - Order yang jauh dan tidak sepadan
 - Harus selalu online untuk dapat order bagus
 
-### 4.3 Internal Product/Engineering: "Tim Developer TRIP"
+### 4.3 Internal Product/Engineering: "Tim Developer Carrier"
 
 **Yang dibutuhkan:**
 - Scope yang jelas dan tidak berubah-ubah di tengah sprint
@@ -202,7 +202,7 @@ Mangkal di depan minimarket, dapat order dari kenalan, atau sesekali online di G
 - Folder `AUDIT` lokal di device
 - Semua event penting tersimpan: order lifecycle, perubahan tarif, handoff eksternal
 - Format compact (tidak plain JSON verbose)
-- Export audit ke file `.tripaudit` via share sheet
+- Export audit ke file `.carrieraudit` via share sheet
 - Guard akses audit dengan device PIN/biometric
 
 ### 6.2 Out of Scope — MVP
@@ -678,7 +678,7 @@ Rules:
 - Event yang wajib dicatat: semua transisi status order, perubahan tarif, handoff eksternal, role switch, login/bootstrap
 - Format: compact (bukan verbose plain text JSON)
 - Append-only, tidak bisa diedit
-- Export ke file `.tripaudit` via share sheet
+- Export ke file `.carrieraudit` via share sheet
 - Guard export dengan device PIN/biometric
 - Audit export UX harus menampilkan rentang tanggal, progress export, dan hasil file dengan jelas
 - Jika export gagal, alasan error harus tampil jelas tanpa istilah teknis berlebihan
@@ -1399,7 +1399,7 @@ Setelah PRD ini, yang dibutuhkan:
 
 ## 17. Ringkasan Keputusan Produk
 
-Carrier App Project dibangun sebagai **single cross-platform mobile app**, dual role, local-first, dengan:
+Carrier dibangun sebagai **single cross-platform mobile app**, dual role, local-first, dengan:
 - pricing transparency sebagai core differentiator,
 - external handoff untuk maps/call/chat,
 - anti-abuse dasar sebagai keharusan MVP,
