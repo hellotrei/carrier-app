@@ -8,7 +8,6 @@ import { SectionCard } from '../../ui/patterns/section-card';
 import type { OrderCancelReason } from '../../domain/order/order';
 import { bootstrapDeps } from '../config/bootstrap-deps';
 import { saveProfile } from '../../application/user/save-profile';
-import { updateCurrentRole } from '../../application/user/update-current-role';
 import { advanceOrderStatus } from '../../application/order/advance-order-status';
 import { cancelOrder } from '../../application/order/cancel-order';
 import { createOrderDraft } from '../../application/order/create-order-draft';
@@ -30,6 +29,7 @@ export function RootNavigation(): React.JSX.Element {
     state => state.setDeviceBindingPresent,
   );
   const setActiveOrder = useAppStore(state => state.setActiveOrder);
+  const setActiveRole = useAppStore(state => state.setActiveRole);
   const setProfile = useAppStore(state => state.setProfile);
   const [activeScreen, setActiveScreen] = React.useState<'home' | 'active_trip'>(
     'home',
@@ -38,18 +38,7 @@ export function RootNavigation(): React.JSX.Element {
   const [submitError, setSubmitError] = React.useState<string | null>(null);
 
   async function handleRoleChange(role: 'customer' | 'mitra') {
-    if (!profile) {
-      useAppStore.getState().setActiveRole(role);
-      return;
-    }
-
-    const result = await updateCurrentRole(bootstrapDeps, role);
-
-    if (!result.ok) {
-      return;
-    }
-
-    setProfile(result.value);
+    setActiveRole(role);
   }
 
   async function handleProfileSubmit(params: {
