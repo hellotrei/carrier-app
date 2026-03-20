@@ -44,10 +44,28 @@ export function HomeCustomerScreen({
   }, [initialDraftValues]);
 
   if (activeOrderStatus && activeOrderStatus !== 'Draft') {
-    const description =
-      activeOrderStatus === 'Requested'
-        ? 'Order has already been submitted and is now waiting for mitra handling in the active flow.'
-        : `Order ${activeOrderStatus} is already active. Resume that flow before starting a new booking.`;
+    let description =
+      `Order ${activeOrderStatus} is already active. Resume that flow before starting a new booking.`;
+
+    if (activeOrderStatus === 'Requested') {
+      description =
+        'Order has already been submitted and is now waiting for mitra handling in the active flow.';
+    }
+
+    if (activeOrderStatus === 'Accepted') {
+      description =
+        'Mitra has accepted this order. Follow the active flow for the next pickup and trip updates.';
+    }
+
+    if (activeOrderStatus === 'OnTheWay') {
+      description =
+        'Mitra is already heading to pickup. Resume the active flow to track the next step.';
+    }
+
+    if (activeOrderStatus === 'OnTrip') {
+      description =
+        'Trip is already in progress. Resume the active flow for the latest trip state.';
+    }
 
     return (
       <SectionCard
