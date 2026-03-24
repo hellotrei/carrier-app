@@ -1,6 +1,6 @@
 # Carrier Docs
 
-Folder ini menampung seluruh dokumen perencanaan dan spesifikasi proyek agar root repository tetap bersih untuk source code React Native.
+Folder ini menampung dokumen perencanaan dan spesifikasi inti Carrier. Source code React Native sudah aktif di root repository, dan folder `docs/` tetap menjadi source of truth untuk scope, arsitektur, dan urutan implementasi.
 
 ## Urutan baca yang disarankan
 
@@ -40,8 +40,23 @@ Folder ini menampung seluruh dokumen perencanaan dan spesifikasi proyek agar roo
 
 File issue spec dipakai next agent atau engineer untuk eksekusi per sprint tanpa harus menerjemahkan ulang backlog.
 
+## Status singkat
+
+Repo ini tidak lagi berada di fase dokumen-only.
+
+Yang sudah ada:
+- BRD, PRD, SDD, TSD, dan issue specs per sprint
+- source code React Native di root repo
+- fondasi flow order, history, feedback, audit, dan export
+- local-first persistence dan native export gateway
+
+Yang masih berlangsung:
+- penyempurnaan relay/signaling penuh
+- infra dan hardening yang benar-benar production-ready
+- final polish untuk pilot launch
+
 ## Catatan
 
 - Semua dokumen `.md` sengaja dipusatkan di folder ini.
-- Source code React Native nantinya bisa hidup di root repository tanpa tercampur file perencanaan.
-- Jika ada agent baru, arahkan pembacaan mulai dari file ini lalu lanjut ke PRD, SDD, dan TSD.
+- Source code React Native hidup di root repository, tetapi keputusan scope dan arsitektur tetap harus mengacu ke dokumen di folder ini.
+- Jika ada agent baru, arahkan pembacaan mulai dari file ini lalu lanjut ke PRD, SDD, TSD, dan issue specs sprint yang relevan.
