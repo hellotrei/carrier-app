@@ -29,11 +29,18 @@ export async function bootstrapApp({
 }: BootstrapAppDeps): Promise<BootstrapSnapshot> {
   await initializeDatabase(database);
 
-  const [profile, activeOrder, deviceBindingId] = await Promise.all([
+  const [profile, deviceBindingId] = await Promise.all([
     userRepository.getProfile(),
-    orderRepository.getActiveOrder(),
     secureStorage.get(SECURE_STORAGE_KEYS.DEVICE_BINDING_ID),
   ]);
+  let activeOrder: Order | null = null;
+
+  try {
+    activeOrder = await orderRepository.getActiveOrder();
+  } catch {
+    // Recovery should fail closed for the active order path without blocking shell bootstrap.
+    activeOrder = null;
+  }
 
   return {
     activeOrder,

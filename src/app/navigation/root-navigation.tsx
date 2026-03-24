@@ -1,6 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 
+import { sanitizeErrorMessage } from '../../core/errors/sanitize-error-message';
 import { AppButton } from '../../ui/primitives/app-button';
 import { AppScreen } from '../../ui/primitives/app-screen';
 import { AppText } from '../../ui/primitives/app-text';
@@ -295,9 +296,10 @@ export function RootNavigation(): React.JSX.Element {
       setTransactionCsvExportPath(path);
     } catch (error) {
       setTransactionCsvExportError(
-        error instanceof Error
-          ? error.message
-          : getExportStateErrorCopy('transaction_csv', 'export'),
+        sanitizeErrorMessage(
+          error,
+          getExportStateErrorCopy('transaction_csv', 'export'),
+        ),
       );
     }
   }
@@ -312,9 +314,10 @@ export function RootNavigation(): React.JSX.Element {
       setTransactionCsvExportError(null);
     } catch (error) {
       setTransactionCsvExportError(
-        error instanceof Error
-          ? error.message
-          : getExportStateErrorCopy('transaction_csv', 'open'),
+        sanitizeErrorMessage(
+          error,
+          getExportStateErrorCopy('transaction_csv', 'open'),
+        ),
       );
     }
   }
@@ -329,9 +332,10 @@ export function RootNavigation(): React.JSX.Element {
       setTransactionCsvExportError(null);
     } catch (error) {
       setTransactionCsvExportError(
-        error instanceof Error
-          ? error.message
-          : getExportStateErrorCopy('transaction_csv', 'share'),
+        sanitizeErrorMessage(
+          error,
+          getExportStateErrorCopy('transaction_csv', 'share'),
+        ),
       );
     }
   }
@@ -353,9 +357,10 @@ export function RootNavigation(): React.JSX.Element {
       setAuditExportPath(path);
     } catch (error) {
       setAuditExportError(
-        error instanceof Error
-          ? error.message
-          : getExportStateErrorCopy('audit_bundle', 'export'),
+        sanitizeErrorMessage(
+          error,
+          getExportStateErrorCopy('audit_bundle', 'export'),
+        ),
       );
     }
   }
@@ -370,9 +375,10 @@ export function RootNavigation(): React.JSX.Element {
       setAuditExportError(null);
     } catch (error) {
       setAuditExportError(
-        error instanceof Error
-          ? error.message
-          : getExportStateErrorCopy('audit_bundle', 'open'),
+        sanitizeErrorMessage(
+          error,
+          getExportStateErrorCopy('audit_bundle', 'open'),
+        ),
       );
     }
   }
@@ -387,9 +393,10 @@ export function RootNavigation(): React.JSX.Element {
       setAuditExportError(null);
     } catch (error) {
       setAuditExportError(
-        error instanceof Error
-          ? error.message
-          : getExportStateErrorCopy('audit_bundle', 'share'),
+        sanitizeErrorMessage(
+          error,
+          getExportStateErrorCopy('audit_bundle', 'share'),
+        ),
       );
     }
   }

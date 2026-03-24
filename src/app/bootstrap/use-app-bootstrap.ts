@@ -5,6 +5,7 @@ export type BootstrapState = {
 
 import { useEffect, useState } from 'react';
 
+import { sanitizeErrorMessage } from '../../core/errors/sanitize-error-message';
 import { bootstrapDeps } from '../config/bootstrap-deps';
 import { bootstrapApp } from '../../application/user/bootstrap-app';
 import { useAppStore } from '../../state/store/app-store';
@@ -31,12 +32,12 @@ export function useAppBootstrap(): BootstrapState {
           return;
         }
 
-        const reason =
-          error instanceof Error ? error.message : 'bootstrap_failed';
-
         setStatus({
           status: 'failed',
-          reason,
+          reason: sanitizeErrorMessage(
+            error,
+            'Bootstrap could not restore local data safely.',
+          ),
         });
       }
     }
