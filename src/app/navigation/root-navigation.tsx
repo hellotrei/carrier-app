@@ -16,7 +16,6 @@ import { createOrderDraft } from '../../application/order/create-order-draft';
 import { guardExportWithDeviceAuth } from '../../application/order/guard-export-with-device-auth';
 import { savePostTripFeedback } from '../../application/order/save-post-trip-feedback';
 import { submitOrderDraft } from '../../application/order/submit-order-draft';
-import { syncNotificationToken } from '../../application/user/sync-notification-token';
 import {
   openExportedFile,
   shareExportedFile,
@@ -34,6 +33,11 @@ import {
 } from '../../state/export/export-actions';
 import { useExportStore } from '../../state/export/export-store';
 import { reloadHistorySnapshot } from '../../state/history/history-actions';
+import {
+  loadHardwarePermissionState,
+  requestLocationPermission,
+  requestNotificationPermission,
+} from '../../state/permission/permission-actions';
 import { useHistoryStore } from '../../state/history/history-store';
 import { usePermissionStore } from '../../state/permission/permission-store';
 import { HardwarePermissionCard } from '../../ui/patterns/hardware-permission-card';
@@ -75,57 +79,31 @@ export function RootNavigation(): React.JSX.Element {
   const notificationTokenPreview = usePermissionStore(
     state => state.notificationTokenPreview,
   );
-  const setLocationPermissionStatus = usePermissionStore(
-    state => state.setLocationPermissionStatus,
-  );
-  const setNotificationPermissionStatus = usePermissionStore(
-    state => state.setNotificationPermissionStatus,
-  );
-  const setNotificationTokenPreview = usePermissionStore(
-    state => state.setNotificationTokenPreview,
-  );
   const [activeScreen, setActiveScreen] = React.useState<RootScreen>('home');
   const [draftError, setDraftError] = React.useState<string | null>(null);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [selectedCompletedOrder, setSelectedCompletedOrder] = React.useState<Order | null>(null);
   const activeStackRoute = resolveStackRouteName(activeScreen);
 
-  const loadHardwarePermissionState = React.useCallback(async () => {
-    try {
-      const [locationStatus, notificationStatus, notificationToken] =
-        await Promise.all([
-          bootstrapDeps.hardwarePermissionGateway.getLocationWhenInUseStatus(),
-          bootstrapDeps.hardwarePermissionGateway.getNotificationStatus(),
-          syncNotificationToken(bootstrapDeps),
-        ]);
-
-      setLocationPermissionStatus(locationStatus);
-      setNotificationPermissionStatus(notificationStatus);
-      setNotificationTokenPreview(
-        notificationToken
-          ? `${notificationToken.slice(0, 6)}...${notificationToken.slice(-4)}`
-          : null,
-      );
-    } catch {
-      setNotificationTokenPreview(null);
-    }
+  const refreshHardwarePermissionState = React.useCallback(async () => {
+    await loadHardwarePermissionState(bootstrapDeps);
   }, []);
 
   React.useEffect(() => {
-    void loadHardwarePermissionState();
-  }, [loadHardwarePermissionState]);
+    void refreshHardwarePermissionState();
+  }, [refreshHardwarePermissionState]);
 
   React.useEffect(() => {
     const subscription = AppState.addEventListener('change', nextState => {
       if (nextState === 'active') {
-        void loadHardwarePermissionState();
+        void refreshHardwarePermissionState();
       }
     });
 
     return () => {
       subscription.remove();
     };
-  }, [loadHardwarePermissionState]);
+  }, [refreshHardwarePermissionState]);
 
   async function handleRoleChange(role: 'customer' | 'mitra') {
     setActiveRole(role);
@@ -323,32 +301,11 @@ export function RootNavigation(): React.JSX.Element {
   }
 
   async function handleRequestLocationPermission() {
-    try {
-      const granted =
-        await bootstrapDeps.hardwarePermissionGateway.requestLocationWhenInUse();
-      setLocationPermissionStatus(granted ? 'granted' : 'denied');
-    } catch {
-      setLocationPermissionStatus('denied');
-    }
+    await requestLocationPermission(bootstrapDeps);
   }
 
   async function handleRequestNotificationPermission() {
-    try {
-      const granted =
-        await bootstrapDeps.hardwarePermissionGateway.requestNotifications();
-      setNotificationPermissionStatus(granted ? 'granted' : 'denied');
-      if (granted) {
-        const token = await syncNotificationToken(bootstrapDeps);
-        setNotificationTokenPreview(
-          token ? `${token.slice(0, 6)}...${token.slice(-4)}` : null,
-        );
-      } else {
-        setNotificationTokenPreview(null);
-      }
-    } catch {
-      setNotificationPermissionStatus('denied');
-      setNotificationTokenPreview(null);
-    }
+    await requestNotificationPermission(bootstrapDeps);
   }
 
   async function handleExportTransactionCsv() {
