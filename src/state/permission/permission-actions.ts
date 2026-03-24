@@ -40,6 +40,14 @@ function toNotificationPreview(
   return `message:${message.messageId ?? 'received'}`;
 }
 
+export async function handleBackgroundNotificationMessage(
+  message: FirebaseMessagingTypes.RemoteMessage,
+) {
+  usePermissionStore.setState({
+    lastNotificationPreview: toNotificationPreview(message),
+  });
+}
+
 export async function loadHardwarePermissionState(
   deps: BootstrapDependencies,
 ) {
@@ -125,15 +133,11 @@ export async function initializeNotificationRuntime() {
   }
 
   const unsubscribeForeground = messaging().onMessage(message => {
-    usePermissionStore.setState({
-      lastNotificationPreview: toNotificationPreview(message),
-    });
+    void handleBackgroundNotificationMessage(message);
   });
 
   const unsubscribeOpened = messaging().onNotificationOpenedApp(message => {
-    usePermissionStore.setState({
-      lastNotificationPreview: toNotificationPreview(message),
-    });
+    void handleBackgroundNotificationMessage(message);
   });
 
   return () => {
