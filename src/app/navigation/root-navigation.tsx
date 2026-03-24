@@ -6,6 +6,7 @@ import { AppButton } from '../../ui/primitives/app-button';
 import { AppScreen } from '../../ui/primitives/app-screen';
 import { AppText } from '../../ui/primitives/app-text';
 import { SectionCard } from '../../ui/patterns/section-card';
+import { UiStateCard } from '../../ui/patterns/ui-state-card';
 import type { Order, OrderCancelReason } from '../../domain/order/order';
 import { bootstrapDeps } from '../config/bootstrap-deps';
 import { saveProfile } from '../../application/user/save-profile';
@@ -427,6 +428,12 @@ export function RootNavigation(): React.JSX.Element {
     (selectedCompletedOrder && selectedCompletedOrder.orderId === selectedHistoryOrderId
       ? selectedCompletedOrder
       : null);
+  const selectedFeedbackOrder =
+    selectedCompletedOrder?.status === 'Completed'
+      ? selectedCompletedOrder
+      : selectedHistoryOrder?.status === 'Completed'
+        ? selectedHistoryOrder
+        : null;
   const selectedHistoryTransactionLog = transactionLogs.find(
     log => log.orderId === selectedHistoryOrderId,
   );
@@ -573,33 +580,60 @@ export function RootNavigation(): React.JSX.Element {
         />
       ) : null}
 
-      {activeScreen === 'post_trip_feedback' && selectedCompletedOrder ? (
-        <PostTripFeedbackScreen
-          onSkip={() => {
-            setSelectedHistoryOrderId(selectedCompletedOrder.orderId);
-            setActiveScreen('history_detail');
-          }}
-          onSubmit={handleSaveFeedback}
-          order={selectedCompletedOrder}
-        />
+      {activeScreen === 'post_trip_feedback' ? (
+        selectedFeedbackOrder ? (
+          <PostTripFeedbackScreen
+            onSkip={() => {
+              setSelectedHistoryOrderId(selectedFeedbackOrder.orderId);
+              setActiveScreen('history_detail');
+            }}
+            onSubmit={handleSaveFeedback}
+            order={selectedFeedbackOrder}
+          />
+        ) : (
+          <UiStateCard
+            eyebrow="Recovery"
+            title="Saved feedback target is no longer available"
+            description="The shell kept history intact, but this completed trip is no longer selected. Return to history and reopen the saved trip detail."
+            secondaryActionLabel="Back to history"
+            onSecondaryAction={() => {
+              setActiveScreen('history_list');
+            }}
+            tone="warning"
+          />
+        )
       ) : null}
 
-      {activeScreen === 'history_detail' && selectedHistoryOrder ? (
-        <HistoryDetailScreen
-          onBack={() => {
-            setActiveScreen('history_list');
-          }}
-          onOpenFeedback={
-            selectedHistoryOrder.status === 'Completed'
-              ? () => {
-                  setSelectedCompletedOrder(selectedHistoryOrder);
-                  setActiveScreen('post_trip_feedback');
-                }
-              : undefined
-          }
-          order={selectedHistoryOrder}
-          transactionLog={selectedHistoryTransactionLog}
-        />
+      {activeScreen === 'history_detail' ? (
+        selectedHistoryOrder ? (
+          <HistoryDetailScreen
+            onBack={() => {
+              setActiveScreen('history_list');
+            }}
+            onOpenFeedback={
+              selectedHistoryOrder.status === 'Completed'
+                ? () => {
+                    setSelectedCompletedOrder(selectedHistoryOrder);
+                    setSelectedHistoryOrderId(selectedHistoryOrder.orderId);
+                    setActiveScreen('post_trip_feedback');
+                  }
+                : undefined
+            }
+            order={selectedHistoryOrder}
+            transactionLog={selectedHistoryTransactionLog}
+          />
+        ) : (
+          <UiStateCard
+            eyebrow="Recovery"
+            title="Saved order detail is no longer available"
+            description="The selected terminal order could not be restored from the current history view. Return to history and reopen the order from the latest saved list."
+            secondaryActionLabel="Back to history"
+            onSecondaryAction={() => {
+              setActiveScreen('history_list');
+            }}
+            tone="warning"
+          />
+        )
       ) : null}
 
       {profile && activeScreen === 'active_trip' && activeOrder ? (
