@@ -5,6 +5,7 @@ import { AppText } from '../primitives/app-text';
 import { SectionCard } from './section-card';
 
 type HardwarePermissionCardProps = {
+  lastNotificationPreview?: string | null;
   locationStatus: 'idle' | 'granted' | 'denied';
   notificationTokenPreview?: string | null;
   notificationStatus: 'idle' | 'granted' | 'denied';
@@ -14,6 +15,7 @@ type HardwarePermissionCardProps = {
 };
 
 export function HardwarePermissionCard({
+  lastNotificationPreview,
   locationStatus,
   notificationTokenPreview,
   notificationStatus,
@@ -37,6 +39,11 @@ export function HardwarePermissionCard({
       {notificationTokenPreview ? (
         <AppText tone="muted">
           Notification token: {notificationTokenPreview}
+        </AppText>
+      ) : null}
+      {lastNotificationPreview ? (
+        <AppText tone="muted">
+          Last push event: {lastNotificationPreview}
         </AppText>
       ) : null}
       <AppButton

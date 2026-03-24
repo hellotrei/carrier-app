@@ -1,9 +1,43 @@
+import messaging, {
+  type FirebaseMessagingTypes,
+} from '@react-native-firebase/messaging';
+
 import { syncNotificationToken } from '../../application/user/sync-notification-token';
 import type { BootstrapDependencies } from '../../app/config/bootstrap-deps';
 import { usePermissionStore } from './permission-store';
 
 function toTokenPreview(token: string | null): string | null {
   return token ? `${token.slice(0, 6)}...${token.slice(-4)}` : null;
+}
+
+function toNotificationPreview(
+  message: FirebaseMessagingTypes.RemoteMessage | null,
+): string | null {
+  if (!message) {
+    return null;
+  }
+
+  const title = message.notification?.title?.trim();
+  const body = message.notification?.body?.trim();
+  const type = message.data?.type?.trim();
+
+  if (title && body) {
+    return `${title}: ${body}`;
+  }
+
+  if (title) {
+    return title;
+  }
+
+  if (body) {
+    return body;
+  }
+
+  if (type) {
+    return `data:${type}`;
+  }
+
+  return `message:${message.messageId ?? 'received'}`;
 }
 
 export async function loadHardwarePermissionState(
@@ -73,4 +107,37 @@ export async function requestNotificationPermission(
       notificationTokenPreview: null,
     });
   }
+}
+
+export async function initializeNotificationRuntime() {
+  try {
+    await messaging().registerDeviceForRemoteMessages();
+  } catch {
+    // Keep runtime best-effort; permission/token flow stays authoritative.
+  }
+
+  const initialNotification = await messaging().getInitialNotification();
+
+  if (initialNotification) {
+    usePermissionStore.setState({
+      lastNotificationPreview: toNotificationPreview(initialNotification),
+    });
+  }
+
+  const unsubscribeForeground = messaging().onMessage(message => {
+    usePermissionStore.setState({
+      lastNotificationPreview: toNotificationPreview(message),
+    });
+  });
+
+  const unsubscribeOpened = messaging().onNotificationOpenedApp(message => {
+    usePermissionStore.setState({
+      lastNotificationPreview: toNotificationPreview(message),
+    });
+  });
+
+  return () => {
+    unsubscribeForeground();
+    unsubscribeOpened();
+  };
 }

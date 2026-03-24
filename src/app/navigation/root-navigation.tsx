@@ -73,6 +73,9 @@ export function RootNavigation(): React.JSX.Element {
   const locationPermissionStatus = usePermissionStore(
     state => state.locationPermissionStatus,
   );
+  const lastNotificationPreview = usePermissionStore(
+    state => state.lastNotificationPreview,
+  );
   const notificationPermissionStatus = usePermissionStore(
     state => state.notificationPermissionStatus,
   );
@@ -526,6 +529,7 @@ export function RootNavigation(): React.JSX.Element {
       </SectionCard>
 
       <HardwarePermissionCard
+        lastNotificationPreview={lastNotificationPreview}
         locationStatus={locationPermissionStatus}
         notificationTokenPreview={notificationTokenPreview}
         notificationStatus={notificationPermissionStatus}

@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { initializeNotificationRuntime } from '../state/permission/permission-actions';
 import { useAppBootstrap } from './bootstrap/use-app-bootstrap';
 import { AppNavigator } from './navigation/app-navigator';
 import { AppScreen } from '../ui/primitives/app-screen';
@@ -7,6 +8,22 @@ import { AppText } from '../ui/primitives/app-text';
 
 export function RootApp(): React.JSX.Element {
   const bootstrap = useAppBootstrap();
+
+  React.useEffect(() => {
+    if (bootstrap.status !== 'ready') {
+      return;
+    }
+
+    let unsubscribe = () => {};
+
+    void initializeNotificationRuntime().then(cleanup => {
+      unsubscribe = cleanup;
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [bootstrap.status]);
 
   if (bootstrap.status === 'failed') {
     return (
