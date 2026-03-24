@@ -25,7 +25,6 @@ import { openHardwarePermissionSettings } from '../../integrations/hardware-perm
 import { ActiveTripScreen } from '../../features/active-trip/screens/active-trip-screen';
 import { AuditExportPreviewScreen } from '../../features/audit/screens/audit-export-preview-screen';
 import { HomeCustomerScreen } from '../../features/home-customer/screens/home-customer-screen';
-import { TransactionLogCsvScreen } from '../../features/history/screens/transaction-log-csv-screen';
 import { HomeMitraScreen } from '../../features/home-mitra/screens/home-mitra-screen';
 import { getExportStateErrorCopy } from '../../features/order/export-state-copy';
 import { BasicProfileScreen } from '../../features/profile/screens/basic-profile-screen';
@@ -41,6 +40,7 @@ import { AuditListRoute } from './screens/audit-list-route';
 import { HistoryDetailRoute } from './screens/history-detail-route';
 import { HistoryListRoute } from './screens/history-list-route';
 import { PostTripFeedbackRoute } from './screens/post-trip-feedback-route';
+import { TransactionCsvRoute } from './screens/transaction-csv-route';
 
 export function RootNavigation(): React.JSX.Element {
   const activeOrder = useAppShellStore(state => state.activeOrder);
@@ -59,15 +59,6 @@ export function RootNavigation(): React.JSX.Element {
     state => state.setSelectedHistoryOrderId,
   );
   const historyFilter = useHistoryStore(state => state.historyFilter);
-  const transactionCsvPreview = useExportStore(
-    state => state.transactionCsvPreview,
-  );
-  const transactionCsvExportError = useExportStore(
-    state => state.transactionCsvExportError,
-  );
-  const transactionCsvExportPath = useExportStore(
-    state => state.transactionCsvExportPath,
-  );
   const auditExportPreview = useExportStore(state => state.auditExportPreview);
   const auditExportError = useExportStore(state => state.auditExportError);
   const auditExportPath = useExportStore(state => state.auditExportPath);
@@ -374,6 +365,12 @@ export function RootNavigation(): React.JSX.Element {
   }
 
   async function handleExportTransactionCsv() {
+    const { transactionCsvPreview } = useExportStore.getState();
+
+    if (!transactionCsvPreview) {
+      return;
+    }
+
     try {
       await guardExportWithDeviceAuth(
         bootstrapDeps,
@@ -399,6 +396,8 @@ export function RootNavigation(): React.JSX.Element {
   }
 
   async function handleOpenTransactionCsvFile() {
+    const { transactionCsvExportPath } = useExportStore.getState();
+
     if (!transactionCsvExportPath) {
       return;
     }
@@ -417,6 +416,8 @@ export function RootNavigation(): React.JSX.Element {
   }
 
   async function handleShareTransactionCsvFile() {
+    const { transactionCsvExportPath } = useExportStore.getState();
+
     if (!transactionCsvExportPath) {
       return;
     }
@@ -618,10 +619,7 @@ export function RootNavigation(): React.JSX.Element {
       ) : null}
 
       {activeScreen === 'transaction_csv' ? (
-        <TransactionLogCsvScreen
-          csvContent={transactionCsvPreview}
-          exportError={transactionCsvExportError}
-          exportedFilePath={transactionCsvExportPath}
+        <TransactionCsvRoute
           onBack={() => {
             setActiveScreen('history_list');
           }}
