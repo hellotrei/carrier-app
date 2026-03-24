@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { useAppBootstrap } from './bootstrap/use-app-bootstrap';
-import { RootNavigation } from './navigation/root-navigation';
+import { AppNavigator } from './navigation/app-navigator';
 import { AppScreen } from '../ui/primitives/app-screen';
 import { AppText } from '../ui/primitives/app-text';
 
@@ -34,5 +34,5 @@ export function RootApp(): React.JSX.Element {
     );
   }
 
-  return <RootNavigation />;
+  return <AppNavigator />;
 }
