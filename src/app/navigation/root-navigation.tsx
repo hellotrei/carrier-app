@@ -237,7 +237,7 @@ export function RootNavigation(): React.JSX.Element {
 
     setDraftError(null);
     setActiveOrder(result.value);
-    setActiveScreen('active_trip');
+    goToScreen('active_trip');
   }
 
   async function handleAdvanceOrder(nextStatus: Parameters<
@@ -282,7 +282,7 @@ export function RootNavigation(): React.JSX.Element {
       setSelectedCompletedOrder(null);
       setSelectedHistoryOrderId(result.value.order.orderId);
       await refreshHistorySnapshot('all');
-      setActiveScreen('history_detail');
+      goToScreen('history_detail');
       return;
     }
 
@@ -306,7 +306,7 @@ export function RootNavigation(): React.JSX.Element {
       setHistoryFilter('all');
       setSelectedHistoryOrderId(result.value.order.orderId);
       await refreshHistorySnapshot('all');
-      setActiveScreen('history_detail');
+      goToScreen('history_detail');
       return;
     }
 
@@ -326,11 +326,11 @@ export function RootNavigation(): React.JSX.Element {
 
     setDraftError(null);
     setActiveOrder(null);
-    setActiveScreen('home');
+    goToScreen('home');
   }
 
   async function handleOpenHistory() {
-    setActiveScreen('history_list');
+    goToScreen('history_list');
   }
 
   async function handleRequestLocationPermission() {
@@ -521,7 +521,7 @@ export function RootNavigation(): React.JSX.Element {
     setSelectedCompletedOrder(result.value);
     setSelectedHistoryOrderId(result.value.orderId);
     await refreshHistorySnapshot(historyFilter);
-    setActiveScreen('history_detail');
+    goToScreen('history_detail');
   }
 
   return (
