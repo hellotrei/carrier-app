@@ -37,6 +37,7 @@ import { HomeMitraScreen } from '../../features/home-mitra/screens/home-mitra-sc
 import { getExportStateErrorCopy } from '../../features/order/export-state-copy';
 import { BasicProfileScreen } from '../../features/profile/screens/basic-profile-screen';
 import { useAppStore } from '../../state/store/app-store';
+import { HardwarePermissionCard } from '../../ui/patterns/hardware-permission-card';
 import { RecoveryBanner } from '../../ui/patterns/recovery-banner';
 
 export function RootNavigation(): React.JSX.Element {
@@ -518,32 +519,16 @@ export function RootNavigation(): React.JSX.Element {
         }} />
       </SectionCard>
 
-      <SectionCard
-        eyebrow="Hardware"
-        title="Permission shell"
-        description="Location and notification permissions can be requested here without crossing the existing app boundary."
-      >
-        <AppText tone="muted">
-          Location permission: {locationPermissionStatus}
-        </AppText>
-        <AppText tone="muted">
-          Notification permission: {notificationPermissionStatus}
-        </AppText>
-        <AppButton
-          label="Request location permission"
-          kind="secondary"
-          onPress={() => {
-            void handleRequestLocationPermission();
-          }}
-        />
-        <AppButton
-          label="Request notification permission"
-          kind="secondary"
-          onPress={() => {
-            void handleRequestNotificationPermission();
-          }}
-        />
-      </SectionCard>
+      <HardwarePermissionCard
+        locationStatus={locationPermissionStatus}
+        notificationStatus={notificationPermissionStatus}
+        onRequestLocation={() => {
+          void handleRequestLocationPermission();
+        }}
+        onRequestNotifications={() => {
+          void handleRequestNotificationPermission();
+        }}
+      />
 
       {activeOrder ? (
         <RecoveryBanner
