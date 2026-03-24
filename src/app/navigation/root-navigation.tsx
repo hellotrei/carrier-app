@@ -22,7 +22,6 @@ import {
   shareExportedFile,
 } from '../../integrations/file-export/file-export-actions';
 import { openHardwarePermissionSettings } from '../../integrations/hardware-permission/hardware-permission-actions';
-import { ActiveTripScreen } from '../../features/active-trip/screens/active-trip-screen';
 import { HomeCustomerScreen } from '../../features/home-customer/screens/home-customer-screen';
 import { HomeMitraScreen } from '../../features/home-mitra/screens/home-mitra-screen';
 import { getExportStateErrorCopy } from '../../features/order/export-state-copy';
@@ -35,6 +34,7 @@ import { useHistoryStore } from '../../state/history/history-store';
 import { usePermissionStore } from '../../state/permission/permission-store';
 import { HardwarePermissionCard } from '../../ui/patterns/hardware-permission-card';
 import { RecoveryBanner } from '../../ui/patterns/recovery-banner';
+import { ActiveTripRoute } from './screens/active-trip-route';
 import { AuditExportPreviewRoute } from './screens/audit-export-preview-route';
 import { AuditListRoute } from './screens/audit-list-route';
 import { HistoryDetailRoute } from './screens/history-detail-route';
@@ -680,9 +680,8 @@ export function RootNavigation(): React.JSX.Element {
         />
       ) : null}
 
-      {profile && activeScreen === 'active_trip' && activeOrder ? (
-        <ActiveTripScreen
-          activeRole={activeRole}
+      {activeScreen === 'active_trip' ? (
+        <ActiveTripRoute
           onAdvance={nextStatus => {
             void handleAdvanceOrder(nextStatus);
           }}
@@ -692,7 +691,6 @@ export function RootNavigation(): React.JSX.Element {
           onCancel={reason => {
             void handleCancelOrder(reason);
           }}
-          order={activeOrder}
         />
       ) : null}
 
