@@ -33,6 +33,7 @@ import { usePermissionStore } from '../../state/permission/permission-store';
 import { HardwarePermissionCard } from '../../ui/patterns/hardware-permission-card';
 import { RecoveryBanner } from '../../ui/patterns/recovery-banner';
 import type { RootScreen } from './app-stack-param-list';
+import { resolveStackRouteName } from './resolve-stack-route';
 import { ActiveTripRoute } from './screens/active-trip-route';
 import { AuditExportPreviewRoute } from './screens/audit-export-preview-route';
 import { AuditListRoute } from './screens/audit-list-route';
@@ -89,6 +90,7 @@ export function RootNavigation(): React.JSX.Element {
   const [draftError, setDraftError] = React.useState<string | null>(null);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [selectedCompletedOrder, setSelectedCompletedOrder] = React.useState<Order | null>(null);
+  const activeStackRoute = resolveStackRouteName(activeScreen);
 
   const loadHardwarePermissionState = React.useCallback(async () => {
     try {
@@ -573,6 +575,9 @@ export function RootNavigation(): React.JSX.Element {
         <AppText tone="muted">
           Active order: {activeOrder ? activeOrder.status : 'None'}
         </AppText>
+        <AppText tone="muted">
+          Target route: {activeStackRoute}
+        </AppText>
         <AppButton label="Open history" kind="secondary" onPress={() => {
           void handleOpenHistory();
         }} />
@@ -596,7 +601,7 @@ export function RootNavigation(): React.JSX.Element {
       {activeOrder && getHasRecoverableOrder(activeOrder) ? (
         <RecoveryBanner
           onResume={() => {
-            setActiveScreen(resumeTarget);
+            goToScreen(resumeTarget);
           }}
           order={activeOrder}
         />
