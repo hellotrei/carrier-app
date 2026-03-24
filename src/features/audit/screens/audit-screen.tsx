@@ -10,6 +10,7 @@ type AuditFilter = 'all' | 'feedback' | 'order' | 'transaction';
 type AuditScreenProps = {
   events: AuditManifestEntry[];
   onBack: () => void;
+  onPreviewExport: (events: AuditManifestEntry[]) => void;
 };
 
 function matchesFilter(
@@ -34,6 +35,7 @@ function matchesFilter(
 export function AuditScreen({
   events,
   onBack,
+  onPreviewExport,
 }: AuditScreenProps): React.JSX.Element {
   const [filter, setFilter] = React.useState<AuditFilter>('all');
   const filteredEvents = events.filter(event => matchesFilter(event, filter));
@@ -90,6 +92,11 @@ export function AuditScreen({
           <AppText tone="muted">Payload: {event.payloadJson}</AppText>
         </SectionCard>
       ))}
+      <AppButton
+        label="Preview audit export"
+        kind="secondary"
+        onPress={() => onPreviewExport(filteredEvents)}
+      />
       <AppButton label="Back to history" kind="secondary" onPress={onBack} />
     </SectionCard>
   );

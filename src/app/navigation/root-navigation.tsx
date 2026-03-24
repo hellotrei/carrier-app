@@ -11,10 +11,12 @@ import { saveProfile } from '../../application/user/save-profile';
 import { advanceOrderStatus } from '../../application/order/advance-order-status';
 import { cancelOrder } from '../../application/order/cancel-order';
 import { createOrderDraft } from '../../application/order/create-order-draft';
+import { exportAuditBundlePreview } from '../../application/order/export-audit-bundle-preview';
 import { exportTransactionLogCsv } from '../../application/order/export-transaction-log-csv';
 import { savePostTripFeedback } from '../../application/order/save-post-trip-feedback';
 import { submitOrderDraft } from '../../application/order/submit-order-draft';
 import { ActiveTripScreen } from '../../features/active-trip/screens/active-trip-screen';
+import { AuditExportPreviewScreen } from '../../features/audit/screens/audit-export-preview-screen';
 import { AuditScreen } from '../../features/audit/screens/audit-screen';
 import { PostTripFeedbackScreen } from '../../features/feedback/screens/post-trip-feedback-screen';
 import { HomeCustomerScreen } from '../../features/home-customer/screens/home-customer-screen';
@@ -39,7 +41,7 @@ export function RootNavigation(): React.JSX.Element {
   const setActiveRole = useAppStore(state => state.setActiveRole);
   const setProfile = useAppStore(state => state.setProfile);
   const [activeScreen, setActiveScreen] = React.useState<
-    'home' | 'active_trip' | 'history_list' | 'history_detail' | 'post_trip_feedback' | 'audit_list' | 'transaction_csv'
+    'home' | 'active_trip' | 'history_list' | 'history_detail' | 'post_trip_feedback' | 'audit_list' | 'transaction_csv' | 'audit_export_preview'
   >('home');
   const [draftError, setDraftError] = React.useState<string | null>(null);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
@@ -56,6 +58,7 @@ export function RootNavigation(): React.JSX.Element {
     ReturnType<typeof bootstrapDeps.auditRepository.listEvents>
   >>([]);
   const [transactionCsvPreview, setTransactionCsvPreview] = React.useState('');
+  const [auditExportPreview, setAuditExportPreview] = React.useState('');
 
   async function handleRoleChange(role: 'customer' | 'mitra') {
     setActiveRole(role);
@@ -402,6 +405,19 @@ export function RootNavigation(): React.JSX.Element {
           onBack={() => {
             setActiveScreen('history_list');
           }}
+          onPreviewExport={events => {
+            setAuditExportPreview(exportAuditBundlePreview(events));
+            setActiveScreen('audit_export_preview');
+          }}
+        />
+      ) : null}
+
+      {activeScreen === 'audit_export_preview' ? (
+        <AuditExportPreviewScreen
+          onBack={() => {
+            setActiveScreen('audit_list');
+          }}
+          previewContent={auditExportPreview}
         />
       ) : null}
 
