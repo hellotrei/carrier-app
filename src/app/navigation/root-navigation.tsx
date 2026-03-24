@@ -39,6 +39,11 @@ import { HomeMitraScreen } from '../../features/home-mitra/screens/home-mitra-sc
 import { getExportStateErrorCopy } from '../../features/order/export-state-copy';
 import { BasicProfileScreen } from '../../features/profile/screens/basic-profile-screen';
 import { useExportStore } from '../../state/export/export-store';
+import {
+  getSelectedFeedbackOrder,
+  getSelectedHistoryOrder,
+  getSelectedHistoryTransactionLog,
+} from '../../state/history/history-selectors';
 import { useHistoryStore } from '../../state/history/history-store';
 import { usePermissionStore } from '../../state/permission/permission-store';
 import { useAppStore } from '../../state/store/app-store';
@@ -542,21 +547,19 @@ export function RootNavigation(): React.JSX.Element {
     setActiveScreen('history_detail');
   }
 
-  const selectedHistoryOrder = historyOrders.find(
-    order => order.orderId === selectedHistoryOrderId,
-  ) ??
-    (selectedCompletedOrder && selectedCompletedOrder.orderId === selectedHistoryOrderId
-      ? selectedCompletedOrder
-      : null);
-  const selectedFeedbackOrder =
-    selectedCompletedOrder?.status === 'Completed'
-      ? selectedCompletedOrder
-      : selectedHistoryOrder?.status === 'Completed'
-        ? selectedHistoryOrder
-        : null;
-  const selectedHistoryTransactionLog = transactionLogs.find(
-    log => log.orderId === selectedHistoryOrderId,
-  );
+  const selectedHistoryOrder = getSelectedHistoryOrder({
+    historyOrders,
+    selectedCompletedOrder,
+    selectedHistoryOrderId,
+  });
+  const selectedFeedbackOrder = getSelectedFeedbackOrder({
+    selectedCompletedOrder,
+    selectedHistoryOrder,
+  });
+  const selectedHistoryTransactionLog = getSelectedHistoryTransactionLog({
+    selectedHistoryOrderId,
+    transactionLogs,
+  });
 
   return (
     <AppScreen scrollable>
