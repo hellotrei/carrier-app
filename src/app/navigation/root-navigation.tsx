@@ -32,6 +32,7 @@ import { useHistoryStore } from '../../state/history/history-store';
 import { usePermissionStore } from '../../state/permission/permission-store';
 import { HardwarePermissionCard } from '../../ui/patterns/hardware-permission-card';
 import { RecoveryBanner } from '../../ui/patterns/recovery-banner';
+import type { RootScreen } from './app-stack-param-list';
 import { ActiveTripRoute } from './screens/active-trip-route';
 import { AuditExportPreviewRoute } from './screens/audit-export-preview-route';
 import { AuditListRoute } from './screens/audit-list-route';
@@ -40,16 +41,6 @@ import { HistoryListRoute } from './screens/history-list-route';
 import { HomeRoute } from './screens/home-route';
 import { PostTripFeedbackRoute } from './screens/post-trip-feedback-route';
 import { TransactionCsvRoute } from './screens/transaction-csv-route';
-
-type RootScreen =
-  | 'home'
-  | 'active_trip'
-  | 'history_list'
-  | 'history_detail'
-  | 'post_trip_feedback'
-  | 'audit_list'
-  | 'transaction_csv'
-  | 'audit_export_preview';
 
 export function RootNavigation(): React.JSX.Element {
   const activeOrder = useAppShellStore(state => state.activeOrder);
