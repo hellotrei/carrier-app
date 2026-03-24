@@ -6,12 +6,15 @@ import type { OrderRepositoryPort } from '../../data/repositories/order-reposito
 import type { UserRepositoryPort } from '../../data/repositories/user-repository-port';
 import type { SecureStoragePort } from '../../data/storage/secure-storage-port';
 import { SECURE_STORAGE_KEYS } from '../../data/storage/secure-storage-keys';
+import type { ResumeTarget } from '../../state/app-shell/app-shell-selectors';
+import { resolveResumeTarget } from '../../state/app-shell/app-shell-selectors';
 
 export type BootstrapSnapshot = {
   activeOrder: Order | null;
   bootstrapDone: boolean;
   deviceBindingPresent: boolean;
   profile: UserProfile | null;
+  resumeTarget: ResumeTarget;
 };
 
 export type BootstrapAppDeps = {
@@ -47,5 +50,6 @@ export async function bootstrapApp({
     bootstrapDone: true,
     deviceBindingPresent: Boolean(deviceBindingId),
     profile,
+    resumeTarget: resolveResumeTarget(activeOrder),
   };
 }

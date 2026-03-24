@@ -38,6 +38,7 @@ import { TransactionLogCsvScreen } from '../../features/history/screens/transact
 import { HomeMitraScreen } from '../../features/home-mitra/screens/home-mitra-screen';
 import { getExportStateErrorCopy } from '../../features/order/export-state-copy';
 import { BasicProfileScreen } from '../../features/profile/screens/basic-profile-screen';
+import { getHasRecoverableOrder } from '../../state/app-shell/app-shell-selectors';
 import { useAppShellStore } from '../../state/app-shell/app-shell-store';
 import { useExportStore } from '../../state/export/export-store';
 import {
@@ -56,6 +57,7 @@ export function RootNavigation(): React.JSX.Element {
   const bootstrapDone = useAppShellStore(state => state.bootstrapDone);
   const deviceBindingPresent = useAppShellStore(state => state.deviceBindingPresent);
   const profile = useAppShellStore(state => state.profile);
+  const resumeTarget = useAppShellStore(state => state.resumeTarget);
   const setDeviceBindingPresent = useAppShellStore(
     state => state.setDeviceBindingPresent,
   );
@@ -630,10 +632,10 @@ export function RootNavigation(): React.JSX.Element {
         }}
       />
 
-      {activeOrder ? (
+      {activeOrder && getHasRecoverableOrder(activeOrder) ? (
         <RecoveryBanner
           onResume={() => {
-            setActiveScreen('active_trip');
+            setActiveScreen(resumeTarget);
           }}
           order={activeOrder}
         />
