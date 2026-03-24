@@ -75,6 +75,12 @@ export function RootNavigation(): React.JSX.Element {
   const [auditExportError, setAuditExportError] = React.useState<string | null>(null);
   const [auditExportPath, setAuditExportPath] = React.useState<string | null>(null);
   const [auditBundleFiles, setAuditBundleFiles] = React.useState<Record<string, string>>({});
+  const [locationPermissionStatus, setLocationPermissionStatus] = React.useState<
+    'idle' | 'granted' | 'denied'
+  >('idle');
+  const [notificationPermissionStatus, setNotificationPermissionStatus] = React.useState<
+    'idle' | 'granted' | 'denied'
+  >('idle');
 
   async function handleRoleChange(role: 'customer' | 'mitra') {
     setActiveRole(role);
@@ -278,6 +284,26 @@ export function RootNavigation(): React.JSX.Element {
   async function handleOpenHistory() {
     await loadHistory(historyFilter);
     setActiveScreen('history_list');
+  }
+
+  async function handleRequestLocationPermission() {
+    try {
+      const granted =
+        await bootstrapDeps.hardwarePermissionGateway.requestLocationWhenInUse();
+      setLocationPermissionStatus(granted ? 'granted' : 'denied');
+    } catch {
+      setLocationPermissionStatus('denied');
+    }
+  }
+
+  async function handleRequestNotificationPermission() {
+    try {
+      const granted =
+        await bootstrapDeps.hardwarePermissionGateway.requestNotifications();
+      setNotificationPermissionStatus(granted ? 'granted' : 'denied');
+    } catch {
+      setNotificationPermissionStatus('denied');
+    }
   }
 
   async function handleExportTransactionCsv() {
@@ -490,6 +516,33 @@ export function RootNavigation(): React.JSX.Element {
         <AppButton label="Open history" kind="secondary" onPress={() => {
           void handleOpenHistory();
         }} />
+      </SectionCard>
+
+      <SectionCard
+        eyebrow="Hardware"
+        title="Permission shell"
+        description="Location and notification permissions can be requested here without crossing the existing app boundary."
+      >
+        <AppText tone="muted">
+          Location permission: {locationPermissionStatus}
+        </AppText>
+        <AppText tone="muted">
+          Notification permission: {notificationPermissionStatus}
+        </AppText>
+        <AppButton
+          label="Request location permission"
+          kind="secondary"
+          onPress={() => {
+            void handleRequestLocationPermission();
+          }}
+        />
+        <AppButton
+          label="Request notification permission"
+          kind="secondary"
+          onPress={() => {
+            void handleRequestNotificationPermission();
+          }}
+        />
       </SectionCard>
 
       {activeOrder ? (

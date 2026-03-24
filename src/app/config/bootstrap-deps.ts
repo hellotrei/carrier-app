@@ -5,6 +5,7 @@ import { createSqliteTransactionLogRepository } from '../../data/repositories/sq
 import { createSqliteUserRepository } from '../../data/repositories/sqlite-user-repository';
 import { createNativeDeviceAuthGateway } from '../../integrations/device-auth/native-device-auth-gateway';
 import { createNativeFileExportGateway } from '../../integrations/file-export/native-file-export-gateway';
+import { createNativeHardwarePermissionGateway } from '../../integrations/hardware-permission/native-hardware-permission-gateway';
 import { createKeychainSecureStorage } from '../../data/storage/keychain-secure-storage';
 
 const database = createCarrierDatabase();
@@ -14,6 +15,7 @@ export const bootstrapDeps = {
   database,
   deviceAuthGateway: createNativeDeviceAuthGateway(),
   fileExportGateway: createNativeFileExportGateway(),
+  hardwarePermissionGateway: createNativeHardwarePermissionGateway(),
   orderRepository: createSqliteOrderRepository(database),
   secureStorage: createKeychainSecureStorage(),
   transactionLogRepository: createSqliteTransactionLogRepository(database),

@@ -1,5 +1,6 @@
 import UIKit
 import React
+import CoreLocation
 import React_RCTAppDelegate
 import ReactAppDependencyProvider
 
@@ -131,5 +132,65 @@ class FileExportModule: NSObject, RCTBridgeModule {
     } catch {
       reject("FILE_EXPORT_FAILED", error.localizedDescription, error)
     }
+  }
+}
+
+@objc(LocationPermissionModule)
+class LocationPermissionModule: NSObject, RCTBridgeModule, CLLocationManagerDelegate {
+  private var locationManager: CLLocationManager?
+  private var pendingResolve: RCTPromiseResolveBlock?
+
+  static func moduleName() -> String! {
+    "LocationPermissionModule"
+  }
+
+  @objc
+  static func requiresMainQueueSetup() -> Bool {
+    true
+  }
+
+  @objc(requestWhenInUseAuthorization:rejecter:)
+  func requestWhenInUseAuthorization(
+    _ resolve: @escaping RCTPromiseResolveBlock,
+    rejecter reject: @escaping RCTPromiseRejectBlock
+  ) {
+    let status = CLLocationManager.authorizationStatus()
+
+    if status == .authorizedAlways || status == .authorizedWhenInUse {
+      resolve(true)
+      return
+    }
+
+    if status == .denied || status == .restricted {
+      resolve(false)
+      return
+    }
+
+    pendingResolve = resolve
+
+    let manager = CLLocationManager()
+    manager.delegate = self
+    locationManager = manager
+    manager.requestWhenInUseAuthorization()
+  }
+
+  func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+    let status = manager.authorizationStatus
+
+    if status == .authorizedAlways || status == .authorizedWhenInUse {
+      pendingResolve?(true)
+      clearPendingCallbacks()
+      return
+    }
+
+    if status == .denied || status == .restricted {
+      pendingResolve?(false)
+      clearPendingCallbacks()
+    }
+  }
+
+  private func clearPendingCallbacks() {
+    pendingResolve = nil
+    locationManager = nil
   }
 }
