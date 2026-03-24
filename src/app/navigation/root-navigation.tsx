@@ -23,7 +23,6 @@ import {
 } from '../../integrations/file-export/file-export-actions';
 import { openHardwarePermissionSettings } from '../../integrations/hardware-permission/hardware-permission-actions';
 import { ActiveTripScreen } from '../../features/active-trip/screens/active-trip-screen';
-import { AuditExportPreviewScreen } from '../../features/audit/screens/audit-export-preview-screen';
 import { HomeCustomerScreen } from '../../features/home-customer/screens/home-customer-screen';
 import { HomeMitraScreen } from '../../features/home-mitra/screens/home-mitra-screen';
 import { getExportStateErrorCopy } from '../../features/order/export-state-copy';
@@ -36,6 +35,7 @@ import { useHistoryStore } from '../../state/history/history-store';
 import { usePermissionStore } from '../../state/permission/permission-store';
 import { HardwarePermissionCard } from '../../ui/patterns/hardware-permission-card';
 import { RecoveryBanner } from '../../ui/patterns/recovery-banner';
+import { AuditExportPreviewRoute } from './screens/audit-export-preview-route';
 import { AuditListRoute } from './screens/audit-list-route';
 import { HistoryDetailRoute } from './screens/history-detail-route';
 import { HistoryListRoute } from './screens/history-list-route';
@@ -59,10 +59,6 @@ export function RootNavigation(): React.JSX.Element {
     state => state.setSelectedHistoryOrderId,
   );
   const historyFilter = useHistoryStore(state => state.historyFilter);
-  const auditExportPreview = useExportStore(state => state.auditExportPreview);
-  const auditExportError = useExportStore(state => state.auditExportError);
-  const auditExportPath = useExportStore(state => state.auditExportPath);
-  const auditBundleFiles = useExportStore(state => state.auditBundleFiles);
   const setTransactionCsvExportError = useExportStore(
     state => state.setTransactionCsvExportError,
   );
@@ -436,6 +432,12 @@ export function RootNavigation(): React.JSX.Element {
   }
 
   async function handleExportAuditBundle() {
+    const { auditBundleFiles } = useExportStore.getState();
+
+    if (!auditBundleFiles) {
+      return;
+    }
+
     try {
       await guardExportWithDeviceAuth(
         bootstrapDeps,
@@ -461,6 +463,8 @@ export function RootNavigation(): React.JSX.Element {
   }
 
   async function handleOpenAuditBundleFile() {
+    const { auditExportPath } = useExportStore.getState();
+
     if (!auditExportPath) {
       return;
     }
@@ -479,6 +483,8 @@ export function RootNavigation(): React.JSX.Element {
   }
 
   async function handleShareAuditBundleFile() {
+    const { auditExportPath } = useExportStore.getState();
+
     if (!auditExportPath) {
       return;
     }
@@ -641,16 +647,13 @@ export function RootNavigation(): React.JSX.Element {
       ) : null}
 
       {activeScreen === 'audit_export_preview' ? (
-        <AuditExportPreviewScreen
-          exportError={auditExportError}
-          exportedFilePath={auditExportPath}
+        <AuditExportPreviewRoute
           onBack={() => {
             setActiveScreen('audit_list');
           }}
           onExport={handleExportAuditBundle}
           onOpenExportedFile={handleOpenAuditBundleFile}
           onShareExportedFile={handleShareAuditBundleFile}
-          previewContent={auditExportPreview}
         />
       ) : null}
 
