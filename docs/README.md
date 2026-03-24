@@ -50,6 +50,7 @@ Yang sudah ada:
 - flow order sprint 3 sudah hidup dan di-harden
 - flow sprint 4 untuk history, feedback, audit, export, dan recovery hardening sudah hidup
 - local-first persistence dan native export gateway
+- navigation boundary yang sudah dipisah: `AppNavigator`, `RootNavigation`, dan route containers di `src/app/navigation/screens`
 
 Yang masih berlangsung:
 - penyempurnaan relay/signaling penuh

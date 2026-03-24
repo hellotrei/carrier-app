@@ -90,6 +90,7 @@ Carrier sekarang sudah punya:
 - source code React Native
 - actual mobile modules untuk order, history, audit, feedback, dan export flow
 - local-first persistence, audit manifest, transaction log, dan native file export gateway
+- navigation shell yang sudah dipisah menjadi `AppNavigator`, `RootNavigation`, dan route containers per flow utama
 
 Yang belum ada di repo ini sekarang:
 - production-ready infra implementation end-to-end
@@ -251,6 +252,7 @@ Contributors yang tertarik ke repo ini biasanya akan suka karena project ini men
 |---|---|
 | Product design | banyak tradeoff nyata antara fairness, cost, dan usability |
 | Mobile architecture | local-first, recovery, offline state, secure storage |
+| Navigation architecture | app navigator shell, route containers, dan recovery-oriented orchestration |
 | Realtime systems | thin relay, signaling, eventual recovery |
 | Trust & safety | anti-abuse, mismatch, trust enforcement |
 | UX writing | warm, non-judgmental, context-aware interaction |
