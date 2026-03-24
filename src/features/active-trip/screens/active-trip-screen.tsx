@@ -7,6 +7,7 @@ import type {
   OrderCancelReason,
   OrderStatus,
 } from '../../../domain/order/order';
+import { canCancelOrderWithReason } from '../../../domain/order/order';
 import {
   getActiveTripHandoffNote,
   getActiveTripRoleSummary,
@@ -57,6 +58,11 @@ function getPrimaryAction(
       };
     case 'OnTheWay':
       return {
+        label: 'Arrived at pickup',
+        nextStatus: 'ArrivedAtPickup',
+      };
+    case 'ArrivedAtPickup':
+      return {
         label: 'Start trip',
         nextStatus: 'OnTrip',
       };
@@ -80,6 +86,19 @@ export function ActiveTripScreen({
   const isDraft = order.status === 'Draft';
   const primaryAction = getPrimaryAction(activeRole, order.status);
   const partnerCancelLabels = getPartnerCancelLabels(order.status);
+  const canCustomerReportPickupMismatch = canCancelOrderWithReason(
+    order.status,
+    'pickup_mismatch',
+  );
+  const canPartnerReportNoShow = canCancelOrderWithReason(order.status, 'no_show');
+  const canPartnerReportIdentityMismatch = canCancelOrderWithReason(
+    order.status,
+    'identity_mismatch',
+  );
+  const canPartnerReportUnsafe = canCancelOrderWithReason(
+    order.status,
+    'unsafe_or_suspicious',
+  );
 
   return (
     <SectionCard
@@ -137,28 +156,36 @@ export function ActiveTripScreen({
           {getSecondaryActionTitle(activeRole, order.status)}
         </AppText>
         {activeRole === 'customer' ? (
-          <AppButton
-            label={getCustomerCancelLabel(order.status)}
-            kind="secondary"
-            onPress={() => onCancel('pickup_mismatch')}
-          />
+          canCustomerReportPickupMismatch ? (
+            <AppButton
+              label={getCustomerCancelLabel(order.status)}
+              kind="secondary"
+              onPress={() => onCancel('pickup_mismatch')}
+            />
+          ) : null
         ) : (
           <>
-            <AppButton
-              label={partnerCancelLabels.noShow}
-              kind="secondary"
-              onPress={() => onCancel('no_show')}
-            />
-            <AppButton
-              label={partnerCancelLabels.identityMismatch}
-              kind="secondary"
-              onPress={() => onCancel('identity_mismatch')}
-            />
-            <AppButton
-              label={partnerCancelLabels.unsafe}
-              kind="secondary"
-              onPress={() => onCancel('unsafe_or_suspicious')}
-            />
+            {canPartnerReportNoShow ? (
+              <AppButton
+                label={partnerCancelLabels.noShow}
+                kind="secondary"
+                onPress={() => onCancel('no_show')}
+              />
+            ) : null}
+            {canPartnerReportIdentityMismatch ? (
+              <AppButton
+                label={partnerCancelLabels.identityMismatch}
+                kind="secondary"
+                onPress={() => onCancel('identity_mismatch')}
+              />
+            ) : null}
+            {canPartnerReportUnsafe ? (
+              <AppButton
+                label={partnerCancelLabels.unsafe}
+                kind="secondary"
+                onPress={() => onCancel('unsafe_or_suspicious')}
+              />
+            ) : null}
           </>
         )}
       </View>

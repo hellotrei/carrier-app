@@ -1,6 +1,5 @@
 import { asOrderId, asUserId } from '../../core/types/ids';
 import type { Order } from '../../domain/order/order';
-import { isTerminalOrderStatus } from '../../domain/order/order';
 import type { SqlStatementExecutor } from '../db/sqlite/database-port';
 import type { OrderRepositoryPort } from './order-repository-port';
 
@@ -71,6 +70,7 @@ export function createSqliteOrderRepository(
           status_updated_at,
           updated_at
         FROM order_table
+        WHERE status NOT IN ('Completed', 'Canceled', 'Rejected', 'Expired')
         ORDER BY updated_at DESC
         LIMIT 1`,
       );
@@ -81,7 +81,7 @@ export function createSqliteOrderRepository(
 
       const order = mapRowToOrder(row);
 
-      return isTerminalOrderStatus(order.status) ? null : order;
+      return order;
     },
     async saveOrder(order) {
       await database.execute(

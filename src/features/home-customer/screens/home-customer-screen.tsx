@@ -10,7 +10,10 @@ import { SectionCard } from '../../../ui/patterns/section-card';
 
 type HomeCustomerScreenProps = {
   activeOrderStatus:
-    | Extract<OrderStatus, 'Draft' | 'Requested' | 'Accepted' | 'OnTheWay' | 'OnTrip'>
+    | Extract<
+        OrderStatus,
+        'Draft' | 'Requested' | 'Accepted' | 'OnTheWay' | 'ArrivedAtPickup' | 'OnTrip'
+      >
     | undefined;
   activeOrderSummary: {
     destinationLabel: string;

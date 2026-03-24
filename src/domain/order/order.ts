@@ -5,6 +5,7 @@ export type OrderStatus =
   | 'Requested'
   | 'Accepted'
   | 'OnTheWay'
+  | 'ArrivedAtPickup'
   | 'OnTrip'
   | 'Completed'
   | 'Canceled'
@@ -50,4 +51,32 @@ export function isTerminalOrderStatus(status: OrderStatus): boolean {
     status === 'Rejected' ||
     status === 'Expired'
   );
+}
+
+export function canCancelOrderWithReason(
+  status: OrderStatus,
+  reason: OrderCancelReason,
+): boolean {
+  switch (reason) {
+    case 'no_show':
+      return status === 'ArrivedAtPickup';
+    case 'pickup_mismatch':
+      return (
+        status === 'Draft' ||
+        status === 'Requested' ||
+        status === 'Accepted' ||
+        status === 'OnTheWay' ||
+        status === 'ArrivedAtPickup'
+      );
+    case 'identity_mismatch':
+      return status !== 'Draft' && status !== 'OnTrip';
+    case 'unsafe_or_suspicious':
+      return status !== 'Draft';
+    case 'contact_mismatch':
+      return status === 'Requested' || status === 'Accepted';
+    case 'other':
+      return status === 'Draft';
+    default:
+      return false;
+  }
 }

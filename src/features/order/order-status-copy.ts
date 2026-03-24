@@ -16,6 +16,10 @@ export function getCustomerHomeStatusDescription(
     return 'Mitra is already heading to pickup. Resume the active flow to track the next step.';
   }
 
+  if (status === 'ArrivedAtPickup') {
+    return 'Mitra has arrived at pickup. Resume the active flow to continue pickup handling before the trip starts.';
+  }
+
   if (status === 'OnTrip') {
     return 'Trip is already in progress. Resume the active flow for the latest trip state.';
   }
@@ -32,7 +36,11 @@ export function getRecoveryResumeHint(status: OrderStatus): string {
     return 'Resume returns you to the active handoff flow so the next actor can continue from the saved request.';
   }
 
-  if (status === 'Accepted' || status === 'OnTheWay') {
+  if (
+    status === 'Accepted' ||
+    status === 'OnTheWay' ||
+    status === 'ArrivedAtPickup'
+  ) {
     return 'Resume returns you to the active pickup flow with the latest saved booking summary.';
   }
 
@@ -48,7 +56,11 @@ export function getRecoveryResumeLabel(status: OrderStatus): string {
     return 'Resume handoff';
   }
 
-  if (status === 'Accepted' || status === 'OnTheWay') {
+  if (
+    status === 'Accepted' ||
+    status === 'OnTheWay' ||
+    status === 'ArrivedAtPickup'
+  ) {
     return 'Resume pickup flow';
   }
 
@@ -64,7 +76,11 @@ export function getRecoveryActiveActorHint(status: OrderStatus): string {
     return 'Primary actor on resume: Mitra review';
   }
 
-  if (status === 'Accepted' || status === 'OnTheWay') {
+  if (
+    status === 'Accepted' ||
+    status === 'OnTheWay' ||
+    status === 'ArrivedAtPickup'
+  ) {
     return 'Primary actor on resume: Mitra pickup flow';
   }
 
@@ -103,7 +119,11 @@ export function getActiveTripHandoffNote(
       return 'Customer has already handed this request to mitra and now waits for acceptance or the next operational update.';
     }
 
-    if (status === 'Accepted' || status === 'OnTheWay') {
+    if (
+      status === 'Accepted' ||
+      status === 'OnTheWay' ||
+      status === 'ArrivedAtPickup'
+    ) {
       return 'Customer should monitor progress while mitra handles pickup execution from the active flow.';
     }
 
@@ -116,7 +136,11 @@ export function getActiveTripHandoffNote(
     return 'Mitra is now responsible for reviewing and accepting the saved request before any pickup progress begins.';
   }
 
-  if (status === 'Accepted' || status === 'OnTheWay') {
+  if (
+    status === 'Accepted' ||
+    status === 'OnTheWay' ||
+    status === 'ArrivedAtPickup'
+  ) {
     return 'Mitra owns the next operational step and should keep the saved booking summary aligned with on-road execution.';
   }
 
@@ -143,12 +167,20 @@ export function getPartnerCancelLabels(status: OrderStatus): {
   if (status === 'Requested') {
     return {
       identityMismatch: 'Decline request: identity mismatch',
-      noShow: 'Decline request: no show',
+      noShow: 'No-show becomes available after arrival',
       unsafe: 'Decline request: unsafe',
     };
   }
 
   if (status === 'Accepted' || status === 'OnTheWay') {
+    return {
+      identityMismatch: 'Cancel pickup: identity mismatch',
+      noShow: 'No-show becomes available after arrival',
+      unsafe: 'Cancel pickup: unsafe',
+    };
+  }
+
+  if (status === 'ArrivedAtPickup') {
     return {
       identityMismatch: 'Cancel pickup: identity mismatch',
       noShow: 'Cancel pickup: no show',
@@ -175,7 +207,11 @@ export function getSecondaryActionTitle(
     return 'Request Review Actions';
   }
 
-  if (status === 'Accepted' || status === 'OnTheWay') {
+  if (
+    status === 'Accepted' ||
+    status === 'OnTheWay' ||
+    status === 'ArrivedAtPickup'
+  ) {
     return 'Pickup Actions';
   }
 

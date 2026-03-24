@@ -1,6 +1,7 @@
 import { nowIso } from '../../core/utils/now';
 import type { Result } from '../../core/result/result';
 import {
+  canCancelOrderWithReason,
   isTerminalOrderStatus,
   type Order,
   type OrderCancelReason,
@@ -8,7 +9,9 @@ import {
 import { transitionOrder } from '../../domain/order/transition-order';
 import type { OrderRepositoryPort } from '../../data/repositories/order-repository-port';
 
-export type CancelOrderError = { code: 'INVALID_TRANSITION' };
+export type CancelOrderError =
+  | { code: 'INVALID_TRANSITION' }
+  | { code: 'INVALID_CANCEL_REASON' };
 
 export type CancelOrderDeps = {
   orderRepository: OrderRepositoryPort;
@@ -24,6 +27,13 @@ export async function cancelOrder(
   order: Order,
   reason: OrderCancelReason,
 ): Promise<Result<CancelOrderSuccess, CancelOrderError>> {
+  if (!canCancelOrderWithReason(order.status, reason)) {
+    return {
+      ok: false,
+      error: { code: 'INVALID_CANCEL_REASON' },
+    };
+  }
+
   try {
     const nextOrder = {
       ...transitionOrder(order, 'Canceled', nowIso()),
