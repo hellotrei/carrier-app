@@ -1,9 +1,12 @@
+import type { AuditRepositoryPort } from '../../data/repositories/audit-repository-port';
 import { nowIso } from '../../core/utils/now';
 import type { Result } from '../../core/result/result';
 import type { OrderRepositoryPort } from '../../data/repositories/order-repository-port';
 import type { Order } from '../../domain/order/order';
+import { buildAuditEvent } from './build-audit-event';
 
 export type SavePostTripFeedbackDeps = {
+  auditRepository: AuditRepositoryPort;
   orderRepository: OrderRepositoryPort;
 };
 
@@ -45,6 +48,19 @@ export async function savePostTripFeedback(
   };
 
   await deps.orderRepository.saveOrder(nextOrder);
+  await deps.auditRepository.appendEvent(
+    buildAuditEvent({
+      actorRole: 'customer',
+      actorUserId: nextOrder.customerId,
+      eventType: 'POST_TRIP_FEEDBACK_SAVED',
+      orderId: nextOrder.orderId,
+      payload: {
+        feedbackSource: nextOrder.feedbackSource,
+        finalRating: nextOrder.finalRating,
+        hasReviewText: Boolean(nextOrder.reviewText),
+      },
+    }),
+  );
 
   return {
     ok: true,

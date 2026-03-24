@@ -73,4 +73,20 @@ export const sqlMigrations = [
       );`,
     ],
   },
+  {
+    version: 5,
+    statements: [
+      `CREATE TABLE IF NOT EXISTS audit_manifest (
+        event_id TEXT PRIMARY KEY NOT NULL,
+        event_type TEXT NOT NULL,
+        order_id TEXT,
+        actor_user_id TEXT NOT NULL,
+        actor_role TEXT NOT NULL,
+        file_name TEXT NOT NULL,
+        checksum TEXT,
+        payload_json TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      );`,
+    ],
+  },
 ] as const;

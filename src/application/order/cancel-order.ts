@@ -1,3 +1,4 @@
+import type { AuditRepositoryPort } from '../../data/repositories/audit-repository-port';
 import { nowIso } from '../../core/utils/now';
 import type { Result } from '../../core/result/result';
 import {
@@ -8,12 +9,14 @@ import {
 } from '../../domain/order/order';
 import { transitionOrder } from '../../domain/order/transition-order';
 import type { OrderRepositoryPort } from '../../data/repositories/order-repository-port';
+import { buildAuditEvent } from './build-audit-event';
 
 export type CancelOrderError =
   | { code: 'INVALID_TRANSITION' }
   | { code: 'INVALID_CANCEL_REASON' };
 
 export type CancelOrderDeps = {
+  auditRepository: AuditRepositoryPort;
   orderRepository: OrderRepositoryPort;
 };
 
@@ -41,6 +44,18 @@ export async function cancelOrder(
     };
 
     await deps.orderRepository.saveOrder(nextOrder);
+    await deps.auditRepository.appendEvent(
+      buildAuditEvent({
+        actorRole: 'mitra',
+        actorUserId: nextOrder.partnerId,
+        eventType: 'ORDER_CANCELED',
+        orderId: nextOrder.orderId,
+        payload: {
+          cancelReason: reason,
+          statusUpdatedAt: nextOrder.statusUpdatedAt,
+        },
+      }),
+    );
 
     return {
       ok: true,

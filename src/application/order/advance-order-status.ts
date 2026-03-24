@@ -1,6 +1,8 @@
+import type { AuditRepositoryPort } from '../../data/repositories/audit-repository-port';
 import { nowIso } from '../../core/utils/now';
 import type { Result } from '../../core/result/result';
 import { buildCompletedOrderFeedback, recordCompletedOrderTransaction } from './record-completed-order';
+import { buildAuditEvent } from './build-audit-event';
 import {
   isTerminalOrderStatus,
   type Order,
@@ -13,6 +15,7 @@ import type { TransactionLogRepositoryPort } from '../../data/repositories/trans
 export type AdvanceOrderStatusError = { code: 'INVALID_TRANSITION' };
 
 export type AdvanceOrderStatusDeps = {
+  auditRepository: AuditRepositoryPort;
   orderRepository: OrderRepositoryPort;
   transactionLogRepository: TransactionLogRepositoryPort;
 };
@@ -39,9 +42,25 @@ export async function advanceOrderStatus(
         : transitionedOrder;
 
     await deps.orderRepository.saveOrder(nextOrder);
+    await deps.auditRepository.appendEvent(
+      buildAuditEvent({
+        actorRole: 'mitra',
+        actorUserId: nextOrder.partnerId,
+        eventType: `ORDER_${nextOrder.status.toUpperCase()}`,
+        orderId: nextOrder.orderId,
+        payload: {
+          nextStatus: nextOrder.status,
+          statusUpdatedAt: nextOrder.statusUpdatedAt,
+        },
+      }),
+    );
 
     if (nextStatus === 'Completed') {
-      await recordCompletedOrderTransaction(deps.transactionLogRepository, nextOrder);
+      await recordCompletedOrderTransaction(
+        deps.auditRepository,
+        deps.transactionLogRepository,
+        nextOrder,
+      );
     }
 
     return {

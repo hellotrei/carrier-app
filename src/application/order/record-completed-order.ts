@@ -1,6 +1,8 @@
+import type { AuditRepositoryPort } from '../../data/repositories/audit-repository-port';
 import { createId } from '../../core/utils/create-id';
 import type { Order } from '../../domain/order/order';
 import type { TransactionLogRepositoryPort } from '../../data/repositories/transaction-log-repository-port';
+import { buildAuditEvent } from './build-audit-event';
 
 const DEFAULT_COMPLETED_RATING = 5;
 const DEFAULT_COMMISSION_RATE = 0.1;
@@ -16,6 +18,7 @@ export function buildCompletedOrderFeedback(order: Order): Order {
 }
 
 export async function recordCompletedOrderTransaction(
+  auditRepository: AuditRepositoryPort,
   transactionLogRepository: TransactionLogRepositoryPort,
   order: Order,
 ): Promise<void> {
@@ -24,7 +27,7 @@ export async function recordCompletedOrderTransaction(
     (order.estimatedPrice * DEFAULT_COMMISSION_RATE).toFixed(2),
   );
 
-  await transactionLogRepository.saveLog({
+  const transactionLog = {
     commissionAmount,
     commissionRate: DEFAULT_COMMISSION_RATE,
     completedAt,
@@ -33,5 +36,16 @@ export async function recordCompletedOrderTransaction(
     logId: createId('txn'),
     orderId: order.orderId,
     partnerId: order.partnerId,
-  });
+  };
+
+  await transactionLogRepository.saveLog(transactionLog);
+  await auditRepository.appendEvent(
+    buildAuditEvent({
+      actorRole: 'mitra',
+      actorUserId: order.partnerId,
+      eventType: 'TRANSACTION_RECORDED',
+      orderId: order.orderId,
+      payload: transactionLog,
+    }),
+  );
 }
