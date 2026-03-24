@@ -4,6 +4,7 @@ import type { Order } from '../../../domain/order/order';
 import type { HistoryFilter } from '../../../data/repositories/order-repository-port';
 import type { TransactionLogEntry } from '../../../data/repositories/transaction-log-repository-port';
 import { SectionCard } from '../../../ui/patterns/section-card';
+import { UiStateCard } from '../../../ui/patterns/ui-state-card';
 import { AppButton } from '../../../ui/primitives/app-button';
 import { AppText } from '../../../ui/primitives/app-text';
 
@@ -48,7 +49,10 @@ export function HistoryScreen({
           onPress={() => onChangeFilter('canceled')}
         />
         {!orders.length ? (
-          <AppText tone="muted">No terminal orders are saved yet.</AppText>
+          <UiStateCard
+            title="No trip history yet"
+            description="Completed and canceled trips will stay here after they reach a terminal status."
+          />
         ) : null}
         {orders.map(order => (
           <SectionCard
@@ -80,7 +84,10 @@ export function HistoryScreen({
         description="Each completed trip writes one local revenue log entry."
       >
         {!transactionLogs.length ? (
-          <AppText tone="muted">No transaction logs recorded yet.</AppText>
+          <UiStateCard
+            title="No transaction logs yet"
+            description="A local transaction entry will appear here after the first completed trip is recorded."
+          />
         ) : null}
         {transactionLogs.map(log => (
           <AppText key={log.logId} tone="muted">

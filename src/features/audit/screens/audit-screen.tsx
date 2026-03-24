@@ -2,6 +2,7 @@ import React from 'react';
 
 import type { AuditManifestEntry } from '../../../data/repositories/audit-repository-port';
 import { SectionCard } from '../../../ui/patterns/section-card';
+import { UiStateCard } from '../../../ui/patterns/ui-state-card';
 import { AppButton } from '../../../ui/primitives/app-button';
 import { AppText } from '../../../ui/primitives/app-text';
 
@@ -76,7 +77,10 @@ export function AuditScreen({
         onPress={() => setFilter('feedback')}
       />
       {!filteredEvents.length ? (
-        <AppText tone="muted">No audit events recorded yet.</AppText>
+        <UiStateCard
+          title="No audit events yet"
+          description="Order, transaction, and feedback events will be indexed here once local activity is recorded."
+        />
       ) : null}
       {filteredEvents.map(event => (
         <SectionCard

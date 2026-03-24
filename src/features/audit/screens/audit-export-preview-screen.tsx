@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { SectionCard } from '../../../ui/patterns/section-card';
+import { UiStateCard } from '../../../ui/patterns/ui-state-card';
 import { AppButton } from '../../../ui/primitives/app-button';
 import { AppText } from '../../../ui/primitives/app-text';
 
@@ -27,13 +28,24 @@ export function AuditExportPreviewScreen({
     <SectionCard
       eyebrow="Audit Export"
       title="Audit bundle preview"
-      description="This preview shows the manifest payload that will back a future .carrieraudit bundle export."
+      description="This preview shows the bundle payload that will be written into the exported .carrieraudit archive."
     >
-      <AppText tone="muted">{previewContent || 'No audit payload available.'}</AppText>
+      {previewContent ? <AppText tone="muted">{previewContent}</AppText> : (
+        <UiStateCard
+          title="No audit payload yet"
+          description="The export bundle preview will appear here after at least one audit event is available."
+        />
+      )}
       {exportedFilePath ? (
         <AppText tone="muted">Exported file: {exportedFilePath}</AppText>
       ) : null}
-      {exportError ? <AppText>{exportError}</AppText> : null}
+      {exportError ? (
+        <UiStateCard
+          title="Audit export failed"
+          description={exportError}
+          tone="warning"
+        />
+      ) : null}
       <AppButton label="Export audit bundle" onPress={() => {
         void onExport();
       }} />

@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { SectionCard } from '../../../ui/patterns/section-card';
+import { UiStateCard } from '../../../ui/patterns/ui-state-card';
 import { AppButton } from '../../../ui/primitives/app-button';
 import { AppText } from '../../../ui/primitives/app-text';
 
@@ -27,13 +28,24 @@ export function TransactionLogCsvScreen({
     <SectionCard
       eyebrow="CSV Preview"
       title="Transaction log export preview"
-      description="CSV columns are stabilized here before file export is wired to a device filesystem flow."
+      description="CSV columns are stabilized here before the log is written as a device file export."
     >
-      <AppText tone="muted">{csvContent || 'No CSV rows available yet.'}</AppText>
+      {csvContent ? <AppText tone="muted">{csvContent}</AppText> : (
+        <UiStateCard
+          title="No CSV rows yet"
+          description="Exportable rows will appear here after at least one completed trip writes a transaction log."
+        />
+      )}
       {exportedFilePath ? (
         <AppText tone="muted">Exported file: {exportedFilePath}</AppText>
       ) : null}
-      {exportError ? <AppText>{exportError}</AppText> : null}
+      {exportError ? (
+        <UiStateCard
+          title="CSV export failed"
+          description={exportError}
+          tone="warning"
+        />
+      ) : null}
       <AppButton label="Export CSV file" onPress={() => {
         void onExport();
       }} />
