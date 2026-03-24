@@ -11,7 +11,7 @@
 
 Carrier adalah gagasan ride-hailing local-first yang mencoba mengambil jalan berbeda dari model platform konvensional: lebih ringan, lebih transparan, lebih ramah untuk mitra, dan lebih realistis untuk dibangun oleh tim kecil.
 
-Repo ini saat ini berada di fase **planning + architecture hardening**. Source code React Native akan ditempatkan di root repo ini, sementara seluruh dokumen spesifikasi sudah dipusatkan di [`docs/`](./docs).
+Repo ini sudah berada di fase **planning + implementation**. Source code React Native sudah hidup di root repo ini, sementara dokumen spesifikasi tetap dipusatkan di [`docs/`](./docs).
 
 ---
 
@@ -54,8 +54,8 @@ Carrier mencoba membuka ruang baru:
 | BRD / PRD / SDD / TSD | available |
 | MVP scope lock | available |
 | Sprint issue specs | available |
-| React Native source | not started in this repo yet |
-| Current phase | planning and execution preparation |
+| React Native source | in progress |
+| Current phase | planning, implementation, and hardening |
 
 ---
 
@@ -71,6 +71,30 @@ Model ini bukan mengejar “serverless absolut”, tapi mengejar sistem yang:
 - lebih murah dibangun
 - lebih ringan dioperasikan
 - tetap masuk akal secara end-to-end
+
+---
+
+## Current Status
+
+Planning is not the product.
+
+But good planning is what makes a small team able to build the product without wasting months.
+
+Carrier sekarang sudah punya:
+- BRD, PRD, SDD, dan TSD
+- MVP scope lock
+- architecture direction
+- wireflow
+- sprint issue specs
+- engineering board
+- source code React Native
+- actual mobile modules untuk order, history, audit, feedback, dan export flow
+- local-first persistence, audit manifest, transaction log, dan native file export gateway
+
+Yang belum ada di repo ini sekarang:
+- production-ready infra implementation end-to-end
+- final relay/signaling implementation yang penuh sesuai scope akhir
+- full production polish untuk launch pilot
 
 ---
 
