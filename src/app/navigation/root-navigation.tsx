@@ -41,6 +41,16 @@ import { HomeRoute } from './screens/home-route';
 import { PostTripFeedbackRoute } from './screens/post-trip-feedback-route';
 import { TransactionCsvRoute } from './screens/transaction-csv-route';
 
+type RootScreen =
+  | 'home'
+  | 'active_trip'
+  | 'history_list'
+  | 'history_detail'
+  | 'post_trip_feedback'
+  | 'audit_list'
+  | 'transaction_csv'
+  | 'audit_export_preview';
+
 export function RootNavigation(): React.JSX.Element {
   const activeOrder = useAppShellStore(state => state.activeOrder);
   const activeRole = useAppShellStore(state => state.activeRole);
@@ -84,9 +94,7 @@ export function RootNavigation(): React.JSX.Element {
   const setNotificationTokenPreview = usePermissionStore(
     state => state.setNotificationTokenPreview,
   );
-  const [activeScreen, setActiveScreen] = React.useState<
-    'home' | 'active_trip' | 'history_list' | 'history_detail' | 'post_trip_feedback' | 'audit_list' | 'transaction_csv' | 'audit_export_preview'
-  >('home');
+  const [activeScreen, setActiveScreen] = React.useState<RootScreen>('home');
   const [draftError, setDraftError] = React.useState<string | null>(null);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [selectedCompletedOrder, setSelectedCompletedOrder] = React.useState<Order | null>(null);
@@ -131,6 +139,10 @@ export function RootNavigation(): React.JSX.Element {
   async function handleRoleChange(role: 'customer' | 'mitra') {
     setActiveRole(role);
   }
+
+  const goToScreen = React.useCallback((screen: RootScreen) => {
+    setActiveScreen(screen);
+  }, []);
 
   async function refreshHistorySnapshot(filter: 'all' | 'completed' | 'canceled') {
     const { historyOrders, transactionLogs, auditEvents } =
@@ -609,16 +621,16 @@ export function RootNavigation(): React.JSX.Element {
       {activeScreen === 'history_list' ? (
         <HistoryListRoute
           onBack={() => {
-            setActiveScreen('home');
+            goToScreen('home');
           }}
           onOpenAudit={() => {
-            setActiveScreen('audit_list');
+            goToScreen('audit_list');
           }}
           onOpenTransactionCsv={() => {
-            setActiveScreen('transaction_csv');
+            goToScreen('transaction_csv');
           }}
           onOpenOrder={() => {
-            setActiveScreen('history_detail');
+            goToScreen('history_detail');
           }}
         />
       ) : null}
@@ -626,7 +638,7 @@ export function RootNavigation(): React.JSX.Element {
       {activeScreen === 'transaction_csv' ? (
         <TransactionCsvRoute
           onBack={() => {
-            setActiveScreen('history_list');
+            goToScreen('history_list');
           }}
           onExport={handleExportTransactionCsv}
           onOpenExportedFile={handleOpenTransactionCsvFile}
@@ -637,10 +649,10 @@ export function RootNavigation(): React.JSX.Element {
       {activeScreen === 'audit_list' ? (
         <AuditListRoute
           onBack={() => {
-            setActiveScreen('history_list');
+            goToScreen('history_list');
           }}
           onOpenExportPreview={() => {
-            setActiveScreen('audit_export_preview');
+            goToScreen('audit_export_preview');
           }}
         />
       ) : null}
@@ -648,7 +660,7 @@ export function RootNavigation(): React.JSX.Element {
       {activeScreen === 'audit_export_preview' ? (
         <AuditExportPreviewRoute
           onBack={() => {
-            setActiveScreen('audit_list');
+            goToScreen('audit_list');
           }}
           onExport={handleExportAuditBundle}
           onOpenExportedFile={handleOpenAuditBundleFile}
@@ -659,7 +671,7 @@ export function RootNavigation(): React.JSX.Element {
       {activeScreen === 'post_trip_feedback' ? (
         <PostTripFeedbackRoute
           onBack={() => {
-            setActiveScreen('history_detail');
+            goToScreen('history_detail');
           }}
           onSubmit={handleSaveFeedback}
           selectedCompletedOrder={selectedCompletedOrder}
@@ -669,11 +681,11 @@ export function RootNavigation(): React.JSX.Element {
       {activeScreen === 'history_detail' ? (
         <HistoryDetailRoute
           onBack={() => {
-            setActiveScreen('history_list');
+            goToScreen('history_list');
           }}
           onOpenFeedback={order => {
             setSelectedCompletedOrder(order);
-            setActiveScreen('post_trip_feedback');
+            goToScreen('post_trip_feedback');
           }}
           selectedCompletedOrder={selectedCompletedOrder}
         />
@@ -685,7 +697,7 @@ export function RootNavigation(): React.JSX.Element {
             void handleAdvanceOrder(nextStatus);
           }}
           onBack={() => {
-            setActiveScreen('home');
+            goToScreen('home');
           }}
           onCancel={reason => {
             void handleCancelOrder(reason);
@@ -701,10 +713,10 @@ export function RootNavigation(): React.JSX.Element {
           }}
           onCreateDraft={handleCreateDraft}
           onOpenRequestedOrder={() => {
-            setActiveScreen('active_trip');
+            goToScreen('active_trip');
           }}
           onReviewProfile={() => {
-            setActiveScreen('home');
+            goToScreen('home');
           }}
         />
       ) : null}
