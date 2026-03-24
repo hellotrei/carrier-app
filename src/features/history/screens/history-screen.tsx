@@ -55,6 +55,12 @@ export function HistoryScreen({
           >
             <AppText tone="muted">Pickup: {order.pickup.label ?? '-'}</AppText>
             <AppText tone="muted">Price: {order.estimatedPrice}</AppText>
+            <AppText tone="muted">
+              Terminal reason: {order.cancelReason ?? (order.status === 'Completed' ? 'Completed normally' : '-')}
+            </AppText>
+            <AppText tone="muted">
+              Rating: {order.finalRating ?? (order.status === 'Completed' ? 5 : '-')}
+            </AppText>
             <AppButton
               label="Open detail"
               kind="secondary"

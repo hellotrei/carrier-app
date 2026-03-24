@@ -278,6 +278,9 @@ export function RootNavigation(): React.JSX.Element {
     (selectedCompletedOrder && selectedCompletedOrder.orderId === selectedHistoryOrderId
       ? selectedCompletedOrder
       : null);
+  const selectedHistoryTransactionLog = transactionLogs.find(
+    log => log.orderId === selectedHistoryOrderId,
+  );
 
   return (
     <AppScreen scrollable>
@@ -385,6 +388,7 @@ export function RootNavigation(): React.JSX.Element {
             setActiveScreen('history_list');
           }}
           order={selectedHistoryOrder}
+          transactionLog={selectedHistoryTransactionLog}
         />
       ) : null}
 
