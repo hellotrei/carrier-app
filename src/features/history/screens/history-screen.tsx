@@ -11,6 +11,7 @@ type HistoryScreenProps = {
   filter: HistoryFilter;
   onBack: () => void;
   onChangeFilter: (filter: HistoryFilter) => void;
+  onOpenAudit: () => void;
   onOpenOrder: (orderId: Order['orderId']) => void;
   orders: Order[];
   transactionLogs: TransactionLogEntry[];
@@ -20,6 +21,7 @@ export function HistoryScreen({
   filter,
   onBack,
   onChangeFilter,
+  onOpenAudit,
   onOpenOrder,
   orders,
   transactionLogs,
@@ -83,6 +85,7 @@ export function HistoryScreen({
             {log.completedAt} · {log.orderId} · est. {log.estimatedPrice} · commission {log.commissionAmount}
           </AppText>
         ))}
+        <AppButton label="Open audit manifest" kind="secondary" onPress={onOpenAudit} />
         <AppButton label="Back to shell" kind="secondary" onPress={onBack} />
       </SectionCard>
     </>

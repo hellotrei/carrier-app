@@ -14,6 +14,7 @@ import { createOrderDraft } from '../../application/order/create-order-draft';
 import { savePostTripFeedback } from '../../application/order/save-post-trip-feedback';
 import { submitOrderDraft } from '../../application/order/submit-order-draft';
 import { ActiveTripScreen } from '../../features/active-trip/screens/active-trip-screen';
+import { AuditScreen } from '../../features/audit/screens/audit-screen';
 import { PostTripFeedbackScreen } from '../../features/feedback/screens/post-trip-feedback-screen';
 import { HomeCustomerScreen } from '../../features/home-customer/screens/home-customer-screen';
 import { HistoryDetailScreen } from '../../features/history/screens/history-detail-screen';
@@ -36,7 +37,7 @@ export function RootNavigation(): React.JSX.Element {
   const setActiveRole = useAppStore(state => state.setActiveRole);
   const setProfile = useAppStore(state => state.setProfile);
   const [activeScreen, setActiveScreen] = React.useState<
-    'home' | 'active_trip' | 'history_list' | 'history_detail' | 'post_trip_feedback'
+    'home' | 'active_trip' | 'history_list' | 'history_detail' | 'post_trip_feedback' | 'audit_list'
   >('home');
   const [draftError, setDraftError] = React.useState<string | null>(null);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
@@ -49,19 +50,24 @@ export function RootNavigation(): React.JSX.Element {
   const [transactionLogs, setTransactionLogs] = React.useState<Awaited<
     ReturnType<typeof bootstrapDeps.transactionLogRepository.listLogs>
   >>([]);
+  const [auditEvents, setAuditEvents] = React.useState<Awaited<
+    ReturnType<typeof bootstrapDeps.auditRepository.listEvents>
+  >>([]);
 
   async function handleRoleChange(role: 'customer' | 'mitra') {
     setActiveRole(role);
   }
 
   async function loadHistory(filter: 'all' | 'completed' | 'canceled') {
-    const [orders, logs] = await Promise.all([
+    const [orders, logs, events] = await Promise.all([
       bootstrapDeps.orderRepository.listHistory(filter),
       bootstrapDeps.transactionLogRepository.listLogs(),
+      bootstrapDeps.auditRepository.listEvents(),
     ]);
 
     setHistoryOrders(orders);
     setTransactionLogs(logs);
+    setAuditEvents(events);
   }
 
   async function handleProfileSubmit(params: {
@@ -362,12 +368,24 @@ export function RootNavigation(): React.JSX.Element {
             setHistoryFilter(nextFilter);
             void loadHistory(nextFilter);
           }}
+          onOpenAudit={() => {
+            setActiveScreen('audit_list');
+          }}
           onOpenOrder={orderId => {
             setSelectedHistoryOrderId(orderId);
             setActiveScreen('history_detail');
           }}
           orders={historyOrders}
           transactionLogs={transactionLogs}
+        />
+      ) : null}
+
+      {activeScreen === 'audit_list' ? (
+        <AuditScreen
+          events={auditEvents}
+          onBack={() => {
+            setActiveScreen('history_list');
+          }}
         />
       ) : null}
 
