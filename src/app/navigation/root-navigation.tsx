@@ -39,6 +39,7 @@ import { HomeMitraScreen } from '../../features/home-mitra/screens/home-mitra-sc
 import { getExportStateErrorCopy } from '../../features/order/export-state-copy';
 import { BasicProfileScreen } from '../../features/profile/screens/basic-profile-screen';
 import { useExportStore } from '../../state/export/export-store';
+import { useHistoryStore } from '../../state/history/history-store';
 import { usePermissionStore } from '../../state/permission/permission-store';
 import { useAppStore } from '../../state/store/app-store';
 import { HardwarePermissionCard } from '../../ui/patterns/hardware-permission-card';
@@ -56,6 +57,20 @@ export function RootNavigation(): React.JSX.Element {
   const setActiveOrder = useAppStore(state => state.setActiveOrder);
   const setActiveRole = useAppStore(state => state.setActiveRole);
   const setProfile = useAppStore(state => state.setProfile);
+  const historyFilter = useHistoryStore(state => state.historyFilter);
+  const historyOrders = useHistoryStore(state => state.historyOrders);
+  const selectedHistoryOrderId = useHistoryStore(
+    state => state.selectedHistoryOrderId,
+  );
+  const transactionLogs = useHistoryStore(state => state.transactionLogs);
+  const auditEvents = useHistoryStore(state => state.auditEvents);
+  const setHistoryFilter = useHistoryStore(state => state.setHistoryFilter);
+  const setHistoryOrders = useHistoryStore(state => state.setHistoryOrders);
+  const setSelectedHistoryOrderId = useHistoryStore(
+    state => state.setSelectedHistoryOrderId,
+  );
+  const setTransactionLogs = useHistoryStore(state => state.setTransactionLogs);
+  const setAuditEvents = useHistoryStore(state => state.setAuditEvents);
   const transactionCsvPreview = useExportStore(
     state => state.transactionCsvPreview,
   );
@@ -113,18 +128,7 @@ export function RootNavigation(): React.JSX.Element {
   >('home');
   const [draftError, setDraftError] = React.useState<string | null>(null);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
-  const [historyFilter, setHistoryFilter] = React.useState<'all' | 'completed' | 'canceled'>('all');
-  const [historyOrders, setHistoryOrders] = React.useState<Awaited<
-    ReturnType<typeof bootstrapDeps.orderRepository.listHistory>
-  >>([]);
-  const [selectedHistoryOrderId, setSelectedHistoryOrderId] = React.useState<string | null>(null);
   const [selectedCompletedOrder, setSelectedCompletedOrder] = React.useState<Order | null>(null);
-  const [transactionLogs, setTransactionLogs] = React.useState<Awaited<
-    ReturnType<typeof bootstrapDeps.transactionLogRepository.listLogs>
-  >>([]);
-  const [auditEvents, setAuditEvents] = React.useState<Awaited<
-    ReturnType<typeof bootstrapDeps.auditRepository.listEvents>
-  >>([]);
 
   const loadHardwarePermissionState = React.useCallback(async () => {
     try {
