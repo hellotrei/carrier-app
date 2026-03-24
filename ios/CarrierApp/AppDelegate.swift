@@ -82,4 +82,54 @@ class FileExportModule: NSObject, RCTBridgeModule {
       reject("FILE_EXPORT_FAILED", error.localizedDescription, error)
     }
   }
+
+  @objc(writeBundleZip:entries:resolver:rejecter:)
+  func writeBundleZip(
+    _ fileName: String,
+    entries: NSDictionary,
+    resolver resolve: RCTPromiseResolveBlock,
+    rejecter reject: RCTPromiseRejectBlock
+  ) {
+    do {
+      guard #available(iOS 16.0, *) else {
+        reject("FILE_EXPORT_FAILED", "ZIP export requires iOS 16 or newer.", nil)
+        return
+      }
+
+      let documentsUrl = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+      let exportsUrl = documentsUrl?.appendingPathComponent("exports", isDirectory: true)
+
+      guard let exportsUrl else {
+        reject("FILE_EXPORT_FAILED", "Documents directory is unavailable", nil)
+        return
+      }
+
+      let tempDir = exportsUrl.appendingPathComponent(UUID().uuidString, isDirectory: true)
+      try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+
+      for (key, value) in entries {
+        guard let relativePath = key as? String, let content = value as? String else {
+          continue
+        }
+
+        let fileUrl = tempDir.appendingPathComponent(relativePath)
+        let parentDir = fileUrl.deletingLastPathComponent()
+        try FileManager.default.createDirectory(at: parentDir, withIntermediateDirectories: true)
+        try content.write(to: fileUrl, atomically: true, encoding: .utf8)
+      }
+
+      try FileManager.default.createDirectory(at: exportsUrl, withIntermediateDirectories: true)
+      let destinationUrl = exportsUrl.appendingPathComponent(fileName)
+      if FileManager.default.fileExists(atPath: destinationUrl.path) {
+        try FileManager.default.removeItem(at: destinationUrl)
+      }
+
+      try FileManager.default.zipItem(at: tempDir, to: destinationUrl)
+      try? FileManager.default.removeItem(at: tempDir)
+
+      resolve(destinationUrl.path)
+    } catch {
+      reject("FILE_EXPORT_FAILED", error.localizedDescription, error)
+    }
+  }
 }

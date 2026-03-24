@@ -11,7 +11,10 @@ import { saveProfile } from '../../application/user/save-profile';
 import { advanceOrderStatus } from '../../application/order/advance-order-status';
 import { cancelOrder } from '../../application/order/cancel-order';
 import { createOrderDraft } from '../../application/order/create-order-draft';
-import { exportAuditBundlePreview } from '../../application/order/export-audit-bundle-preview';
+import {
+  buildAuditBundleFiles,
+  exportAuditBundlePreview,
+} from '../../application/order/export-audit-bundle-preview';
 import { exportTransactionLogCsv } from '../../application/order/export-transaction-log-csv';
 import { guardExportWithDeviceAuth } from '../../application/order/guard-export-with-device-auth';
 import { savePostTripFeedback } from '../../application/order/save-post-trip-feedback';
@@ -64,6 +67,7 @@ export function RootNavigation(): React.JSX.Element {
   const [auditExportPreview, setAuditExportPreview] = React.useState('');
   const [auditExportError, setAuditExportError] = React.useState<string | null>(null);
   const [auditExportPath, setAuditExportPath] = React.useState<string | null>(null);
+  const [auditBundleFiles, setAuditBundleFiles] = React.useState<Record<string, string>>({});
 
   async function handleRoleChange(role: 'customer' | 'mitra') {
     setActiveRole(role);
@@ -298,8 +302,8 @@ export function RootNavigation(): React.JSX.Element {
         'Authenticate to export audit bundle',
       );
 
-      const path = await bootstrapDeps.fileExportGateway.writeExportFile({
-        content: auditExportPreview,
+      const path = await bootstrapDeps.fileExportGateway.writeBundleExportFile({
+        entries: auditBundleFiles,
         extension: 'carrieraudit',
         prefix: 'audit-export',
       });
@@ -460,6 +464,7 @@ export function RootNavigation(): React.JSX.Element {
             setActiveScreen('history_list');
           }}
           onPreviewExport={events => {
+            setAuditBundleFiles(buildAuditBundleFiles(events));
             setAuditExportPreview(exportAuditBundlePreview(events));
             setAuditExportError(null);
             setAuditExportPath(null);
