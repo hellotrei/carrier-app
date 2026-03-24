@@ -41,6 +41,7 @@ import { BasicProfileScreen } from '../../features/profile/screens/basic-profile
 import { getHasRecoverableOrder } from '../../state/app-shell/app-shell-selectors';
 import { useAppShellStore } from '../../state/app-shell/app-shell-store';
 import { useExportStore } from '../../state/export/export-store';
+import { loadHistorySnapshot } from '../../state/history/history-actions';
 import {
   getSelectedFeedbackOrder,
   getSelectedHistoryOrder,
@@ -179,15 +180,12 @@ export function RootNavigation(): React.JSX.Element {
   }
 
   async function loadHistory(filter: 'all' | 'completed' | 'canceled') {
-    const [orders, logs, events] = await Promise.all([
-      bootstrapDeps.orderRepository.listHistory(filter),
-      bootstrapDeps.transactionLogRepository.listLogs(),
-      bootstrapDeps.auditRepository.listEvents(),
-    ]);
+    const { historyOrders, transactionLogs, auditEvents } =
+      await loadHistorySnapshot(bootstrapDeps, filter);
 
-    setHistoryOrders(orders);
-    setTransactionLogs(logs);
-    setAuditEvents(events);
+    setHistoryOrders(historyOrders);
+    setTransactionLogs(transactionLogs);
+    setAuditEvents(auditEvents);
   }
 
   async function handleProfileSubmit(params: {
