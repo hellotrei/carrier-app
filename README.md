@@ -361,29 +361,6 @@ Kalau Anda baru masuk ke repo ini:
    - [`docs/carrier-sprint-3-issue-specs.md`](./docs/carrier-sprint-3-issue-specs.md)
    - [`docs/carrier-sprint-4-issue-specs.md`](./docs/carrier-sprint-4-issue-specs.md)
 
----
-
-## Current Status
-
-> Planning is not the product.
->
-> But good planning is what makes a small team able to build the product without wasting months.
-
-Carrier sekarang sudah punya:
-- BRD, PRD, SDD, dan TSD
-- MVP scope lock
-- architecture direction
-- wireflow
-- sprint issue specs
-- engineering board
-
-Yang belum ada di repo ini sekarang:
-- source code React Native
-- actual mobile modules
-- production-ready infra implementation
-
----
-
 ## Join the Build
 
 Kalau Anda tertarik ikut membangun:
