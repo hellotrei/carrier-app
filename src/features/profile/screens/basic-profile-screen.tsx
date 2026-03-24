@@ -9,6 +9,7 @@ import type {
 } from '../../../domain/user/user-profile';
 import { tokens } from '../../../ui/theme/tokens';
 import { SectionCard } from '../../../ui/patterns/section-card';
+import { UiStateCard } from '../../../ui/patterns/ui-state-card';
 import { AppButton } from '../../../ui/primitives/app-button';
 import { AppInput } from '../../../ui/primitives/app-input';
 import { AppText } from '../../../ui/primitives/app-text';
@@ -25,6 +26,21 @@ type BasicProfileScreenProps = {
   }) => Promise<void>;
   submitError?: string | null;
 };
+
+function getProfileErrorTitle(errorMessage: string): string {
+  if (errorMessage.includes('vehicle type') || errorMessage.includes('mitra readiness')) {
+    return 'Profile is not ready';
+  }
+
+  if (
+    errorMessage.includes('Display name') ||
+    errorMessage.includes('Phone number')
+  ) {
+    return 'Profile details are incomplete';
+  }
+
+  return 'Profile could not be saved';
+}
 
 function getReadinessLabel(status: DriverReadinessStatus | undefined): string {
   switch (status) {
@@ -258,7 +274,14 @@ export function BasicProfileScreen({
             </Pressable>
           </>
         ) : null}
-        {submitError ? <AppText>{submitError}</AppText> : null}
+        {submitError ? (
+          <UiStateCard
+            eyebrow="Action Needed"
+            title={getProfileErrorTitle(submitError)}
+            description={submitError}
+            tone="warning"
+          />
+        ) : null}
         <AppButton
           label={
             isSaving

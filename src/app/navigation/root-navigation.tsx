@@ -126,9 +126,9 @@ export function RootNavigation(): React.JSX.Element {
 
     if (!result.ok) {
       const errorMap: Record<typeof result.error.code, string> = {
-        DISPLAY_NAME_REQUIRED: 'Display name is required.',
-        PHONE_REQUIRED: 'Phone number is required.',
-        VEHICLE_TYPE_REQUIRED: 'Vehicle type is required for mitra.',
+        DISPLAY_NAME_REQUIRED: 'Display name is required before this local profile can be saved.',
+        PHONE_REQUIRED: 'Phone number is required before this local profile can be saved.',
+        VEHICLE_TYPE_REQUIRED: 'Choose one active vehicle type before enabling mitra readiness.',
       };
 
       setSubmitError(errorMap[result.error.code]);
@@ -169,10 +169,10 @@ export function RootNavigation(): React.JSX.Element {
 
     if (!result.ok) {
       const errorMap: Record<typeof result.error.code, string> = {
-        INVALID_DESTINATION: 'Destination is required.',
-        INVALID_ESTIMATED_PRICE: 'Estimated price must be greater than zero.',
-        INVALID_PICKUP: 'Pickup is required.',
-        PROFILE_NOT_FOUND: 'Profile is required before creating a draft.',
+        INVALID_DESTINATION: 'Destination location is required before this draft can be saved.',
+        INVALID_ESTIMATED_PRICE: 'Estimated price must be greater than zero before this draft can be saved.',
+        INVALID_PICKUP: 'Pickup location is required before this draft can be saved.',
+        PROFILE_NOT_FOUND: 'Save the local profile first before creating a customer draft.',
       };
 
       setDraftError(errorMap[result.error.code]);

@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import type { OrderStatus } from '../../../domain/order/order';
 import { getCustomerHomeStatusDescription } from '../../order/order-status-copy';
 import { OrderSummaryBlock } from '../../../ui/patterns/order-summary-block';
+import { UiStateCard } from '../../../ui/patterns/ui-state-card';
 import { AppButton } from '../../../ui/primitives/app-button';
 import { AppInput } from '../../../ui/primitives/app-input';
 import { AppText } from '../../../ui/primitives/app-text';
@@ -34,6 +35,22 @@ type HomeCustomerScreenProps = {
   onClearDraft: (() => void) | undefined;
   submitError?: string | null;
 };
+
+function getDraftErrorTitle(errorMessage: string): string {
+  if (errorMessage.includes('Pickup location') || errorMessage.includes('Destination location')) {
+    return 'Location is required';
+  }
+
+  if (errorMessage.includes('Estimated price')) {
+    return 'Estimated price is invalid';
+  }
+
+  if (errorMessage.includes('local profile')) {
+    return 'Profile is not ready';
+  }
+
+  return 'Draft could not be saved';
+}
 
 export function HomeCustomerScreen({
   activeOrderStatus,
@@ -101,7 +118,14 @@ export function HomeCustomerScreen({
         placeholder="18000"
         value={estimatedPrice}
       />
-      {submitError ? <AppText>{submitError}</AppText> : null}
+      {submitError ? (
+        <UiStateCard
+          eyebrow="Action Needed"
+          title={getDraftErrorTitle(submitError)}
+          description={submitError}
+          tone="warning"
+        />
+      ) : null}
       <AppButton
         label={activeOrderStatus === 'Draft' ? 'Update draft' : 'Save draft'}
         onPress={() => {
