@@ -21,6 +21,7 @@ import { exportTransactionLogCsv } from '../../application/order/export-transact
 import { guardExportWithDeviceAuth } from '../../application/order/guard-export-with-device-auth';
 import { savePostTripFeedback } from '../../application/order/save-post-trip-feedback';
 import { submitOrderDraft } from '../../application/order/submit-order-draft';
+import { syncNotificationToken } from '../../application/user/sync-notification-token';
 import {
   openExportedFile,
   shareExportedFile,
@@ -91,7 +92,7 @@ export function RootNavigation(): React.JSX.Element {
         await Promise.all([
           bootstrapDeps.hardwarePermissionGateway.getLocationWhenInUseStatus(),
           bootstrapDeps.hardwarePermissionGateway.getNotificationStatus(),
-          bootstrapDeps.hardwarePermissionGateway.getNotificationToken(),
+          syncNotificationToken(bootstrapDeps),
         ]);
 
       setLocationPermissionStatus(locationStatus);
@@ -342,8 +343,7 @@ export function RootNavigation(): React.JSX.Element {
         await bootstrapDeps.hardwarePermissionGateway.requestNotifications();
       setNotificationPermissionStatus(granted ? 'granted' : 'denied');
       if (granted) {
-        const token =
-          await bootstrapDeps.hardwarePermissionGateway.getNotificationToken();
+        const token = await syncNotificationToken(bootstrapDeps);
         setNotificationTokenPreview(
           token ? `${token.slice(0, 6)}...${token.slice(-4)}` : null,
         );
