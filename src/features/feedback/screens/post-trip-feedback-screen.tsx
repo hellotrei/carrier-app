@@ -17,8 +17,12 @@ export function PostTripFeedbackScreen({
   onSubmit,
   order,
 }: PostTripFeedbackScreenProps): React.JSX.Element {
-  const [manualRating, setManualRating] = React.useState('');
-  const [reviewText, setReviewText] = React.useState('');
+  const [manualRating, setManualRating] = React.useState(
+    order.feedbackSource === 'manual' && order.finalRating
+      ? String(order.finalRating)
+      : '',
+  );
+  const [reviewText, setReviewText] = React.useState(order.reviewText ?? '');
 
   return (
     <SectionCard
@@ -27,6 +31,9 @@ export function PostTripFeedbackScreen({
       description="Default rating stays at 5 if you skip this step."
     >
       <AppText tone="muted">Completed trip: {order.destination.label ?? order.orderId}</AppText>
+      <AppText tone="muted">
+        Current saved rating: {order.finalRating ?? 5} ({order.feedbackSource ?? 'default_auto'})
+      </AppText>
       <AppInput
         keyboardType="numeric"
         label="Rating (1-5)"
@@ -49,7 +56,7 @@ export function PostTripFeedbackScreen({
           })
         }
       />
-      <AppButton label="Skip for now" kind="secondary" onPress={onSkip} />
+      <AppButton label="Keep saved feedback" kind="secondary" onPress={onSkip} />
     </SectionCard>
   );
 }

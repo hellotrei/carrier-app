@@ -9,12 +9,14 @@ import { AppText } from '../../../ui/primitives/app-text';
 
 type HistoryDetailScreenProps = {
   onBack: () => void;
+  onOpenFeedback?: () => void;
   order: Order;
   transactionLog?: TransactionLogEntry;
 };
 
 export function HistoryDetailScreen({
   onBack,
+  onOpenFeedback,
   order,
   transactionLog,
 }: HistoryDetailScreenProps): React.JSX.Element {
@@ -53,6 +55,13 @@ export function HistoryDetailScreen({
       <AppText tone="muted">Rating: {order.finalRating ?? '-'}</AppText>
       <AppText tone="muted">Feedback source: {order.feedbackSource ?? '-'}</AppText>
       <AppText tone="muted">Review: {order.reviewText ?? '-'}</AppText>
+      {order.status === 'Completed' && onOpenFeedback ? (
+        <AppButton
+          label="Edit post-trip feedback"
+          kind="secondary"
+          onPress={onOpenFeedback}
+        />
+      ) : null}
       <AppButton label="Back to history" kind="secondary" onPress={onBack} />
     </SectionCard>
   );

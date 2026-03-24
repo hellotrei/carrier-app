@@ -387,6 +387,14 @@ export function RootNavigation(): React.JSX.Element {
           onBack={() => {
             setActiveScreen('history_list');
           }}
+          onOpenFeedback={
+            selectedHistoryOrder.status === 'Completed'
+              ? () => {
+                  setSelectedCompletedOrder(selectedHistoryOrder);
+                  setActiveScreen('post_trip_feedback');
+                }
+              : undefined
+          }
           order={selectedHistoryOrder}
           transactionLog={selectedHistoryTransactionLog}
         />
