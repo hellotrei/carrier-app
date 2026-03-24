@@ -9,14 +9,19 @@ type HardwarePermissionCardProps = {
   notificationStatus: 'idle' | 'granted' | 'denied';
   onRequestLocation: () => void;
   onRequestNotifications: () => void;
+  onOpenSettings: () => void;
 };
 
 export function HardwarePermissionCard({
   locationStatus,
   notificationStatus,
+  onOpenSettings,
   onRequestLocation,
   onRequestNotifications,
 }: HardwarePermissionCardProps): React.JSX.Element {
+  const showSettingsAction =
+    locationStatus === 'denied' || notificationStatus === 'denied';
+
   return (
     <SectionCard
       eyebrow="Pilot Ops"
@@ -37,6 +42,13 @@ export function HardwarePermissionCard({
         kind="secondary"
         onPress={onRequestNotifications}
       />
+      {showSettingsAction ? (
+        <AppButton
+          label="Open app settings"
+          kind="secondary"
+          onPress={onOpenSettings}
+        />
+      ) : null}
     </SectionCard>
   );
 }

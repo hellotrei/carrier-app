@@ -25,6 +25,7 @@ import {
   openExportedFile,
   shareExportedFile,
 } from '../../integrations/file-export/file-export-actions';
+import { openHardwarePermissionSettings } from '../../integrations/hardware-permission/hardware-permission-actions';
 import { ActiveTripScreen } from '../../features/active-trip/screens/active-trip-screen';
 import { AuditExportPreviewScreen } from '../../features/audit/screens/audit-export-preview-screen';
 import { AuditScreen } from '../../features/audit/screens/audit-screen';
@@ -522,6 +523,9 @@ export function RootNavigation(): React.JSX.Element {
       <HardwarePermissionCard
         locationStatus={locationPermissionStatus}
         notificationStatus={notificationPermissionStatus}
+        onOpenSettings={() => {
+          void openHardwarePermissionSettings();
+        }}
         onRequestLocation={() => {
           void handleRequestLocationPermission();
         }}
