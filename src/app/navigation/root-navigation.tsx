@@ -19,6 +19,10 @@ import { exportTransactionLogCsv } from '../../application/order/export-transact
 import { guardExportWithDeviceAuth } from '../../application/order/guard-export-with-device-auth';
 import { savePostTripFeedback } from '../../application/order/save-post-trip-feedback';
 import { submitOrderDraft } from '../../application/order/submit-order-draft';
+import {
+  openExportedFile,
+  shareExportedFile,
+} from '../../integrations/file-export/file-export-actions';
 import { ActiveTripScreen } from '../../features/active-trip/screens/active-trip-screen';
 import { AuditExportPreviewScreen } from '../../features/audit/screens/audit-export-preview-screen';
 import { AuditScreen } from '../../features/audit/screens/audit-screen';
@@ -295,6 +299,36 @@ export function RootNavigation(): React.JSX.Element {
     }
   }
 
+  async function handleOpenTransactionCsvFile() {
+    if (!transactionCsvExportPath) {
+      return;
+    }
+
+    try {
+      await openExportedFile(transactionCsvExportPath);
+      setTransactionCsvExportError(null);
+    } catch (error) {
+      setTransactionCsvExportError(
+        error instanceof Error ? error.message : 'Unable to open exported CSV.',
+      );
+    }
+  }
+
+  async function handleShareTransactionCsvFile() {
+    if (!transactionCsvExportPath) {
+      return;
+    }
+
+    try {
+      await shareExportedFile(transactionCsvExportPath);
+      setTransactionCsvExportError(null);
+    } catch (error) {
+      setTransactionCsvExportError(
+        error instanceof Error ? error.message : 'Unable to share exported CSV.',
+      );
+    }
+  }
+
   async function handleExportAuditBundle() {
     try {
       await guardExportWithDeviceAuth(
@@ -313,6 +347,36 @@ export function RootNavigation(): React.JSX.Element {
     } catch (error) {
       setAuditExportError(
         error instanceof Error ? error.message : 'Audit export failed.',
+      );
+    }
+  }
+
+  async function handleOpenAuditBundleFile() {
+    if (!auditExportPath) {
+      return;
+    }
+
+    try {
+      await openExportedFile(auditExportPath);
+      setAuditExportError(null);
+    } catch (error) {
+      setAuditExportError(
+        error instanceof Error ? error.message : 'Unable to open audit export.',
+      );
+    }
+  }
+
+  async function handleShareAuditBundleFile() {
+    if (!auditExportPath) {
+      return;
+    }
+
+    try {
+      await shareExportedFile(auditExportPath);
+      setAuditExportError(null);
+    } catch (error) {
+      setAuditExportError(
+        error instanceof Error ? error.message : 'Unable to share audit export.',
       );
     }
   }
@@ -454,6 +518,8 @@ export function RootNavigation(): React.JSX.Element {
             setActiveScreen('history_list');
           }}
           onExport={handleExportTransactionCsv}
+          onOpenExportedFile={handleOpenTransactionCsvFile}
+          onShareExportedFile={handleShareTransactionCsvFile}
         />
       ) : null}
 
@@ -481,6 +547,8 @@ export function RootNavigation(): React.JSX.Element {
             setActiveScreen('audit_list');
           }}
           onExport={handleExportAuditBundle}
+          onOpenExportedFile={handleOpenAuditBundleFile}
+          onShareExportedFile={handleShareAuditBundleFile}
           previewContent={auditExportPreview}
         />
       ) : null}
