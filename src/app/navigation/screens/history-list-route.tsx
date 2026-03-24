@@ -1,9 +1,8 @@
 import React from 'react';
 
-import { exportTransactionLogCsv } from '../../../application/order/export-transaction-log-csv';
 import { bootstrapDeps } from '../../config/bootstrap-deps';
 import { HistoryScreen } from '../../../features/history/screens/history-screen';
-import { useExportStore } from '../../../state/export/export-store';
+import { prepareTransactionCsvPreview } from '../../../state/export/export-actions';
 import { loadHistorySnapshot } from '../../../state/history/history-actions';
 import { useHistoryStore } from '../../../state/history/history-store';
 
@@ -30,12 +29,6 @@ export function HistoryListRoute({
     state => state.setSelectedHistoryOrderId,
   );
   const setTransactionLogs = useHistoryStore(state => state.setTransactionLogs);
-  const resetTransactionCsvState = useExportStore(
-    state => state.resetTransactionCsvState,
-  );
-  const setTransactionCsvPreview = useExportStore(
-    state => state.setTransactionCsvPreview,
-  );
 
   const refreshHistory = React.useCallback(async (filter: typeof historyFilter) => {
     const { historyOrders, transactionLogs, auditEvents } =
@@ -63,8 +56,7 @@ export function HistoryListRoute({
         onOpenOrder(orderId);
       }}
       onOpenTransactionCsv={() => {
-        resetTransactionCsvState();
-        setTransactionCsvPreview(exportTransactionLogCsv(transactionLogs));
+        prepareTransactionCsvPreview(transactionLogs);
         onOpenTransactionCsv();
       }}
       orders={historyOrders}

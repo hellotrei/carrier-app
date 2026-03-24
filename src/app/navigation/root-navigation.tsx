@@ -26,6 +26,12 @@ import { getExportStateErrorCopy } from '../../features/order/export-state-copy'
 import { BasicProfileScreen } from '../../features/profile/screens/basic-profile-screen';
 import { getHasRecoverableOrder } from '../../state/app-shell/app-shell-selectors';
 import { useAppShellStore } from '../../state/app-shell/app-shell-store';
+import {
+  applyAuditExportError,
+  applyAuditExportSuccess,
+  applyTransactionCsvExportError,
+  applyTransactionCsvExportSuccess,
+} from '../../state/export/export-actions';
 import { useExportStore } from '../../state/export/export-store';
 import { reloadHistorySnapshot } from '../../state/history/history-actions';
 import { useHistoryStore } from '../../state/history/history-store';
@@ -60,14 +66,6 @@ export function RootNavigation(): React.JSX.Element {
     state => state.setSelectedHistoryOrderId,
   );
   const historyFilter = useHistoryStore(state => state.historyFilter);
-  const setTransactionCsvExportError = useExportStore(
-    state => state.setTransactionCsvExportError,
-  );
-  const setTransactionCsvExportPath = useExportStore(
-    state => state.setTransactionCsvExportPath,
-  );
-  const setAuditExportError = useExportStore(state => state.setAuditExportError);
-  const setAuditExportPath = useExportStore(state => state.setAuditExportPath);
   const locationPermissionStatus = usePermissionStore(
     state => state.locationPermissionStatus,
   );
@@ -372,10 +370,9 @@ export function RootNavigation(): React.JSX.Element {
         prefix: 'transaction-log-export',
       });
 
-      setTransactionCsvExportError(null);
-      setTransactionCsvExportPath(path);
+      applyTransactionCsvExportSuccess(path);
     } catch (error) {
-      setTransactionCsvExportError(
+      applyTransactionCsvExportError(
         sanitizeErrorMessage(
           error,
           getExportStateErrorCopy('transaction_csv', 'export'),
@@ -393,9 +390,9 @@ export function RootNavigation(): React.JSX.Element {
 
     try {
       await openExportedFile(transactionCsvExportPath);
-      setTransactionCsvExportError(null);
+      applyTransactionCsvExportSuccess(transactionCsvExportPath);
     } catch (error) {
-      setTransactionCsvExportError(
+      applyTransactionCsvExportError(
         sanitizeErrorMessage(
           error,
           getExportStateErrorCopy('transaction_csv', 'open'),
@@ -413,9 +410,9 @@ export function RootNavigation(): React.JSX.Element {
 
     try {
       await shareExportedFile(transactionCsvExportPath);
-      setTransactionCsvExportError(null);
+      applyTransactionCsvExportSuccess(transactionCsvExportPath);
     } catch (error) {
-      setTransactionCsvExportError(
+      applyTransactionCsvExportError(
         sanitizeErrorMessage(
           error,
           getExportStateErrorCopy('transaction_csv', 'share'),
@@ -443,10 +440,9 @@ export function RootNavigation(): React.JSX.Element {
         prefix: 'audit-export',
       });
 
-      setAuditExportError(null);
-      setAuditExportPath(path);
+      applyAuditExportSuccess(path);
     } catch (error) {
-      setAuditExportError(
+      applyAuditExportError(
         sanitizeErrorMessage(
           error,
           getExportStateErrorCopy('audit_bundle', 'export'),
@@ -464,9 +460,9 @@ export function RootNavigation(): React.JSX.Element {
 
     try {
       await openExportedFile(auditExportPath);
-      setAuditExportError(null);
+      applyAuditExportSuccess(auditExportPath);
     } catch (error) {
-      setAuditExportError(
+      applyAuditExportError(
         sanitizeErrorMessage(
           error,
           getExportStateErrorCopy('audit_bundle', 'open'),
@@ -484,9 +480,9 @@ export function RootNavigation(): React.JSX.Element {
 
     try {
       await shareExportedFile(auditExportPath);
-      setAuditExportError(null);
+      applyAuditExportSuccess(auditExportPath);
     } catch (error) {
-      setAuditExportError(
+      applyAuditExportError(
         sanitizeErrorMessage(
           error,
           getExportStateErrorCopy('audit_bundle', 'share'),
