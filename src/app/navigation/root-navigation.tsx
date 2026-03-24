@@ -5,15 +5,19 @@ import { AppButton } from '../../ui/primitives/app-button';
 import { AppScreen } from '../../ui/primitives/app-screen';
 import { AppText } from '../../ui/primitives/app-text';
 import { SectionCard } from '../../ui/patterns/section-card';
-import type { OrderCancelReason } from '../../domain/order/order';
+import type { Order, OrderCancelReason } from '../../domain/order/order';
 import { bootstrapDeps } from '../config/bootstrap-deps';
 import { saveProfile } from '../../application/user/save-profile';
 import { advanceOrderStatus } from '../../application/order/advance-order-status';
 import { cancelOrder } from '../../application/order/cancel-order';
 import { createOrderDraft } from '../../application/order/create-order-draft';
+import { savePostTripFeedback } from '../../application/order/save-post-trip-feedback';
 import { submitOrderDraft } from '../../application/order/submit-order-draft';
 import { ActiveTripScreen } from '../../features/active-trip/screens/active-trip-screen';
+import { PostTripFeedbackScreen } from '../../features/feedback/screens/post-trip-feedback-screen';
 import { HomeCustomerScreen } from '../../features/home-customer/screens/home-customer-screen';
+import { HistoryDetailScreen } from '../../features/history/screens/history-detail-screen';
+import { HistoryScreen } from '../../features/history/screens/history-screen';
 import { HomeMitraScreen } from '../../features/home-mitra/screens/home-mitra-screen';
 import { BasicProfileScreen } from '../../features/profile/screens/basic-profile-screen';
 import { useAppStore } from '../../state/store/app-store';
@@ -31,14 +35,33 @@ export function RootNavigation(): React.JSX.Element {
   const setActiveOrder = useAppStore(state => state.setActiveOrder);
   const setActiveRole = useAppStore(state => state.setActiveRole);
   const setProfile = useAppStore(state => state.setProfile);
-  const [activeScreen, setActiveScreen] = React.useState<'home' | 'active_trip'>(
-    'home',
-  );
+  const [activeScreen, setActiveScreen] = React.useState<
+    'home' | 'active_trip' | 'history_list' | 'history_detail' | 'post_trip_feedback'
+  >('home');
   const [draftError, setDraftError] = React.useState<string | null>(null);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
+  const [historyFilter, setHistoryFilter] = React.useState<'all' | 'completed' | 'canceled'>('all');
+  const [historyOrders, setHistoryOrders] = React.useState<Awaited<
+    ReturnType<typeof bootstrapDeps.orderRepository.listHistory>
+  >>([]);
+  const [selectedHistoryOrderId, setSelectedHistoryOrderId] = React.useState<string | null>(null);
+  const [selectedCompletedOrder, setSelectedCompletedOrder] = React.useState<Order | null>(null);
+  const [transactionLogs, setTransactionLogs] = React.useState<Awaited<
+    ReturnType<typeof bootstrapDeps.transactionLogRepository.listLogs>
+  >>([]);
 
   async function handleRoleChange(role: 'customer' | 'mitra') {
     setActiveRole(role);
+  }
+
+  async function loadHistory(filter: 'all' | 'completed' | 'canceled') {
+    const [orders, logs] = await Promise.all([
+      bootstrapDeps.orderRepository.listHistory(filter),
+      bootstrapDeps.transactionLogRepository.listLogs(),
+    ]);
+
+    setHistoryOrders(orders);
+    setTransactionLogs(logs);
   }
 
   async function handleProfileSubmit(params: {
@@ -163,7 +186,21 @@ export function RootNavigation(): React.JSX.Element {
     setDraftError(null);
     if (result.value.isTerminal) {
       setActiveOrder(null);
-      setActiveScreen('home');
+      setHistoryFilter('all');
+      if (result.value.order.status === 'Completed') {
+        setSelectedCompletedOrder(result.value.order);
+        setActiveScreen(
+          activeRole === 'customer' ? 'post_trip_feedback' : 'history_detail',
+        );
+        setSelectedHistoryOrderId(result.value.order.orderId);
+        await loadHistory('all');
+        return;
+      }
+
+      setSelectedCompletedOrder(null);
+      setSelectedHistoryOrderId(result.value.order.orderId);
+      await loadHistory('all');
+      setActiveScreen('history_detail');
       return;
     }
 
@@ -183,7 +220,11 @@ export function RootNavigation(): React.JSX.Element {
 
     if (result.value.isTerminal) {
       setActiveOrder(null);
-      setActiveScreen('home');
+      setSelectedCompletedOrder(null);
+      setHistoryFilter('all');
+      setSelectedHistoryOrderId(result.value.order.orderId);
+      await loadHistory('all');
+      setActiveScreen('history_detail');
       return;
     }
 
@@ -205,6 +246,38 @@ export function RootNavigation(): React.JSX.Element {
     setActiveOrder(null);
     setActiveScreen('home');
   }
+
+  async function handleOpenHistory() {
+    await loadHistory(historyFilter);
+    setActiveScreen('history_list');
+  }
+
+  async function handleSaveFeedback(params: {
+    manualRating?: number;
+    reviewText?: string;
+  }) {
+    if (!selectedCompletedOrder) {
+      return;
+    }
+
+    const result = await savePostTripFeedback(bootstrapDeps, selectedCompletedOrder, params);
+
+    if (!result.ok) {
+      return;
+    }
+
+    setSelectedCompletedOrder(result.value);
+    setSelectedHistoryOrderId(result.value.orderId);
+    await loadHistory(historyFilter);
+    setActiveScreen('history_detail');
+  }
+
+  const selectedHistoryOrder = historyOrders.find(
+    order => order.orderId === selectedHistoryOrderId,
+  ) ??
+    (selectedCompletedOrder && selectedCompletedOrder.orderId === selectedHistoryOrderId
+      ? selectedCompletedOrder
+      : null);
 
   return (
     <AppScreen scrollable>
@@ -255,6 +328,9 @@ export function RootNavigation(): React.JSX.Element {
         <AppText tone="muted">
           Active order: {activeOrder ? activeOrder.status : 'None'}
         </AppText>
+        <AppButton label="Open history" kind="secondary" onPress={() => {
+          void handleOpenHistory();
+        }} />
       </SectionCard>
 
       {activeOrder ? (
@@ -272,6 +348,45 @@ export function RootNavigation(): React.JSX.Element {
         onSubmit={handleProfileSubmit}
         submitError={submitError}
       />
+
+      {activeScreen === 'history_list' ? (
+        <HistoryScreen
+          filter={historyFilter}
+          onBack={() => {
+            setActiveScreen('home');
+          }}
+          onChangeFilter={nextFilter => {
+            setHistoryFilter(nextFilter);
+            void loadHistory(nextFilter);
+          }}
+          onOpenOrder={orderId => {
+            setSelectedHistoryOrderId(orderId);
+            setActiveScreen('history_detail');
+          }}
+          orders={historyOrders}
+          transactionLogs={transactionLogs}
+        />
+      ) : null}
+
+      {activeScreen === 'post_trip_feedback' && selectedCompletedOrder ? (
+        <PostTripFeedbackScreen
+          onSkip={() => {
+            setSelectedHistoryOrderId(selectedCompletedOrder.orderId);
+            setActiveScreen('history_detail');
+          }}
+          onSubmit={handleSaveFeedback}
+          order={selectedCompletedOrder}
+        />
+      ) : null}
+
+      {activeScreen === 'history_detail' && selectedHistoryOrder ? (
+        <HistoryDetailScreen
+          onBack={() => {
+            setActiveScreen('history_list');
+          }}
+          order={selectedHistoryOrder}
+        />
+      ) : null}
 
       {profile && activeScreen === 'active_trip' && activeOrder ? (
         <ActiveTripScreen

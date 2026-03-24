@@ -23,6 +23,14 @@ export function createCarrierDatabase(): SqlStatementExecutor {
     async execute(statement: string, params?: readonly unknown[]) {
       await getDatabase().execute(statement, params as Scalar[] | undefined);
     },
+    async queryAll<TRow>(statement: string, params?: readonly unknown[]) {
+      const result = await getDatabase().execute(
+        statement,
+        params as Scalar[] | undefined,
+      );
+
+      return result.rows as TRow[];
+    },
     async queryOne<TRow>(statement: string, params?: readonly unknown[]) {
       const result = await getDatabase().execute(
         statement,

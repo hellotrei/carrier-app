@@ -1,5 +1,6 @@
 import { nowIso } from '../../core/utils/now';
 import type { Result } from '../../core/result/result';
+import { buildCompletedOrderFeedback, recordCompletedOrderTransaction } from './record-completed-order';
 import {
   isTerminalOrderStatus,
   type Order,
@@ -7,11 +8,13 @@ import {
 } from '../../domain/order/order';
 import { transitionOrder } from '../../domain/order/transition-order';
 import type { OrderRepositoryPort } from '../../data/repositories/order-repository-port';
+import type { TransactionLogRepositoryPort } from '../../data/repositories/transaction-log-repository-port';
 
 export type AdvanceOrderStatusError = { code: 'INVALID_TRANSITION' };
 
 export type AdvanceOrderStatusDeps = {
   orderRepository: OrderRepositoryPort;
+  transactionLogRepository: TransactionLogRepositoryPort;
 };
 
 export type AdvanceOrderStatusSuccess = {
@@ -25,9 +28,21 @@ export async function advanceOrderStatus(
   nextStatus: OrderStatus,
 ): Promise<Result<AdvanceOrderStatusSuccess, AdvanceOrderStatusError>> {
   try {
-    const nextOrder = transitionOrder(order, nextStatus, nowIso());
+    const timestamp = nowIso();
+    const transitionedOrder = transitionOrder(order, nextStatus, timestamp);
+    const nextOrder =
+      nextStatus === 'Completed'
+        ? buildCompletedOrderFeedback({
+            ...transitionedOrder,
+            completedAt: timestamp,
+          })
+        : transitionedOrder;
 
     await deps.orderRepository.saveOrder(nextOrder);
+
+    if (nextStatus === 'Completed') {
+      await recordCompletedOrderTransaction(deps.transactionLogRepository, nextOrder);
+    }
 
     return {
       ok: true,

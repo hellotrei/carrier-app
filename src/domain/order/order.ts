@@ -32,7 +32,11 @@ export type Order = {
   bookingSessionId: string;
   cancelReason?: OrderCancelReason;
   customerId: UserId;
+  completedAt?: string;
   partnerId: UserId;
+  feedbackSource?: 'default_auto' | 'manual';
+  finalRating?: number;
+  reviewText?: string;
   riderDeclaredName: string;
   pickup: LocationPoint;
   destination: LocationPoint;

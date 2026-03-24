@@ -53,4 +53,24 @@ export const sqlMigrations = [
       `ALTER TABLE order_table ADD COLUMN status_updated_at TEXT;`,
     ],
   },
+  {
+    version: 4,
+    statements: [
+      `ALTER TABLE order_table ADD COLUMN cancel_reason TEXT;`,
+      `ALTER TABLE order_table ADD COLUMN completed_at TEXT;`,
+      `ALTER TABLE order_table ADD COLUMN final_rating INTEGER;`,
+      `ALTER TABLE order_table ADD COLUMN review_text TEXT;`,
+      `ALTER TABLE order_table ADD COLUMN feedback_source TEXT;`,
+      `CREATE TABLE IF NOT EXISTS transaction_log (
+        log_id TEXT PRIMARY KEY NOT NULL,
+        order_id TEXT NOT NULL,
+        customer_id TEXT NOT NULL,
+        partner_id TEXT NOT NULL,
+        estimated_price REAL NOT NULL,
+        commission_rate REAL NOT NULL DEFAULT 0.10,
+        commission_amount REAL NOT NULL,
+        completed_at TEXT NOT NULL
+      );`,
+    ],
+  },
 ] as const;
