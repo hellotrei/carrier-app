@@ -2,8 +2,8 @@ import messaging, {
   type FirebaseMessagingTypes,
 } from '@react-native-firebase/messaging';
 
-import { syncNotificationToken } from '../../application/user/sync-notification-token';
 import type { BootstrapDependencies } from '../../app/config/bootstrap-deps';
+import { syncNotificationTokenToRelay } from '../../application/user/sync-notification-token-to-relay';
 import { normalizeNotificationEvent } from './notification-event';
 import { usePermissionStore } from './permission-store';
 
@@ -27,7 +27,7 @@ export async function loadHardwarePermissionState(
       await Promise.all([
         deps.hardwarePermissionGateway.getLocationWhenInUseStatus(),
         deps.hardwarePermissionGateway.getNotificationStatus(),
-        syncNotificationToken(deps),
+        syncNotificationTokenToRelay(deps),
       ]);
 
     usePermissionStore.setState({
@@ -74,7 +74,7 @@ export async function requestNotificationPermission(
       return;
     }
 
-    const token = await syncNotificationToken(deps);
+    const token = await syncNotificationTokenToRelay(deps);
 
     usePermissionStore.setState({
       notificationPermissionStatus: 'granted',

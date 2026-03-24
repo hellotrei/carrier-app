@@ -6,6 +6,7 @@ import { createSqliteUserRepository } from '../../data/repositories/sqlite-user-
 import { createNativeDeviceAuthGateway } from '../../integrations/device-auth/native-device-auth-gateway';
 import { createNativeFileExportGateway } from '../../integrations/file-export/native-file-export-gateway';
 import { createNativeHardwarePermissionGateway } from '../../integrations/hardware-permission/native-hardware-permission-gateway';
+import { createNoopNotificationRelayGateway } from '../../integrations/notification-relay/notification-relay-gateway';
 import { createKeychainSecureStorage } from '../../data/storage/keychain-secure-storage';
 
 const database = createCarrierDatabase();
@@ -16,8 +17,11 @@ export const bootstrapDeps = {
   deviceAuthGateway: createNativeDeviceAuthGateway(),
   fileExportGateway: createNativeFileExportGateway(),
   hardwarePermissionGateway: createNativeHardwarePermissionGateway(),
+  notificationRelayGateway: createNoopNotificationRelayGateway(),
   orderRepository: createSqliteOrderRepository(database),
   secureStorage: createKeychainSecureStorage(),
   transactionLogRepository: createSqliteTransactionLogRepository(database),
   userRepository: createSqliteUserRepository(database),
 };
+
+export type BootstrapDependencies = typeof bootstrapDeps;
