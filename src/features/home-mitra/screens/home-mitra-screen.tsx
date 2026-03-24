@@ -8,6 +8,7 @@ import {
 import type { UserProfile } from '../../../domain/user/user-profile';
 import { isDriverReady } from '../../../domain/user/validate-driver-readiness';
 import { OrderSummaryBlock } from '../../../ui/patterns/order-summary-block';
+import { UiStateCard } from '../../../ui/patterns/ui-state-card';
 import { AppButton } from '../../../ui/primitives/app-button';
 import { AppText } from '../../../ui/primitives/app-text';
 import { SectionCard } from '../../../ui/patterns/section-card';
@@ -78,41 +79,36 @@ export function HomeMitraScreen({
             Driver readiness: {profile?.driverReadinessStatus ?? 'draft'}
           </AppText>
           {!mitraReady ? (
-            <AppText>
-              Complete mitra readiness first. Active vehicle and minimum driver setup must be valid before opening this request.
-            </AppText>
+            <UiStateCard
+              eyebrow="Action Needed"
+              title="Mitra readiness is still blocked"
+              description="Complete the minimum driver setup first. An active vehicle and valid readiness inputs are required before this request can be opened."
+              tone="warning"
+            />
           ) : null}
           {onOpenRequest && mitraReady ? (
             <AppButton label="Open request" onPress={onOpenRequest} />
           ) : null}
         </SectionCard>
         {!mitraReady ? (
-          <SectionCard
+          <UiStateCard
             eyebrow="Guidance"
             title="Finish mitra readiness"
-            description="This request stays locked until the minimum mitra setup is complete. Update the mitra profile section in this screen first."
-          >
-            {readinessGuidance.map(item => (
-              <AppText key={item} tone="muted">
-                - {item}
-              </AppText>
-            ))}
-            <AppButton
-              label="Review mitra profile"
-              kind="secondary"
-              onPress={onReviewProfile}
-            />
-          </SectionCard>
+            description={`This request stays locked until the minimum mitra setup is complete.${readinessGuidance.length ? ` ${readinessGuidance.join(' ')}` : ''}`}
+            secondaryActionLabel="Review mitra profile"
+            onSecondaryAction={onReviewProfile}
+            tone="warning"
+          />
         ) : null}
       </>
     );
   }
 
   return (
-    <SectionCard
-      eyebrow="Feature"
-      title="Mitra home scaffold"
-      description="This slice is ready for readiness gates, online toggle orchestration, and incoming-order flow without duplicating shared UI."
+    <UiStateCard
+      eyebrow="Inbox"
+      title="No incoming request yet"
+      description="Mitra home is ready for request review, but no saved request is waiting in the local inbox right now."
     />
   );
 }

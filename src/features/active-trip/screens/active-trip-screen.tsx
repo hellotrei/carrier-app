@@ -18,6 +18,7 @@ import {
 } from '../../order/order-status-copy';
 import { OrderSummaryBlock } from '../../../ui/patterns/order-summary-block';
 import { SectionCard } from '../../../ui/patterns/section-card';
+import { UiStateCard } from '../../../ui/patterns/ui-state-card';
 import { AppButton } from '../../../ui/primitives/app-button';
 import { AppText } from '../../../ui/primitives/app-text';
 import { tokens } from '../../../ui/theme/tokens';
@@ -131,12 +132,11 @@ export function ActiveTripScreen({
         {getActiveTripRoleSummary(activeRole, order.status)}
       </AppText>
       {isDraft ? (
-        <View style={styles.reviewCard}>
-          <AppText variant="eyebrow">Draft Notes</AppText>
-          <AppText tone="muted">
-            Submitting this draft moves it to Requested and locks the current booking summary for recovery.
-          </AppText>
-        </View>
+        <UiStateCard
+          eyebrow="Draft Notes"
+          title="Draft review is still editable"
+          description="Submitting this draft moves it to Requested and locks the current booking summary for recovery."
+        />
       ) : (
         <View style={styles.reviewCard}>
           <AppText variant="eyebrow">Handoff Notes</AppText>

@@ -7,6 +7,7 @@ import { tokens } from '../theme/tokens';
 
 type UiStateCardProps = {
   description: string;
+  eyebrow?: string;
   primaryActionLabel?: string;
   onPrimaryAction?: () => void;
   secondaryActionLabel?: string;
@@ -17,6 +18,7 @@ type UiStateCardProps = {
 
 export function UiStateCard({
   description,
+  eyebrow,
   onPrimaryAction,
   onSecondaryAction,
   primaryActionLabel,
@@ -26,7 +28,9 @@ export function UiStateCard({
 }: UiStateCardProps): React.JSX.Element {
   return (
     <View style={[styles.card, tone === 'warning' ? styles.warningCard : null]}>
-      <AppText variant="eyebrow">{tone === 'warning' ? 'Action Needed' : 'Nothing Saved Yet'}</AppText>
+      <AppText variant="eyebrow">
+        {eyebrow ?? (tone === 'warning' ? 'Action Needed' : 'Nothing Saved Yet')}
+      </AppText>
       <AppText style={styles.title}>{title}</AppText>
       <AppText tone="muted">{description}</AppText>
       {primaryActionLabel && onPrimaryAction ? (
