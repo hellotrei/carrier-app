@@ -11,6 +11,7 @@ import { saveProfile } from '../../application/user/save-profile';
 import { advanceOrderStatus } from '../../application/order/advance-order-status';
 import { cancelOrder } from '../../application/order/cancel-order';
 import { createOrderDraft } from '../../application/order/create-order-draft';
+import { exportTransactionLogCsv } from '../../application/order/export-transaction-log-csv';
 import { savePostTripFeedback } from '../../application/order/save-post-trip-feedback';
 import { submitOrderDraft } from '../../application/order/submit-order-draft';
 import { ActiveTripScreen } from '../../features/active-trip/screens/active-trip-screen';
@@ -19,6 +20,7 @@ import { PostTripFeedbackScreen } from '../../features/feedback/screens/post-tri
 import { HomeCustomerScreen } from '../../features/home-customer/screens/home-customer-screen';
 import { HistoryDetailScreen } from '../../features/history/screens/history-detail-screen';
 import { HistoryScreen } from '../../features/history/screens/history-screen';
+import { TransactionLogCsvScreen } from '../../features/history/screens/transaction-log-csv-screen';
 import { HomeMitraScreen } from '../../features/home-mitra/screens/home-mitra-screen';
 import { BasicProfileScreen } from '../../features/profile/screens/basic-profile-screen';
 import { useAppStore } from '../../state/store/app-store';
@@ -37,7 +39,7 @@ export function RootNavigation(): React.JSX.Element {
   const setActiveRole = useAppStore(state => state.setActiveRole);
   const setProfile = useAppStore(state => state.setProfile);
   const [activeScreen, setActiveScreen] = React.useState<
-    'home' | 'active_trip' | 'history_list' | 'history_detail' | 'post_trip_feedback' | 'audit_list'
+    'home' | 'active_trip' | 'history_list' | 'history_detail' | 'post_trip_feedback' | 'audit_list' | 'transaction_csv'
   >('home');
   const [draftError, setDraftError] = React.useState<string | null>(null);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
@@ -53,6 +55,7 @@ export function RootNavigation(): React.JSX.Element {
   const [auditEvents, setAuditEvents] = React.useState<Awaited<
     ReturnType<typeof bootstrapDeps.auditRepository.listEvents>
   >>([]);
+  const [transactionCsvPreview, setTransactionCsvPreview] = React.useState('');
 
   async function handleRoleChange(role: 'customer' | 'mitra') {
     setActiveRole(role);
@@ -371,12 +374,25 @@ export function RootNavigation(): React.JSX.Element {
           onOpenAudit={() => {
             setActiveScreen('audit_list');
           }}
+          onOpenTransactionCsv={() => {
+            setTransactionCsvPreview(exportTransactionLogCsv(transactionLogs));
+            setActiveScreen('transaction_csv');
+          }}
           onOpenOrder={orderId => {
             setSelectedHistoryOrderId(orderId);
             setActiveScreen('history_detail');
           }}
           orders={historyOrders}
           transactionLogs={transactionLogs}
+        />
+      ) : null}
+
+      {activeScreen === 'transaction_csv' ? (
+        <TransactionLogCsvScreen
+          csvContent={transactionCsvPreview}
+          onBack={() => {
+            setActiveScreen('history_list');
+          }}
         />
       ) : null}
 
