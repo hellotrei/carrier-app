@@ -38,6 +38,7 @@ import { TransactionLogCsvScreen } from '../../features/history/screens/transact
 import { HomeMitraScreen } from '../../features/home-mitra/screens/home-mitra-screen';
 import { getExportStateErrorCopy } from '../../features/order/export-state-copy';
 import { BasicProfileScreen } from '../../features/profile/screens/basic-profile-screen';
+import { useExportStore } from '../../state/export/export-store';
 import { usePermissionStore } from '../../state/permission/permission-store';
 import { useAppStore } from '../../state/store/app-store';
 import { HardwarePermissionCard } from '../../ui/patterns/hardware-permission-card';
@@ -55,6 +56,40 @@ export function RootNavigation(): React.JSX.Element {
   const setActiveOrder = useAppStore(state => state.setActiveOrder);
   const setActiveRole = useAppStore(state => state.setActiveRole);
   const setProfile = useAppStore(state => state.setProfile);
+  const transactionCsvPreview = useExportStore(
+    state => state.transactionCsvPreview,
+  );
+  const transactionCsvExportError = useExportStore(
+    state => state.transactionCsvExportError,
+  );
+  const transactionCsvExportPath = useExportStore(
+    state => state.transactionCsvExportPath,
+  );
+  const auditExportPreview = useExportStore(state => state.auditExportPreview);
+  const auditExportError = useExportStore(state => state.auditExportError);
+  const auditExportPath = useExportStore(state => state.auditExportPath);
+  const auditBundleFiles = useExportStore(state => state.auditBundleFiles);
+  const setTransactionCsvPreview = useExportStore(
+    state => state.setTransactionCsvPreview,
+  );
+  const setTransactionCsvExportError = useExportStore(
+    state => state.setTransactionCsvExportError,
+  );
+  const setTransactionCsvExportPath = useExportStore(
+    state => state.setTransactionCsvExportPath,
+  );
+  const resetTransactionCsvState = useExportStore(
+    state => state.resetTransactionCsvState,
+  );
+  const setAuditBundleFiles = useExportStore(state => state.setAuditBundleFiles);
+  const setAuditExportPreview = useExportStore(
+    state => state.setAuditExportPreview,
+  );
+  const setAuditExportError = useExportStore(state => state.setAuditExportError);
+  const setAuditExportPath = useExportStore(state => state.setAuditExportPath);
+  const resetAuditExportState = useExportStore(
+    state => state.resetAuditExportState,
+  );
   const locationPermissionStatus = usePermissionStore(
     state => state.locationPermissionStatus,
   );
@@ -90,13 +125,6 @@ export function RootNavigation(): React.JSX.Element {
   const [auditEvents, setAuditEvents] = React.useState<Awaited<
     ReturnType<typeof bootstrapDeps.auditRepository.listEvents>
   >>([]);
-  const [transactionCsvPreview, setTransactionCsvPreview] = React.useState('');
-  const [transactionCsvExportError, setTransactionCsvExportError] = React.useState<string | null>(null);
-  const [transactionCsvExportPath, setTransactionCsvExportPath] = React.useState<string | null>(null);
-  const [auditExportPreview, setAuditExportPreview] = React.useState('');
-  const [auditExportError, setAuditExportError] = React.useState<string | null>(null);
-  const [auditExportPath, setAuditExportPath] = React.useState<string | null>(null);
-  const [auditBundleFiles, setAuditBundleFiles] = React.useState<Record<string, string>>({});
 
   const loadHardwarePermissionState = React.useCallback(async () => {
     try {
@@ -625,9 +653,8 @@ export function RootNavigation(): React.JSX.Element {
             setActiveScreen('audit_list');
           }}
           onOpenTransactionCsv={() => {
+            resetTransactionCsvState();
             setTransactionCsvPreview(exportTransactionLogCsv(transactionLogs));
-            setTransactionCsvExportError(null);
-            setTransactionCsvExportPath(null);
             setActiveScreen('transaction_csv');
           }}
           onOpenOrder={orderId => {
@@ -660,10 +687,9 @@ export function RootNavigation(): React.JSX.Element {
             setActiveScreen('history_list');
           }}
           onPreviewExport={events => {
+            resetAuditExportState();
             setAuditBundleFiles(buildAuditBundleFiles(events));
             setAuditExportPreview(exportAuditBundlePreview(events));
-            setAuditExportError(null);
-            setAuditExportPath(null);
             setActiveScreen('audit_export_preview');
           }}
         />
