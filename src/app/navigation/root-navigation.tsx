@@ -22,8 +22,6 @@ import {
   shareExportedFile,
 } from '../../integrations/file-export/file-export-actions';
 import { openHardwarePermissionSettings } from '../../integrations/hardware-permission/hardware-permission-actions';
-import { HomeCustomerScreen } from '../../features/home-customer/screens/home-customer-screen';
-import { HomeMitraScreen } from '../../features/home-mitra/screens/home-mitra-screen';
 import { getExportStateErrorCopy } from '../../features/order/export-state-copy';
 import { BasicProfileScreen } from '../../features/profile/screens/basic-profile-screen';
 import { getHasRecoverableOrder } from '../../state/app-shell/app-shell-selectors';
@@ -39,6 +37,7 @@ import { AuditExportPreviewRoute } from './screens/audit-export-preview-route';
 import { AuditListRoute } from './screens/audit-list-route';
 import { HistoryDetailRoute } from './screens/history-detail-route';
 import { HistoryListRoute } from './screens/history-list-route';
+import { HomeRoute } from './screens/home-route';
 import { PostTripFeedbackRoute } from './screens/post-trip-feedback-route';
 import { TransactionCsvRoute } from './screens/transaction-csv-route';
 
@@ -694,73 +693,21 @@ export function RootNavigation(): React.JSX.Element {
         />
       ) : null}
 
-      {profile && activeScreen === 'home'
-        ? activeRole === 'customer'
-          ? (
-              <HomeCustomerScreen
-                activeOrderStatus={
-                  activeOrder && activeOrder.status !== 'Canceled' &&
-                  activeOrder.status !== 'Completed' &&
-                  activeOrder.status !== 'Rejected' &&
-                  activeOrder.status !== 'Expired'
-                    ? activeOrder.status
-                    : undefined
-                }
-                activeOrderSummary={
-                  activeOrder
-                    ? {
-                        destinationLabel: activeOrder.destination.label ?? '',
-                        estimatedPrice: String(activeOrder.estimatedPrice),
-                        pickupLabel: activeOrder.pickup.label ?? '',
-                      }
-                    : undefined
-                }
-                initialDraftValues={
-                  activeOrder?.status === 'Draft'
-                    ? {
-                        destinationLabel: activeOrder.destination.label ?? '',
-                        estimatedPrice: String(activeOrder.estimatedPrice),
-                        pickupLabel: activeOrder.pickup.label ?? '',
-                      }
-                    : undefined
-                }
-                lastUpdatedHint={
-                  activeOrder
-                    ? activeOrder.status === 'Draft'
-                      ? `Draft last updated: ${activeOrder.updatedAt}.`
-                      : `Last status update: ${activeOrder.statusUpdatedAt}.`
-                    : undefined
-                }
-                onClearDraft={
-                  activeOrder?.status === 'Draft'
-                    ? () => {
-                        void handleClearDraft();
-                      }
-                    : undefined
-                }
-                onCreateDraft={handleCreateDraft}
-                submitError={draftError}
-              />
-            )
-          : (
-              <HomeMitraScreen
-                onOpenRequest={
-                  activeOrder?.status === 'Requested'
-                    ? () => {
-                        setActiveScreen('active_trip');
-                      }
-                    : undefined
-                }
-                onReviewProfile={() => {
-                  setActiveScreen('home');
-                }}
-                profile={profile}
-                requestedOrder={
-                  activeOrder?.status === 'Requested' ? activeOrder : undefined
-                }
-              />
-            )
-        : null}
+      {profile && activeScreen === 'home' ? (
+        <HomeRoute
+          draftError={draftError}
+          onClearDraft={() => {
+            void handleClearDraft();
+          }}
+          onCreateDraft={handleCreateDraft}
+          onOpenRequestedOrder={() => {
+            setActiveScreen('active_trip');
+          }}
+          onReviewProfile={() => {
+            setActiveScreen('home');
+          }}
+        />
+      ) : null}
     </AppScreen>
   );
 }
