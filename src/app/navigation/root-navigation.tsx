@@ -87,6 +87,7 @@ export function RootNavigation(): React.JSX.Element {
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [selectedCompletedOrder, setSelectedCompletedOrder] = React.useState<Order | null>(null);
   const activeStackRoute = resolveStackRouteName(activeScreen);
+  const lastHandledNotificationRef = React.useRef<string | null>(null);
 
   const refreshHardwarePermissionState = React.useCallback(async () => {
     await loadHardwarePermissionState(bootstrapDeps);
@@ -115,6 +116,36 @@ export function RootNavigation(): React.JSX.Element {
   const goToScreen = React.useCallback((screen: RootScreen) => {
     setActiveScreen(screen);
   }, []);
+
+  React.useEffect(() => {
+    if (!lastNotificationEvent?.orderId) {
+      return;
+    }
+
+    const notificationKey =
+      `${lastNotificationEvent.type}:${lastNotificationEvent.orderId}:${lastNotificationEvent.preview}`;
+
+    if (lastHandledNotificationRef.current === notificationKey) {
+      return;
+    }
+
+    lastHandledNotificationRef.current = notificationKey;
+
+    if (activeOrder?.orderId === lastNotificationEvent.orderId) {
+      goToScreen(resumeTarget);
+      return;
+    }
+
+    setSelectedCompletedOrder(null);
+    setSelectedHistoryOrderId(lastNotificationEvent.orderId);
+    goToScreen('history_detail');
+  }, [
+    activeOrder,
+    goToScreen,
+    lastNotificationEvent,
+    resumeTarget,
+    setSelectedHistoryOrderId,
+  ]);
 
   async function handleProfileSubmit(params: {
     displayName: string;
