@@ -17,7 +17,6 @@ import {
   buildAuditBundleFiles,
   exportAuditBundlePreview,
 } from '../../application/order/export-audit-bundle-preview';
-import { exportTransactionLogCsv } from '../../application/order/export-transaction-log-csv';
 import { guardExportWithDeviceAuth } from '../../application/order/guard-export-with-device-auth';
 import { savePostTripFeedback } from '../../application/order/save-post-trip-feedback';
 import { submitOrderDraft } from '../../application/order/submit-order-draft';
@@ -33,7 +32,6 @@ import { AuditScreen } from '../../features/audit/screens/audit-screen';
 import { PostTripFeedbackScreen } from '../../features/feedback/screens/post-trip-feedback-screen';
 import { HomeCustomerScreen } from '../../features/home-customer/screens/home-customer-screen';
 import { HistoryDetailScreen } from '../../features/history/screens/history-detail-screen';
-import { HistoryScreen } from '../../features/history/screens/history-screen';
 import { TransactionLogCsvScreen } from '../../features/history/screens/transaction-log-csv-screen';
 import { HomeMitraScreen } from '../../features/home-mitra/screens/home-mitra-screen';
 import { getExportStateErrorCopy } from '../../features/order/export-state-copy';
@@ -51,6 +49,7 @@ import { useHistoryStore } from '../../state/history/history-store';
 import { usePermissionStore } from '../../state/permission/permission-store';
 import { HardwarePermissionCard } from '../../ui/patterns/hardware-permission-card';
 import { RecoveryBanner } from '../../ui/patterns/recovery-banner';
+import { HistoryListRoute } from './screens/history-list-route';
 
 export function RootNavigation(): React.JSX.Element {
   const activeOrder = useAppShellStore(state => state.activeOrder);
@@ -65,20 +64,16 @@ export function RootNavigation(): React.JSX.Element {
   const setActiveOrder = useAppShellStore(state => state.setActiveOrder);
   const setActiveRole = useAppShellStore(state => state.setActiveRole);
   const setProfile = useAppShellStore(state => state.setProfile);
-  const historyFilter = useHistoryStore(state => state.historyFilter);
   const historyOrders = useHistoryStore(state => state.historyOrders);
   const selectedHistoryOrderId = useHistoryStore(
     state => state.selectedHistoryOrderId,
   );
   const transactionLogs = useHistoryStore(state => state.transactionLogs);
   const auditEvents = useHistoryStore(state => state.auditEvents);
-  const setHistoryFilter = useHistoryStore(state => state.setHistoryFilter);
-  const setHistoryOrders = useHistoryStore(state => state.setHistoryOrders);
   const setSelectedHistoryOrderId = useHistoryStore(
     state => state.setSelectedHistoryOrderId,
   );
-  const setTransactionLogs = useHistoryStore(state => state.setTransactionLogs);
-  const setAuditEvents = useHistoryStore(state => state.setAuditEvents);
+  const historyFilter = useHistoryStore(state => state.historyFilter);
   const transactionCsvPreview = useExportStore(
     state => state.transactionCsvPreview,
   );
@@ -92,17 +87,11 @@ export function RootNavigation(): React.JSX.Element {
   const auditExportError = useExportStore(state => state.auditExportError);
   const auditExportPath = useExportStore(state => state.auditExportPath);
   const auditBundleFiles = useExportStore(state => state.auditBundleFiles);
-  const setTransactionCsvPreview = useExportStore(
-    state => state.setTransactionCsvPreview,
-  );
   const setTransactionCsvExportError = useExportStore(
     state => state.setTransactionCsvExportError,
   );
   const setTransactionCsvExportPath = useExportStore(
     state => state.setTransactionCsvExportPath,
-  );
-  const resetTransactionCsvState = useExportStore(
-    state => state.resetTransactionCsvState,
   );
   const setAuditBundleFiles = useExportStore(state => state.setAuditBundleFiles);
   const setAuditExportPreview = useExportStore(
@@ -179,13 +168,15 @@ export function RootNavigation(): React.JSX.Element {
     setActiveRole(role);
   }
 
-  async function loadHistory(filter: 'all' | 'completed' | 'canceled') {
+  async function refreshHistorySnapshot(filter: 'all' | 'completed' | 'canceled') {
     const { historyOrders, transactionLogs, auditEvents } =
       await loadHistorySnapshot(bootstrapDeps, filter);
 
-    setHistoryOrders(historyOrders);
-    setTransactionLogs(transactionLogs);
-    setAuditEvents(auditEvents);
+    useHistoryStore.setState({
+      auditEvents,
+      historyOrders,
+      transactionLogs,
+    });
   }
 
   async function handleProfileSubmit(params: {
@@ -323,7 +314,7 @@ export function RootNavigation(): React.JSX.Element {
 
       setSelectedCompletedOrder(null);
       setSelectedHistoryOrderId(result.value.order.orderId);
-      await loadHistory('all');
+      await refreshHistorySnapshot('all');
       setActiveScreen('history_detail');
       return;
     }
@@ -347,7 +338,7 @@ export function RootNavigation(): React.JSX.Element {
       setSelectedCompletedOrder(null);
       setHistoryFilter('all');
       setSelectedHistoryOrderId(result.value.order.orderId);
-      await loadHistory('all');
+      await refreshHistorySnapshot('all');
       setActiveScreen('history_detail');
       return;
     }
@@ -372,7 +363,6 @@ export function RootNavigation(): React.JSX.Element {
   }
 
   async function handleOpenHistory() {
-    await loadHistory(historyFilter);
     setActiveScreen('history_list');
   }
 
@@ -543,7 +533,7 @@ export function RootNavigation(): React.JSX.Element {
 
     setSelectedCompletedOrder(result.value);
     setSelectedHistoryOrderId(result.value.orderId);
-    await loadHistory(historyFilter);
+    await refreshHistorySnapshot(historyFilter);
     setActiveScreen('history_detail');
   }
 
@@ -647,29 +637,19 @@ export function RootNavigation(): React.JSX.Element {
       />
 
       {activeScreen === 'history_list' ? (
-        <HistoryScreen
-          filter={historyFilter}
+        <HistoryListRoute
           onBack={() => {
             setActiveScreen('home');
-          }}
-          onChangeFilter={nextFilter => {
-            setHistoryFilter(nextFilter);
-            void loadHistory(nextFilter);
           }}
           onOpenAudit={() => {
             setActiveScreen('audit_list');
           }}
           onOpenTransactionCsv={() => {
-            resetTransactionCsvState();
-            setTransactionCsvPreview(exportTransactionLogCsv(transactionLogs));
             setActiveScreen('transaction_csv');
           }}
           onOpenOrder={orderId => {
-            setSelectedHistoryOrderId(orderId);
             setActiveScreen('history_detail');
           }}
-          orders={historyOrders}
-          transactionLogs={transactionLogs}
         />
       ) : null}
 
