@@ -13,6 +13,7 @@ import { cancelOrder } from '../../application/order/cancel-order';
 import { createOrderDraft } from '../../application/order/create-order-draft';
 import { exportAuditBundlePreview } from '../../application/order/export-audit-bundle-preview';
 import { exportTransactionLogCsv } from '../../application/order/export-transaction-log-csv';
+import { guardExportWithDeviceAuth } from '../../application/order/guard-export-with-device-auth';
 import { savePostTripFeedback } from '../../application/order/save-post-trip-feedback';
 import { submitOrderDraft } from '../../application/order/submit-order-draft';
 import { ActiveTripScreen } from '../../features/active-trip/screens/active-trip-screen';
@@ -270,6 +271,11 @@ export function RootNavigation(): React.JSX.Element {
 
   async function handleExportTransactionCsv() {
     try {
+      await guardExportWithDeviceAuth(
+        bootstrapDeps,
+        'Authenticate to export transaction log CSV',
+      );
+
       const path = await bootstrapDeps.fileExportGateway.writeExportFile({
         content: transactionCsvPreview,
         extension: 'csv',
@@ -287,6 +293,11 @@ export function RootNavigation(): React.JSX.Element {
 
   async function handleExportAuditBundle() {
     try {
+      await guardExportWithDeviceAuth(
+        bootstrapDeps,
+        'Authenticate to export audit bundle',
+      );
+
       const path = await bootstrapDeps.fileExportGateway.writeExportFile({
         content: auditExportPreview,
         extension: 'carrieraudit',
