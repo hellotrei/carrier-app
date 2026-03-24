@@ -6,6 +6,7 @@ import { SectionCard } from './section-card';
 
 type HardwarePermissionCardProps = {
   locationStatus: 'idle' | 'granted' | 'denied';
+  notificationTokenPreview?: string | null;
   notificationStatus: 'idle' | 'granted' | 'denied';
   onRequestLocation: () => void;
   onRequestNotifications: () => void;
@@ -14,6 +15,7 @@ type HardwarePermissionCardProps = {
 
 export function HardwarePermissionCard({
   locationStatus,
+  notificationTokenPreview,
   notificationStatus,
   onOpenSettings,
   onRequestLocation,
@@ -32,6 +34,11 @@ export function HardwarePermissionCard({
       <AppText tone="muted">
         Notification permission: {notificationStatus}
       </AppText>
+      {notificationTokenPreview ? (
+        <AppText tone="muted">
+          Notification token: {notificationTokenPreview}
+        </AppText>
+      ) : null}
       <AppButton
         label="Request location permission"
         kind="secondary"

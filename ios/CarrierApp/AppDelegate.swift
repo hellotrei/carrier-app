@@ -149,6 +149,26 @@ class LocationPermissionModule: NSObject, RCTBridgeModule, CLLocationManagerDele
     true
   }
 
+  @objc(getWhenInUseAuthorizationStatus:rejecter:)
+  func getWhenInUseAuthorizationStatus(
+    _ resolve: RCTPromiseResolveBlock,
+    rejecter reject: RCTPromiseRejectBlock
+  ) {
+    let status = CLLocationManager.authorizationStatus()
+
+    if status == .authorizedAlways || status == .authorizedWhenInUse {
+      resolve("granted")
+      return
+    }
+
+    if status == .denied || status == .restricted {
+      resolve("denied")
+      return
+    }
+
+    resolve("idle")
+  }
+
   @objc(requestWhenInUseAuthorization:rejecter:)
   func requestWhenInUseAuthorization(
     _ resolve: @escaping RCTPromiseResolveBlock,

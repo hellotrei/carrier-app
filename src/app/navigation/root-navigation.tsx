@@ -83,6 +83,46 @@ export function RootNavigation(): React.JSX.Element {
   const [notificationPermissionStatus, setNotificationPermissionStatus] = React.useState<
     'idle' | 'granted' | 'denied'
   >('idle');
+  const [notificationTokenPreview, setNotificationTokenPreview] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    async function loadHardwarePermissionState() {
+      try {
+        const [locationStatus, notificationStatus, notificationToken] =
+          await Promise.all([
+            bootstrapDeps.hardwarePermissionGateway.getLocationWhenInUseStatus(),
+            bootstrapDeps.hardwarePermissionGateway.getNotificationStatus(),
+            bootstrapDeps.hardwarePermissionGateway.getNotificationToken(),
+          ]);
+
+        if (cancelled) {
+          return;
+        }
+
+        setLocationPermissionStatus(locationStatus);
+        setNotificationPermissionStatus(notificationStatus);
+        setNotificationTokenPreview(
+          notificationToken
+            ? `${notificationToken.slice(0, 6)}...${notificationToken.slice(-4)}`
+            : null,
+        );
+      } catch {
+        if (cancelled) {
+          return;
+        }
+
+        setNotificationTokenPreview(null);
+      }
+    }
+
+    void loadHardwarePermissionState();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function handleRoleChange(role: 'customer' | 'mitra') {
     setActiveRole(role);
@@ -303,8 +343,18 @@ export function RootNavigation(): React.JSX.Element {
       const granted =
         await bootstrapDeps.hardwarePermissionGateway.requestNotifications();
       setNotificationPermissionStatus(granted ? 'granted' : 'denied');
+      if (granted) {
+        const token =
+          await bootstrapDeps.hardwarePermissionGateway.getNotificationToken();
+        setNotificationTokenPreview(
+          token ? `${token.slice(0, 6)}...${token.slice(-4)}` : null,
+        );
+      } else {
+        setNotificationTokenPreview(null);
+      }
     } catch {
       setNotificationPermissionStatus('denied');
+      setNotificationTokenPreview(null);
     }
   }
 
@@ -522,6 +572,7 @@ export function RootNavigation(): React.JSX.Element {
 
       <HardwarePermissionCard
         locationStatus={locationPermissionStatus}
+        notificationTokenPreview={notificationTokenPreview}
         notificationStatus={notificationPermissionStatus}
         onOpenSettings={() => {
           void openHardwarePermissionSettings();

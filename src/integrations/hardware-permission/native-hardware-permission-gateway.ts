@@ -8,10 +8,14 @@ import {
 } from 'react-native';
 
 type LocationPermissionModule = {
+  getWhenInUseAuthorizationStatus: () => Promise<'granted' | 'denied' | 'idle'>;
   requestWhenInUseAuthorization: () => Promise<boolean>;
 };
 
 export type HardwarePermissionGateway = {
+  getLocationWhenInUseStatus: () => Promise<'granted' | 'denied' | 'idle'>;
+  getNotificationStatus: () => Promise<'granted' | 'denied' | 'idle'>;
+  getNotificationToken: () => Promise<string | null>;
   requestLocationWhenInUse: () => Promise<boolean>;
   requestNotifications: () => Promise<boolean>;
 };
@@ -54,8 +58,67 @@ async function requestAndroidNotificationPermission(): Promise<boolean> {
   return result === PermissionsAndroid.RESULTS.GRANTED;
 }
 
+async function getAndroidLocationPermissionStatus(): Promise<
+  'granted' | 'denied' | 'idle'
+> {
+  const fineGranted = await PermissionsAndroid.check(
+    PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+  );
+  const coarseGranted = await PermissionsAndroid.check(
+    PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
+  );
+
+  return fineGranted || coarseGranted ? 'granted' : 'idle';
+}
+
+async function getAndroidNotificationPermissionStatus(): Promise<
+  'granted' | 'denied' | 'idle'
+> {
+  if (Platform.Version < 33) {
+    return 'granted';
+  }
+
+  const granted = await PermissionsAndroid.check(
+    PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+  );
+
+  return granted ? 'granted' : 'idle';
+}
+
 export function createNativeHardwarePermissionGateway(): HardwarePermissionGateway {
   return {
+    async getLocationWhenInUseStatus() {
+      if (Platform.OS === 'android') {
+        return getAndroidLocationPermissionStatus();
+      }
+
+      return getLocationPermissionModule().getWhenInUseAuthorizationStatus();
+    },
+    async getNotificationStatus() {
+      if (Platform.OS === 'android') {
+        return getAndroidNotificationPermissionStatus();
+      }
+
+      const status = await messaging().hasPermission();
+
+      if (
+        status === AuthorizationStatus.AUTHORIZED ||
+        status === AuthorizationStatus.PROVISIONAL
+      ) {
+        return 'granted';
+      }
+
+      return status === AuthorizationStatus.DENIED ? 'denied' : 'idle';
+    },
+    async getNotificationToken() {
+      const notificationStatus = await this.getNotificationStatus();
+
+      if (notificationStatus !== 'granted') {
+        return null;
+      }
+
+      return messaging().getToken();
+    },
     async requestLocationWhenInUse() {
       if (Platform.OS === 'android') {
         return requestAndroidLocationPermission();
