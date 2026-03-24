@@ -118,12 +118,12 @@ export function RootNavigation(): React.JSX.Element {
   }, []);
 
   React.useEffect(() => {
-    if (!lastNotificationEvent?.orderId) {
+    if (!lastNotificationEvent) {
       return;
     }
 
     const notificationKey =
-      `${lastNotificationEvent.type}:${lastNotificationEvent.orderId}:${lastNotificationEvent.preview}`;
+      `${lastNotificationEvent.type}:${lastNotificationEvent.orderId ?? 'none'}:${lastNotificationEvent.preview}`;
 
     if (lastHandledNotificationRef.current === notificationKey) {
       return;
@@ -131,16 +131,48 @@ export function RootNavigation(): React.JSX.Element {
 
     lastHandledNotificationRef.current = notificationKey;
 
-    if (activeOrder?.orderId === lastNotificationEvent.orderId) {
-      goToScreen(resumeTarget);
+    if (lastNotificationEvent.type === 'sos_notice' || !lastNotificationEvent.orderId) {
       return;
     }
 
-    setSelectedCompletedOrder(null);
-    setSelectedHistoryOrderId(lastNotificationEvent.orderId);
-    goToScreen('history_detail');
+    if (activeOrder?.orderId === lastNotificationEvent.orderId) {
+      if (
+        lastNotificationEvent.type === 'trip_update' ||
+        lastNotificationEvent.type === 'order_response' ||
+        lastNotificationEvent.type === 'incoming_order'
+      ) {
+        goToScreen(resumeTarget);
+        return;
+      }
+
+      if (lastNotificationEvent.type === 'trip_terminal') {
+        setSelectedCompletedOrder(null);
+        setSelectedHistoryOrderId(lastNotificationEvent.orderId);
+        goToScreen('history_detail');
+      }
+
+      return;
+    }
+
+    if (
+      lastNotificationEvent.type === 'trip_terminal' ||
+      lastNotificationEvent.type === 'order_response'
+    ) {
+      setSelectedCompletedOrder(null);
+      setSelectedHistoryOrderId(lastNotificationEvent.orderId);
+      goToScreen('history_detail');
+      return;
+    }
+
+    if (
+      lastNotificationEvent.type === 'incoming_order' &&
+      activeRole === 'mitra'
+    ) {
+      goToScreen('home');
+    }
   }, [
     activeOrder,
+    activeRole,
     goToScreen,
     lastNotificationEvent,
     resumeTarget,
