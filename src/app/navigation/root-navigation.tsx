@@ -29,7 +29,6 @@ import { openHardwarePermissionSettings } from '../../integrations/hardware-perm
 import { ActiveTripScreen } from '../../features/active-trip/screens/active-trip-screen';
 import { AuditExportPreviewScreen } from '../../features/audit/screens/audit-export-preview-screen';
 import { AuditScreen } from '../../features/audit/screens/audit-screen';
-import { PostTripFeedbackScreen } from '../../features/feedback/screens/post-trip-feedback-screen';
 import { HomeCustomerScreen } from '../../features/home-customer/screens/home-customer-screen';
 import { TransactionLogCsvScreen } from '../../features/history/screens/transaction-log-csv-screen';
 import { HomeMitraScreen } from '../../features/home-mitra/screens/home-mitra-screen';
@@ -45,6 +44,7 @@ import { HardwarePermissionCard } from '../../ui/patterns/hardware-permission-ca
 import { RecoveryBanner } from '../../ui/patterns/recovery-banner';
 import { HistoryDetailRoute } from './screens/history-detail-route';
 import { HistoryListRoute } from './screens/history-list-route';
+import { PostTripFeedbackRoute } from './screens/post-trip-feedback-route';
 
 export function RootNavigation(): React.JSX.Element {
   const activeOrder = useAppShellStore(state => state.activeOrder);
@@ -527,11 +527,6 @@ export function RootNavigation(): React.JSX.Element {
     setActiveScreen('history_detail');
   }
 
-  const selectedFeedbackOrder =
-    selectedCompletedOrder?.status === 'Completed'
-      ? selectedCompletedOrder
-      : null;
-
   return (
     <AppScreen scrollable>
       <SectionCard
@@ -678,27 +673,13 @@ export function RootNavigation(): React.JSX.Element {
       ) : null}
 
       {activeScreen === 'post_trip_feedback' ? (
-        selectedFeedbackOrder ? (
-          <PostTripFeedbackScreen
-            onSkip={() => {
-              setSelectedHistoryOrderId(selectedFeedbackOrder.orderId);
-              setActiveScreen('history_detail');
-            }}
-            onSubmit={handleSaveFeedback}
-            order={selectedFeedbackOrder}
-          />
-        ) : (
-          <UiStateCard
-            eyebrow="Recovery"
-            title="Saved feedback target is no longer available"
-            description="The shell kept history intact, but this completed trip is no longer selected. Return to history and reopen the saved trip detail."
-            secondaryActionLabel="Back to history"
-            onSecondaryAction={() => {
-              setActiveScreen('history_list');
-            }}
-            tone="warning"
-          />
-        )
+        <PostTripFeedbackRoute
+          onBack={() => {
+            setActiveScreen('history_detail');
+          }}
+          onSubmit={handleSaveFeedback}
+          selectedCompletedOrder={selectedCompletedOrder}
+        />
       ) : null}
 
       {activeScreen === 'history_detail' ? (
