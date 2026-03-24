@@ -13,10 +13,6 @@ import { saveProfile } from '../../application/user/save-profile';
 import { advanceOrderStatus } from '../../application/order/advance-order-status';
 import { cancelOrder } from '../../application/order/cancel-order';
 import { createOrderDraft } from '../../application/order/create-order-draft';
-import {
-  buildAuditBundleFiles,
-  exportAuditBundlePreview,
-} from '../../application/order/export-audit-bundle-preview';
 import { guardExportWithDeviceAuth } from '../../application/order/guard-export-with-device-auth';
 import { savePostTripFeedback } from '../../application/order/save-post-trip-feedback';
 import { submitOrderDraft } from '../../application/order/submit-order-draft';
@@ -28,7 +24,6 @@ import {
 import { openHardwarePermissionSettings } from '../../integrations/hardware-permission/hardware-permission-actions';
 import { ActiveTripScreen } from '../../features/active-trip/screens/active-trip-screen';
 import { AuditExportPreviewScreen } from '../../features/audit/screens/audit-export-preview-screen';
-import { AuditScreen } from '../../features/audit/screens/audit-screen';
 import { HomeCustomerScreen } from '../../features/home-customer/screens/home-customer-screen';
 import { TransactionLogCsvScreen } from '../../features/history/screens/transaction-log-csv-screen';
 import { HomeMitraScreen } from '../../features/home-mitra/screens/home-mitra-screen';
@@ -42,6 +37,7 @@ import { useHistoryStore } from '../../state/history/history-store';
 import { usePermissionStore } from '../../state/permission/permission-store';
 import { HardwarePermissionCard } from '../../ui/patterns/hardware-permission-card';
 import { RecoveryBanner } from '../../ui/patterns/recovery-banner';
+import { AuditListRoute } from './screens/audit-list-route';
 import { HistoryDetailRoute } from './screens/history-detail-route';
 import { HistoryListRoute } from './screens/history-list-route';
 import { PostTripFeedbackRoute } from './screens/post-trip-feedback-route';
@@ -59,7 +55,6 @@ export function RootNavigation(): React.JSX.Element {
   const setActiveOrder = useAppShellStore(state => state.setActiveOrder);
   const setActiveRole = useAppShellStore(state => state.setActiveRole);
   const setProfile = useAppShellStore(state => state.setProfile);
-  const auditEvents = useHistoryStore(state => state.auditEvents);
   const setSelectedHistoryOrderId = useHistoryStore(
     state => state.setSelectedHistoryOrderId,
   );
@@ -83,15 +78,8 @@ export function RootNavigation(): React.JSX.Element {
   const setTransactionCsvExportPath = useExportStore(
     state => state.setTransactionCsvExportPath,
   );
-  const setAuditBundleFiles = useExportStore(state => state.setAuditBundleFiles);
-  const setAuditExportPreview = useExportStore(
-    state => state.setAuditExportPreview,
-  );
   const setAuditExportError = useExportStore(state => state.setAuditExportError);
   const setAuditExportPath = useExportStore(state => state.setAuditExportPath);
-  const resetAuditExportState = useExportStore(
-    state => state.resetAuditExportState,
-  );
   const locationPermissionStatus = usePermissionStore(
     state => state.locationPermissionStatus,
   );
@@ -644,15 +632,11 @@ export function RootNavigation(): React.JSX.Element {
       ) : null}
 
       {activeScreen === 'audit_list' ? (
-        <AuditScreen
-          events={auditEvents}
+        <AuditListRoute
           onBack={() => {
             setActiveScreen('history_list');
           }}
-          onPreviewExport={events => {
-            resetAuditExportState();
-            setAuditBundleFiles(buildAuditBundleFiles(events));
-            setAuditExportPreview(exportAuditBundlePreview(events));
+          onOpenExportPreview={() => {
             setActiveScreen('audit_export_preview');
           }}
         />
