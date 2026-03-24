@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { sanitizeFilePathPreview } from '../../../core/errors/sanitize-display-value';
 import { SectionCard } from '../../../ui/patterns/section-card';
 import { UiStateCard } from '../../../ui/patterns/ui-state-card';
 import { AppButton } from '../../../ui/primitives/app-button';
@@ -37,7 +38,9 @@ export function TransactionLogCsvScreen({
         />
       )}
       {exportedFilePath ? (
-        <AppText tone="muted">Exported file: {exportedFilePath}</AppText>
+        <AppText tone="muted">
+          Exported file: {sanitizeFilePathPreview(exportedFilePath)}
+        </AppText>
       ) : null}
       {exportError ? (
         <UiStateCard

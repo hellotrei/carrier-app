@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { sanitizeJsonPreview } from '../../../core/errors/sanitize-display-value';
 import type { AuditManifestEntry } from '../../../data/repositories/audit-repository-port';
 import { SectionCard } from '../../../ui/patterns/section-card';
 import { UiStateCard } from '../../../ui/patterns/ui-state-card';
@@ -93,7 +94,9 @@ export function AuditScreen({
           <AppText tone="muted">Actor role: {event.actorRole}</AppText>
           <AppText tone="muted">Actor user: {event.actorUserId}</AppText>
           <AppText tone="muted">Checksum: {event.checksum ?? '-'}</AppText>
-          <AppText tone="muted">Payload: {event.payloadJson}</AppText>
+          <AppText tone="muted">
+            Payload preview: {sanitizeJsonPreview(event.payloadJson)}
+          </AppText>
         </SectionCard>
       ))}
       <AppButton

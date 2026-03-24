@@ -1,5 +1,9 @@
 import React from 'react';
 
+import {
+  sanitizeFilePathPreview,
+  sanitizeJsonPreview,
+} from '../../../core/errors/sanitize-display-value';
 import { SectionCard } from '../../../ui/patterns/section-card';
 import { UiStateCard } from '../../../ui/patterns/ui-state-card';
 import { AppButton } from '../../../ui/primitives/app-button';
@@ -30,14 +34,16 @@ export function AuditExportPreviewScreen({
       title="Audit bundle preview"
       description="This preview shows the bundle payload that will be written into the exported .carrieraudit archive."
     >
-      {previewContent ? <AppText tone="muted">{previewContent}</AppText> : (
+      {previewContent ? <AppText tone="muted">{sanitizeJsonPreview(previewContent)}</AppText> : (
         <UiStateCard
           title="No audit payload yet"
           description="The export bundle preview will appear here after at least one audit event is available."
         />
       )}
       {exportedFilePath ? (
-        <AppText tone="muted">Exported file: {exportedFilePath}</AppText>
+        <AppText tone="muted">
+          Exported file: {sanitizeFilePathPreview(exportedFilePath)}
+        </AppText>
       ) : null}
       {exportError ? (
         <UiStateCard
