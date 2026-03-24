@@ -1,5 +1,5 @@
 import React from 'react';
-import { View } from 'react-native';
+import { AppState, View } from 'react-native';
 
 import { sanitizeErrorMessage } from '../../core/errors/sanitize-error-message';
 import { AppButton } from '../../ui/primitives/app-button';
@@ -85,44 +85,42 @@ export function RootNavigation(): React.JSX.Element {
   >('idle');
   const [notificationTokenPreview, setNotificationTokenPreview] = React.useState<string | null>(null);
 
-  React.useEffect(() => {
-    let cancelled = false;
+  const loadHardwarePermissionState = React.useCallback(async () => {
+    try {
+      const [locationStatus, notificationStatus, notificationToken] =
+        await Promise.all([
+          bootstrapDeps.hardwarePermissionGateway.getLocationWhenInUseStatus(),
+          bootstrapDeps.hardwarePermissionGateway.getNotificationStatus(),
+          bootstrapDeps.hardwarePermissionGateway.getNotificationToken(),
+        ]);
 
-    async function loadHardwarePermissionState() {
-      try {
-        const [locationStatus, notificationStatus, notificationToken] =
-          await Promise.all([
-            bootstrapDeps.hardwarePermissionGateway.getLocationWhenInUseStatus(),
-            bootstrapDeps.hardwarePermissionGateway.getNotificationStatus(),
-            bootstrapDeps.hardwarePermissionGateway.getNotificationToken(),
-          ]);
-
-        if (cancelled) {
-          return;
-        }
-
-        setLocationPermissionStatus(locationStatus);
-        setNotificationPermissionStatus(notificationStatus);
-        setNotificationTokenPreview(
-          notificationToken
-            ? `${notificationToken.slice(0, 6)}...${notificationToken.slice(-4)}`
-            : null,
-        );
-      } catch {
-        if (cancelled) {
-          return;
-        }
-
-        setNotificationTokenPreview(null);
-      }
+      setLocationPermissionStatus(locationStatus);
+      setNotificationPermissionStatus(notificationStatus);
+      setNotificationTokenPreview(
+        notificationToken
+          ? `${notificationToken.slice(0, 6)}...${notificationToken.slice(-4)}`
+          : null,
+      );
+    } catch {
+      setNotificationTokenPreview(null);
     }
+  }, []);
 
+  React.useEffect(() => {
     void loadHardwarePermissionState();
+  }, [loadHardwarePermissionState]);
+
+  React.useEffect(() => {
+    const subscription = AppState.addEventListener('change', nextState => {
+      if (nextState === 'active') {
+        void loadHardwarePermissionState();
+      }
+    });
 
     return () => {
-      cancelled = true;
+      subscription.remove();
     };
-  }, []);
+  }, [loadHardwarePermissionState]);
 
   async function handleRoleChange(role: 'customer' | 'mitra') {
     setActiveRole(role);
