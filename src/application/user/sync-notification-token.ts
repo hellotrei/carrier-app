@@ -11,13 +11,16 @@ export async function syncNotificationToken({
   hardwarePermissionGateway,
   secureStorage,
 }: SyncNotificationTokenDeps): Promise<string | null> {
+  const storedToken = await secureStorage.get(SECURE_STORAGE_KEYS.NOTIFICATION_TOKEN);
   const token = await hardwarePermissionGateway.getNotificationToken();
 
   if (!token) {
-    return null;
+    return storedToken;
   }
 
-  await secureStorage.set(SECURE_STORAGE_KEYS.NOTIFICATION_TOKEN, token);
+  if (token !== storedToken) {
+    await secureStorage.set(SECURE_STORAGE_KEYS.NOTIFICATION_TOKEN, token);
+  }
 
   return token;
 }
