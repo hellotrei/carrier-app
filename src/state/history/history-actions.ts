@@ -1,3 +1,5 @@
+import { useHistoryStore } from './history-store';
+
 import type { AuditRepositoryPort } from '../../data/repositories/audit-repository-port';
 import type { HistoryFilter, OrderRepositoryPort } from '../../data/repositories/order-repository-port';
 import type { TransactionLogRepositoryPort } from '../../data/repositories/transaction-log-repository-port';
@@ -23,4 +25,15 @@ export async function loadHistorySnapshot(
     historyOrders,
     transactionLogs,
   };
+}
+
+export async function reloadHistorySnapshot(
+  deps: LoadHistorySnapshotDeps,
+  filter: HistoryFilter,
+) {
+  const snapshot = await loadHistorySnapshot(deps, filter);
+
+  useHistoryStore.setState(snapshot);
+
+  return snapshot;
 }

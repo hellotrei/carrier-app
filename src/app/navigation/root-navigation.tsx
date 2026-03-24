@@ -27,7 +27,7 @@ import { BasicProfileScreen } from '../../features/profile/screens/basic-profile
 import { getHasRecoverableOrder } from '../../state/app-shell/app-shell-selectors';
 import { useAppShellStore } from '../../state/app-shell/app-shell-store';
 import { useExportStore } from '../../state/export/export-store';
-import { loadHistorySnapshot } from '../../state/history/history-actions';
+import { reloadHistorySnapshot } from '../../state/history/history-actions';
 import { useHistoryStore } from '../../state/history/history-store';
 import { usePermissionStore } from '../../state/permission/permission-store';
 import { HardwarePermissionCard } from '../../ui/patterns/hardware-permission-card';
@@ -136,17 +136,6 @@ export function RootNavigation(): React.JSX.Element {
   const goToScreen = React.useCallback((screen: RootScreen) => {
     setActiveScreen(screen);
   }, []);
-
-  async function refreshHistorySnapshot(filter: 'all' | 'completed' | 'canceled') {
-    const { historyOrders, transactionLogs, auditEvents } =
-      await loadHistorySnapshot(bootstrapDeps, filter);
-
-    useHistoryStore.setState({
-      auditEvents,
-      historyOrders,
-      transactionLogs,
-    });
-  }
 
   async function handleProfileSubmit(params: {
     displayName: string;
@@ -277,13 +266,13 @@ export function RootNavigation(): React.JSX.Element {
           activeRole === 'customer' ? 'post_trip_feedback' : 'history_detail',
         );
         setSelectedHistoryOrderId(result.value.order.orderId);
-        await loadHistory('all');
+        await reloadHistorySnapshot(bootstrapDeps, 'all');
         return;
       }
 
       setSelectedCompletedOrder(null);
       setSelectedHistoryOrderId(result.value.order.orderId);
-      await refreshHistorySnapshot('all');
+      await reloadHistorySnapshot(bootstrapDeps, 'all');
       goToScreen('history_detail');
       return;
     }
@@ -307,7 +296,7 @@ export function RootNavigation(): React.JSX.Element {
       setSelectedCompletedOrder(null);
       setHistoryFilter('all');
       setSelectedHistoryOrderId(result.value.order.orderId);
-      await refreshHistorySnapshot('all');
+      await reloadHistorySnapshot(bootstrapDeps, 'all');
       goToScreen('history_detail');
       return;
     }
@@ -522,7 +511,7 @@ export function RootNavigation(): React.JSX.Element {
 
     setSelectedCompletedOrder(result.value);
     setSelectedHistoryOrderId(result.value.orderId);
-    await refreshHistorySnapshot(historyFilter);
+    await reloadHistorySnapshot(bootstrapDeps, historyFilter);
     goToScreen('history_detail');
   }
 
