@@ -46,3 +46,40 @@ class ReactNativeDelegate: RCTDefaultReactNativeFactoryDelegate {
 #endif
   }
 }
+
+@objc(FileExportModule)
+class FileExportModule: NSObject, RCTBridgeModule {
+  static func moduleName() -> String! {
+    "FileExportModule"
+  }
+
+  @objc
+  static func requiresMainQueueSetup() -> Bool {
+    false
+  }
+
+  @objc(writeTextFile:content:resolver:rejecter:)
+  func writeTextFile(
+    _ fileName: String,
+    content: String,
+    resolver resolve: RCTPromiseResolveBlock,
+    rejecter reject: RCTPromiseRejectBlock
+  ) {
+    do {
+      let documentsUrl = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+      let exportsUrl = documentsUrl?.appendingPathComponent("exports", isDirectory: true)
+
+      guard let exportsUrl else {
+        reject("FILE_EXPORT_FAILED", "Documents directory is unavailable", nil)
+        return
+      }
+
+      try FileManager.default.createDirectory(at: exportsUrl, withIntermediateDirectories: true)
+      let fileUrl = exportsUrl.appendingPathComponent(fileName)
+      try content.write(to: fileUrl, atomically: true, encoding: .utf8)
+      resolve(fileUrl.path)
+    } catch {
+      reject("FILE_EXPORT_FAILED", error.localizedDescription, error)
+    }
+  }
+}

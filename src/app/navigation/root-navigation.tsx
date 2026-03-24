@@ -58,7 +58,11 @@ export function RootNavigation(): React.JSX.Element {
     ReturnType<typeof bootstrapDeps.auditRepository.listEvents>
   >>([]);
   const [transactionCsvPreview, setTransactionCsvPreview] = React.useState('');
+  const [transactionCsvExportError, setTransactionCsvExportError] = React.useState<string | null>(null);
+  const [transactionCsvExportPath, setTransactionCsvExportPath] = React.useState<string | null>(null);
   const [auditExportPreview, setAuditExportPreview] = React.useState('');
+  const [auditExportError, setAuditExportError] = React.useState<string | null>(null);
+  const [auditExportPath, setAuditExportPath] = React.useState<string | null>(null);
 
   async function handleRoleChange(role: 'customer' | 'mitra') {
     setActiveRole(role);
@@ -264,6 +268,40 @@ export function RootNavigation(): React.JSX.Element {
     setActiveScreen('history_list');
   }
 
+  async function handleExportTransactionCsv() {
+    try {
+      const path = await bootstrapDeps.fileExportGateway.writeExportFile({
+        content: transactionCsvPreview,
+        extension: 'csv',
+        prefix: 'transaction-log-export',
+      });
+
+      setTransactionCsvExportError(null);
+      setTransactionCsvExportPath(path);
+    } catch (error) {
+      setTransactionCsvExportError(
+        error instanceof Error ? error.message : 'CSV export failed.',
+      );
+    }
+  }
+
+  async function handleExportAuditBundle() {
+    try {
+      const path = await bootstrapDeps.fileExportGateway.writeExportFile({
+        content: auditExportPreview,
+        extension: 'carrieraudit',
+        prefix: 'audit-export',
+      });
+
+      setAuditExportError(null);
+      setAuditExportPath(path);
+    } catch (error) {
+      setAuditExportError(
+        error instanceof Error ? error.message : 'Audit export failed.',
+      );
+    }
+  }
+
   async function handleSaveFeedback(params: {
     manualRating?: number;
     reviewText?: string;
@@ -379,6 +417,8 @@ export function RootNavigation(): React.JSX.Element {
           }}
           onOpenTransactionCsv={() => {
             setTransactionCsvPreview(exportTransactionLogCsv(transactionLogs));
+            setTransactionCsvExportError(null);
+            setTransactionCsvExportPath(null);
             setActiveScreen('transaction_csv');
           }}
           onOpenOrder={orderId => {
@@ -393,9 +433,12 @@ export function RootNavigation(): React.JSX.Element {
       {activeScreen === 'transaction_csv' ? (
         <TransactionLogCsvScreen
           csvContent={transactionCsvPreview}
+          exportError={transactionCsvExportError}
+          exportedFilePath={transactionCsvExportPath}
           onBack={() => {
             setActiveScreen('history_list');
           }}
+          onExport={handleExportTransactionCsv}
         />
       ) : null}
 
@@ -407,6 +450,8 @@ export function RootNavigation(): React.JSX.Element {
           }}
           onPreviewExport={events => {
             setAuditExportPreview(exportAuditBundlePreview(events));
+            setAuditExportError(null);
+            setAuditExportPath(null);
             setActiveScreen('audit_export_preview');
           }}
         />
@@ -414,9 +459,12 @@ export function RootNavigation(): React.JSX.Element {
 
       {activeScreen === 'audit_export_preview' ? (
         <AuditExportPreviewScreen
+          exportError={auditExportError}
+          exportedFilePath={auditExportPath}
           onBack={() => {
             setActiveScreen('audit_list');
           }}
+          onExport={handleExportAuditBundle}
           previewContent={auditExportPreview}
         />
       ) : null}
