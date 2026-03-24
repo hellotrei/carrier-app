@@ -1,33 +1,35 @@
 import { create } from 'zustand';
 
+import type { NotificationEvent } from './notification-event';
+
 export type PermissionStatus = 'idle' | 'granted' | 'denied';
 
 type PermissionStore = {
-  lastNotificationPreview: string | null;
+  lastNotificationEvent: NotificationEvent | null;
   locationPermissionStatus: PermissionStatus;
   notificationPermissionStatus: PermissionStatus;
   notificationTokenPreview: string | null;
   resetPermissionState: () => void;
-  setLastNotificationPreview: (preview: string | null) => void;
+  setLastNotificationEvent: (event: NotificationEvent | null) => void;
   setLocationPermissionStatus: (status: PermissionStatus) => void;
   setNotificationPermissionStatus: (status: PermissionStatus) => void;
   setNotificationTokenPreview: (tokenPreview: string | null) => void;
 };
 
 export const usePermissionStore = create<PermissionStore>(set => ({
-  lastNotificationPreview: null,
+  lastNotificationEvent: null,
   locationPermissionStatus: 'idle',
   notificationPermissionStatus: 'idle',
   notificationTokenPreview: null,
   resetPermissionState: () =>
     set({
-      lastNotificationPreview: null,
+      lastNotificationEvent: null,
       locationPermissionStatus: 'idle',
       notificationPermissionStatus: 'idle',
       notificationTokenPreview: null,
     }),
-  setLastNotificationPreview: lastNotificationPreview =>
-    set({ lastNotificationPreview }),
+  setLastNotificationEvent: lastNotificationEvent =>
+    set({ lastNotificationEvent }),
   setLocationPermissionStatus: locationPermissionStatus =>
     set({ locationPermissionStatus }),
   setNotificationPermissionStatus: notificationPermissionStatus =>

@@ -1,11 +1,12 @@
 import React from 'react';
 
+import type { NotificationEvent } from '../../state/permission/notification-event';
 import { AppButton } from '../primitives/app-button';
 import { AppText } from '../primitives/app-text';
 import { SectionCard } from './section-card';
 
 type HardwarePermissionCardProps = {
-  lastNotificationPreview?: string | null;
+  lastNotificationEvent?: NotificationEvent | null;
   locationStatus: 'idle' | 'granted' | 'denied';
   notificationTokenPreview?: string | null;
   notificationStatus: 'idle' | 'granted' | 'denied';
@@ -15,7 +16,7 @@ type HardwarePermissionCardProps = {
 };
 
 export function HardwarePermissionCard({
-  lastNotificationPreview,
+  lastNotificationEvent,
   locationStatus,
   notificationTokenPreview,
   notificationStatus,
@@ -41,10 +42,20 @@ export function HardwarePermissionCard({
           Notification token: {notificationTokenPreview}
         </AppText>
       ) : null}
-      {lastNotificationPreview ? (
-        <AppText tone="muted">
-          Last push event: {lastNotificationPreview}
-        </AppText>
+      {lastNotificationEvent ? (
+        <>
+          <AppText tone="muted">
+            Last push event: {lastNotificationEvent.preview}
+          </AppText>
+          <AppText tone="muted">
+            Push type: {lastNotificationEvent.type}
+          </AppText>
+          {lastNotificationEvent.orderId ? (
+            <AppText tone="muted">
+              Push order ID: {lastNotificationEvent.orderId}
+            </AppText>
+          ) : null}
+        </>
       ) : null}
       <AppButton
         label="Request location permission"

@@ -4,47 +4,18 @@ import messaging, {
 
 import { syncNotificationToken } from '../../application/user/sync-notification-token';
 import type { BootstrapDependencies } from '../../app/config/bootstrap-deps';
+import { normalizeNotificationEvent } from './notification-event';
 import { usePermissionStore } from './permission-store';
 
 function toTokenPreview(token: string | null): string | null {
   return token ? `${token.slice(0, 6)}...${token.slice(-4)}` : null;
 }
 
-function toNotificationPreview(
-  message: FirebaseMessagingTypes.RemoteMessage | null,
-): string | null {
-  if (!message) {
-    return null;
-  }
-
-  const title = message.notification?.title?.trim();
-  const body = message.notification?.body?.trim();
-  const type = message.data?.type?.trim();
-
-  if (title && body) {
-    return `${title}: ${body}`;
-  }
-
-  if (title) {
-    return title;
-  }
-
-  if (body) {
-    return body;
-  }
-
-  if (type) {
-    return `data:${type}`;
-  }
-
-  return `message:${message.messageId ?? 'received'}`;
-}
-
 export async function handleBackgroundNotificationMessage(
   message: FirebaseMessagingTypes.RemoteMessage,
 ) {
   usePermissionStore.setState({
-    lastNotificationPreview: toNotificationPreview(message),
+    lastNotificationEvent: normalizeNotificationEvent(message),
   });
 }
 
@@ -128,7 +99,7 @@ export async function initializeNotificationRuntime() {
 
   if (initialNotification) {
     usePermissionStore.setState({
-      lastNotificationPreview: toNotificationPreview(initialNotification),
+      lastNotificationEvent: normalizeNotificationEvent(initialNotification),
     });
   }
 
