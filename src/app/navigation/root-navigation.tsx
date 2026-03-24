@@ -38,6 +38,7 @@ import { TransactionLogCsvScreen } from '../../features/history/screens/transact
 import { HomeMitraScreen } from '../../features/home-mitra/screens/home-mitra-screen';
 import { getExportStateErrorCopy } from '../../features/order/export-state-copy';
 import { BasicProfileScreen } from '../../features/profile/screens/basic-profile-screen';
+import { useAppShellStore } from '../../state/app-shell/app-shell-store';
 import { useExportStore } from '../../state/export/export-store';
 import {
   getSelectedFeedbackOrder,
@@ -46,22 +47,21 @@ import {
 } from '../../state/history/history-selectors';
 import { useHistoryStore } from '../../state/history/history-store';
 import { usePermissionStore } from '../../state/permission/permission-store';
-import { useAppStore } from '../../state/store/app-store';
 import { HardwarePermissionCard } from '../../ui/patterns/hardware-permission-card';
 import { RecoveryBanner } from '../../ui/patterns/recovery-banner';
 
 export function RootNavigation(): React.JSX.Element {
-  const activeOrder = useAppStore(state => state.activeOrder);
-  const activeRole = useAppStore(state => state.activeRole);
-  const bootstrapDone = useAppStore(state => state.bootstrapDone);
-  const deviceBindingPresent = useAppStore(state => state.deviceBindingPresent);
-  const profile = useAppStore(state => state.profile);
-  const setDeviceBindingPresent = useAppStore(
+  const activeOrder = useAppShellStore(state => state.activeOrder);
+  const activeRole = useAppShellStore(state => state.activeRole);
+  const bootstrapDone = useAppShellStore(state => state.bootstrapDone);
+  const deviceBindingPresent = useAppShellStore(state => state.deviceBindingPresent);
+  const profile = useAppShellStore(state => state.profile);
+  const setDeviceBindingPresent = useAppShellStore(
     state => state.setDeviceBindingPresent,
   );
-  const setActiveOrder = useAppStore(state => state.setActiveOrder);
-  const setActiveRole = useAppStore(state => state.setActiveRole);
-  const setProfile = useAppStore(state => state.setProfile);
+  const setActiveOrder = useAppShellStore(state => state.setActiveOrder);
+  const setActiveRole = useAppShellStore(state => state.setActiveRole);
+  const setProfile = useAppShellStore(state => state.setProfile);
   const historyFilter = useHistoryStore(state => state.historyFilter);
   const historyOrders = useHistoryStore(state => state.historyOrders);
   const selectedHistoryOrderId = useHistoryStore(
