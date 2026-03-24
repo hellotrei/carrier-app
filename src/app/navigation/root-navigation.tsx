@@ -38,6 +38,7 @@ import { TransactionLogCsvScreen } from '../../features/history/screens/transact
 import { HomeMitraScreen } from '../../features/home-mitra/screens/home-mitra-screen';
 import { getExportStateErrorCopy } from '../../features/order/export-state-copy';
 import { BasicProfileScreen } from '../../features/profile/screens/basic-profile-screen';
+import { usePermissionStore } from '../../state/permission/permission-store';
 import { useAppStore } from '../../state/store/app-store';
 import { HardwarePermissionCard } from '../../ui/patterns/hardware-permission-card';
 import { RecoveryBanner } from '../../ui/patterns/recovery-banner';
@@ -54,6 +55,24 @@ export function RootNavigation(): React.JSX.Element {
   const setActiveOrder = useAppStore(state => state.setActiveOrder);
   const setActiveRole = useAppStore(state => state.setActiveRole);
   const setProfile = useAppStore(state => state.setProfile);
+  const locationPermissionStatus = usePermissionStore(
+    state => state.locationPermissionStatus,
+  );
+  const notificationPermissionStatus = usePermissionStore(
+    state => state.notificationPermissionStatus,
+  );
+  const notificationTokenPreview = usePermissionStore(
+    state => state.notificationTokenPreview,
+  );
+  const setLocationPermissionStatus = usePermissionStore(
+    state => state.setLocationPermissionStatus,
+  );
+  const setNotificationPermissionStatus = usePermissionStore(
+    state => state.setNotificationPermissionStatus,
+  );
+  const setNotificationTokenPreview = usePermissionStore(
+    state => state.setNotificationTokenPreview,
+  );
   const [activeScreen, setActiveScreen] = React.useState<
     'home' | 'active_trip' | 'history_list' | 'history_detail' | 'post_trip_feedback' | 'audit_list' | 'transaction_csv' | 'audit_export_preview'
   >('home');
@@ -78,13 +97,6 @@ export function RootNavigation(): React.JSX.Element {
   const [auditExportError, setAuditExportError] = React.useState<string | null>(null);
   const [auditExportPath, setAuditExportPath] = React.useState<string | null>(null);
   const [auditBundleFiles, setAuditBundleFiles] = React.useState<Record<string, string>>({});
-  const [locationPermissionStatus, setLocationPermissionStatus] = React.useState<
-    'idle' | 'granted' | 'denied'
-  >('idle');
-  const [notificationPermissionStatus, setNotificationPermissionStatus] = React.useState<
-    'idle' | 'granted' | 'denied'
-  >('idle');
-  const [notificationTokenPreview, setNotificationTokenPreview] = React.useState<string | null>(null);
 
   const loadHardwarePermissionState = React.useCallback(async () => {
     try {
