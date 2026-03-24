@@ -4,7 +4,7 @@
 >
 > Adil untuk driver, customer, dan pengembang.
 
-![Status](https://img.shields.io/badge/status-planning%20%2B%20execution%20prep-0a7ea4)
+![Status](https://img.shields.io/badge/status-planning%20%2B%20implementation%20%2B%20hardening-0a7ea4)
 ![Scope](https://img.shields.io/badge/scope-MVP%20Pilot-1f7a1f)
 ![Architecture](https://img.shields.io/badge/architecture-local--first%20%2B%20thin%20relay-5c4ee5)
 ![Contributors](https://img.shields.io/badge/contributors-wanted-f08c00)
@@ -54,8 +54,8 @@ Carrier mencoba membuka ruang baru:
 | BRD / PRD / SDD / TSD | available |
 | MVP scope lock | available |
 | Sprint issue specs | available |
-| React Native source | in progress |
-| Current phase | planning, implementation, and hardening |
+| React Native source | active |
+| Current phase | implementation and pilot hardening |
 
 ---
 
@@ -95,6 +95,15 @@ Yang belum ada di repo ini sekarang:
 - production-ready infra implementation end-to-end
 - final relay/signaling implementation yang penuh sesuai scope akhir
 - full production polish untuk launch pilot
+
+## Sprint Status
+
+| Sprint / Issue Range | Status |
+|---|---|
+| Sprint 1 (`ENG-001` s.d. `ENG-004`) | docs baseline locked |
+| Sprint 2 (`ENG-005` s.d. `ENG-008`) | docs baseline locked |
+| Sprint 3 (`ENG-009` s.d. `ENG-012`) | implemented and hardened in repo |
+| Sprint 4 (`ENG-013` s.d. `ENG-016`) | implemented in repo, with pilot hardening in progress |
 
 ---
 
@@ -251,7 +260,7 @@ Contributors yang tertarik ke repo ini biasanya akan suka karena project ini men
 
 ## Contributor Opportunities
 
-Kami belum masuk fase coding besar, jadi ini justru waktu yang bagus untuk ikut membentuk fondasinya.
+Repo ini sudah masuk fase implementasi nyata, jadi kontribusi sekarang lebih banyak berupa hardening, penyelarasan flow, dan penutupan gap pilot.
 
 Area kontribusi yang paling bernilai:
 - React Native app foundation

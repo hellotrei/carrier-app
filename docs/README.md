@@ -47,13 +47,20 @@ Repo ini tidak lagi berada di fase dokumen-only.
 Yang sudah ada:
 - BRD, PRD, SDD, TSD, dan issue specs per sprint
 - source code React Native di root repo
-- fondasi flow order, history, feedback, audit, dan export
+- flow order sprint 3 sudah hidup dan di-harden
+- flow sprint 4 untuk history, feedback, audit, export, dan recovery hardening sudah hidup
 - local-first persistence dan native export gateway
 
 Yang masih berlangsung:
 - penyempurnaan relay/signaling penuh
 - infra dan hardening yang benar-benar production-ready
 - final polish untuk pilot launch
+
+## Status sprint implementasi
+
+- Sprint 1 dan Sprint 2: source of truth tetap di dokumen/spec
+- Sprint 3 (`ENG-009` s.d. `ENG-012`): sudah terimplementasi di repo
+- Sprint 4 (`ENG-013` s.d. `ENG-016`): sudah terimplementasi di repo dan sedang masuk fase hardening pilot
 
 ## Catatan
 
