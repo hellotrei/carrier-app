@@ -31,7 +31,6 @@ import { AuditExportPreviewScreen } from '../../features/audit/screens/audit-exp
 import { AuditScreen } from '../../features/audit/screens/audit-screen';
 import { PostTripFeedbackScreen } from '../../features/feedback/screens/post-trip-feedback-screen';
 import { HomeCustomerScreen } from '../../features/home-customer/screens/home-customer-screen';
-import { HistoryDetailScreen } from '../../features/history/screens/history-detail-screen';
 import { TransactionLogCsvScreen } from '../../features/history/screens/transaction-log-csv-screen';
 import { HomeMitraScreen } from '../../features/home-mitra/screens/home-mitra-screen';
 import { getExportStateErrorCopy } from '../../features/order/export-state-copy';
@@ -40,15 +39,11 @@ import { getHasRecoverableOrder } from '../../state/app-shell/app-shell-selector
 import { useAppShellStore } from '../../state/app-shell/app-shell-store';
 import { useExportStore } from '../../state/export/export-store';
 import { loadHistorySnapshot } from '../../state/history/history-actions';
-import {
-  getSelectedFeedbackOrder,
-  getSelectedHistoryOrder,
-  getSelectedHistoryTransactionLog,
-} from '../../state/history/history-selectors';
 import { useHistoryStore } from '../../state/history/history-store';
 import { usePermissionStore } from '../../state/permission/permission-store';
 import { HardwarePermissionCard } from '../../ui/patterns/hardware-permission-card';
 import { RecoveryBanner } from '../../ui/patterns/recovery-banner';
+import { HistoryDetailRoute } from './screens/history-detail-route';
 import { HistoryListRoute } from './screens/history-list-route';
 
 export function RootNavigation(): React.JSX.Element {
@@ -64,11 +59,6 @@ export function RootNavigation(): React.JSX.Element {
   const setActiveOrder = useAppShellStore(state => state.setActiveOrder);
   const setActiveRole = useAppShellStore(state => state.setActiveRole);
   const setProfile = useAppShellStore(state => state.setProfile);
-  const historyOrders = useHistoryStore(state => state.historyOrders);
-  const selectedHistoryOrderId = useHistoryStore(
-    state => state.selectedHistoryOrderId,
-  );
-  const transactionLogs = useHistoryStore(state => state.transactionLogs);
   const auditEvents = useHistoryStore(state => state.auditEvents);
   const setSelectedHistoryOrderId = useHistoryStore(
     state => state.setSelectedHistoryOrderId,
@@ -537,19 +527,10 @@ export function RootNavigation(): React.JSX.Element {
     setActiveScreen('history_detail');
   }
 
-  const selectedHistoryOrder = getSelectedHistoryOrder({
-    historyOrders,
-    selectedCompletedOrder,
-    selectedHistoryOrderId,
-  });
-  const selectedFeedbackOrder = getSelectedFeedbackOrder({
-    selectedCompletedOrder,
-    selectedHistoryOrder,
-  });
-  const selectedHistoryTransactionLog = getSelectedHistoryTransactionLog({
-    selectedHistoryOrderId,
-    transactionLogs,
-  });
+  const selectedFeedbackOrder =
+    selectedCompletedOrder?.status === 'Completed'
+      ? selectedCompletedOrder
+      : null;
 
   return (
     <AppScreen scrollable>
@@ -647,7 +628,7 @@ export function RootNavigation(): React.JSX.Element {
           onOpenTransactionCsv={() => {
             setActiveScreen('transaction_csv');
           }}
-          onOpenOrder={orderId => {
+          onOpenOrder={() => {
             setActiveScreen('history_detail');
           }}
         />
@@ -721,35 +702,16 @@ export function RootNavigation(): React.JSX.Element {
       ) : null}
 
       {activeScreen === 'history_detail' ? (
-        selectedHistoryOrder ? (
-          <HistoryDetailScreen
-            onBack={() => {
-              setActiveScreen('history_list');
-            }}
-            onOpenFeedback={
-              selectedHistoryOrder.status === 'Completed'
-                ? () => {
-                    setSelectedCompletedOrder(selectedHistoryOrder);
-                    setSelectedHistoryOrderId(selectedHistoryOrder.orderId);
-                    setActiveScreen('post_trip_feedback');
-                  }
-                : undefined
-            }
-            order={selectedHistoryOrder}
-            transactionLog={selectedHistoryTransactionLog}
-          />
-        ) : (
-          <UiStateCard
-            eyebrow="Recovery"
-            title="Saved order detail is no longer available"
-            description="The selected terminal order could not be restored from the current history view. Return to history and reopen the order from the latest saved list."
-            secondaryActionLabel="Back to history"
-            onSecondaryAction={() => {
-              setActiveScreen('history_list');
-            }}
-            tone="warning"
-          />
-        )
+        <HistoryDetailRoute
+          onBack={() => {
+            setActiveScreen('history_list');
+          }}
+          onOpenFeedback={order => {
+            setSelectedCompletedOrder(order);
+            setActiveScreen('post_trip_feedback');
+          }}
+          selectedCompletedOrder={selectedCompletedOrder}
+        />
       ) : null}
 
       {profile && activeScreen === 'active_trip' && activeOrder ? (
