@@ -51,6 +51,7 @@ Yang sudah ada:
 - flow sprint 4 untuk history, feedback, audit, export, dan recovery hardening sudah hidup
 - local-first persistence dan native export gateway
 - navigation boundary yang sudah dipisah: `AppNavigator`, `RootNavigation`, dan route containers di `src/app/navigation/screens`
+- contract payload FCM minimum sudah mulai dikunci di app layer untuk `incoming_order`, `order_response`, `trip_update`, `trip_terminal`, dan `sos_notice`
 
 Yang masih berlangsung:
 - penyempurnaan relay/signaling penuh
