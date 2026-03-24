@@ -32,6 +32,7 @@ import { HistoryDetailScreen } from '../../features/history/screens/history-deta
 import { HistoryScreen } from '../../features/history/screens/history-screen';
 import { TransactionLogCsvScreen } from '../../features/history/screens/transaction-log-csv-screen';
 import { HomeMitraScreen } from '../../features/home-mitra/screens/home-mitra-screen';
+import { getExportStateErrorCopy } from '../../features/order/export-state-copy';
 import { BasicProfileScreen } from '../../features/profile/screens/basic-profile-screen';
 import { useAppStore } from '../../state/store/app-store';
 import { RecoveryBanner } from '../../ui/patterns/recovery-banner';
@@ -294,7 +295,9 @@ export function RootNavigation(): React.JSX.Element {
       setTransactionCsvExportPath(path);
     } catch (error) {
       setTransactionCsvExportError(
-        error instanceof Error ? error.message : 'CSV export failed.',
+        error instanceof Error
+          ? error.message
+          : getExportStateErrorCopy('transaction_csv', 'export'),
       );
     }
   }
@@ -309,7 +312,9 @@ export function RootNavigation(): React.JSX.Element {
       setTransactionCsvExportError(null);
     } catch (error) {
       setTransactionCsvExportError(
-        error instanceof Error ? error.message : 'Unable to open exported CSV.',
+        error instanceof Error
+          ? error.message
+          : getExportStateErrorCopy('transaction_csv', 'open'),
       );
     }
   }
@@ -324,7 +329,9 @@ export function RootNavigation(): React.JSX.Element {
       setTransactionCsvExportError(null);
     } catch (error) {
       setTransactionCsvExportError(
-        error instanceof Error ? error.message : 'Unable to share exported CSV.',
+        error instanceof Error
+          ? error.message
+          : getExportStateErrorCopy('transaction_csv', 'share'),
       );
     }
   }
@@ -346,7 +353,9 @@ export function RootNavigation(): React.JSX.Element {
       setAuditExportPath(path);
     } catch (error) {
       setAuditExportError(
-        error instanceof Error ? error.message : 'Audit export failed.',
+        error instanceof Error
+          ? error.message
+          : getExportStateErrorCopy('audit_bundle', 'export'),
       );
     }
   }
@@ -361,7 +370,9 @@ export function RootNavigation(): React.JSX.Element {
       setAuditExportError(null);
     } catch (error) {
       setAuditExportError(
-        error instanceof Error ? error.message : 'Unable to open audit export.',
+        error instanceof Error
+          ? error.message
+          : getExportStateErrorCopy('audit_bundle', 'open'),
       );
     }
   }
@@ -376,7 +387,9 @@ export function RootNavigation(): React.JSX.Element {
       setAuditExportError(null);
     } catch (error) {
       setAuditExportError(
-        error instanceof Error ? error.message : 'Unable to share audit export.',
+        error instanceof Error
+          ? error.message
+          : getExportStateErrorCopy('audit_bundle', 'share'),
       );
     }
   }
